@@ -1,0 +1,860 @@
+/* ============================================================
+   CineBook — USER STYLES
+   Dark cinematic theme for the public-facing user frontend.
+   Depends on: base.css
+   ============================================================ */
+
+/* ── Body override for user pages (dark) ── */
+body {
+  background: var(--dark);
+  color: var(--text-primary);
+}
+
+/* ============================================================
+   FIX 1 — Neutralise base.css admin table rules on user pages.
+   Since we scoped data-card rules to .admin-page in base.css,
+   we still explicitly declare correct dark-theme styles for all
+   user page data-cards to avoid any residual conflicts.
+   ============================================================ */
+
+/* User-side data-card: dark background, white text */
+.data-card {
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+}
+
+.data-card-title { color: #fff !important; }
+
+/* Override any table colour leaking from Bootstrap or base */
+.table {
+  background: transparent !important;
+  color: var(--text-primary) !important;
+}
+
+.table > :not(caption) > * > * {
+  background-color: transparent !important;
+  color: var(--text-primary) !important;
+}
+
+/* All content inside user data-cards must be white */
+.data-card p,
+.data-card div,
+.data-card span,
+.data-card strong,
+.data-card h1,
+.data-card h2,
+.data-card h3,
+.data-card h4,
+.data-card h5,
+.data-card h6,
+.data-card label {
+  color: inherit;
+}
+
+/* Any stray strong / span / p inside user page text blocks */
+.hero-content strong,
+.section-title strong,
+.section-title span,
+p strong {
+  color: inherit;
+}
+
+/* ============================================================
+   NAVBAR
+   ============================================================ */
+.site-navbar {
+  background: rgba(8, 8, 11, 0.96);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+  border-bottom: 1px solid var(--border);
+}
+
+.site-navbar .navbar-brand {
+  font-family: 'Platypi', serif;
+  font-weight: 800;
+  font-size: 1.5rem;
+  color: #fff;
+}
+
+.site-navbar .navbar-brand span { color: var(--orange); }
+
+.site-navbar .nav-link {
+  color: rgba(255,255,255,0.8) !important;
+  font-size: 0.9rem;
+  font-weight: 500;
+  letter-spacing: 0.3px;
+  padding: 0.5rem 1rem !important;
+  transition: color 0.2s;
+}
+
+.site-navbar .nav-link:hover,
+.site-navbar .nav-link.active { color: var(--orange) !important; }
+
+.site-navbar .dropdown-menu {
+  background: #14141A;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+  min-width: 200px;
+}
+
+.site-navbar .dropdown-item {
+  color: rgba(255,255,255,0.75) !important;
+  font-size: 0.875rem;
+  padding: 0.5rem 1.25rem;
+  transition: all 0.15s;
+}
+
+.site-navbar .dropdown-item:hover {
+  background: rgba(255,106,0,0.12);
+  color: var(--orange) !important;
+}
+
+.site-navbar .dropdown-item i {
+  width: 16px;
+  color: inherit;
+}
+
+.site-navbar .dropdown-item.text-danger { color: #f87171 !important; }
+.site-navbar .dropdown-item.text-danger:hover {
+  background: rgba(229,9,20,0.1);
+  color: #ef4444 !important;
+}
+
+.site-navbar .dropdown-divider { border-color: var(--border); }
+
+.city-badge {
+  background: rgba(255,106,0,0.12);
+  border: 1px solid rgba(255,106,0,0.3);
+  color: var(--orange);
+  border-radius: 20px;
+  padding: 4px 12px;
+  font-size: 0.8rem;
+  cursor: pointer;
+}
+
+/* ============================================================
+   HERO SECTION
+   ============================================================ */
+.hero-section {
+  position: relative;
+  min-height: 520px;
+  background: linear-gradient(135deg, #0B0B0F, #14141A, #1C1C24);
+  display: flex;
+  align-items: center;
+  overflow: hidden;
+}
+
+.hero-section::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: url('../img/hero-bg.jpg') center/cover no-repeat;
+  opacity: 0.18;
+}
+
+.hero-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to right, rgba(8,8,11,0.9) 35%, transparent);
+}
+
+.hero-content { position: relative; z-index: 2; }
+
+.hero-title {
+  font-family: 'Platypi', serif;
+  font-size: 3rem;
+  font-weight: 800;
+  color: #fff;
+  line-height: 1.2;
+}
+
+.hero-title span { color: var(--orange); }
+
+@media (max-width: 768px) {
+  .hero-title { font-size: 2rem; }
+}
+
+/* ============================================================
+   MOVIE CARDS
+   FIX 2 — Cards were not equal height in the grid because the
+   Bootstrap column did not stretch to fill.  Setting the col
+   wrapper to flex and the card to flex-column + height:100%
+   makes every card in a row the same height.
+   ============================================================ */
+
+/* Make every Bootstrap column a flex container so height:100%
+   on the card actually stretches to the tallest sibling.
+   CRITICAL FIX: exclude #payPage columns — the flex-column
+   collapses .pmc cards and payment panels inside the payment
+   page, killing click targets and hiding form panels. */
+:not(#payPage) > .row > [class*="col"],
+#payPage .movie-card-col {
+  display: flex;
+  flex-direction: column;
+}
+/* #payPage columns must stay block so the payment method
+   grid, panels, and form inputs are not crushed. */
+#payPage .row > [class*="col"] {
+  display: block !important;
+  flex-direction: unset !important;
+}
+
+.movie-card {
+  background: var(--card-bg);
+  border-radius: 14px;
+  overflow: hidden;
+  transition: transform 0.3s, box-shadow 0.3s, border-color 0.3s;
+  border: 1px solid var(--border);
+  /* FIX: flex:1 instead of height:100% so the card fills the
+     flex column wrapper regardless of sibling content */
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+}
+
+.movie-card:hover {
+  transform: translateY(-6px);
+  box-shadow: 0 20px 40px rgba(0,0,0,0.6);
+  border-color: rgba(255,106,0,0.25);
+}
+
+.movie-card .poster-wrap {
+  position: relative;
+  width: 100%;
+  /* FIX: use padding-top trick instead of aspect-ratio so it
+     works consistently across all Bootstrap breakpoints      */
+  padding-top: 150%; /* 2:3 ratio */
+  overflow: hidden;
+  flex-shrink: 0;
+  background: #0d0d0d;
+}
+
+/* aspect-ratio kept as progressive enhancement */
+@supports (aspect-ratio: 2/3) {
+  .movie-card .poster-wrap {
+    padding-top: 0;
+    aspect-ratio: 2/3;
+    min-height: 180px;
+  }
+}
+
+.movie-card .poster-wrap img {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center top;
+  display: block;
+  transition: transform 0.4s;
+}
+
+.movie-card:hover .poster-wrap img { transform: scale(1.06); }
+
+.movie-card .poster-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to top, rgba(0,0,0,0.92) 0%, transparent 60%);
+  opacity: 0;
+  transition: opacity 0.3s;
+  display: flex;
+  align-items: flex-end;
+  padding: 15px;
+}
+
+.movie-card:hover .poster-overlay { opacity: 1; }
+
+.movie-card .card-body {
+  padding: 10px 12px 12px;
+  /* FIX: flex:1 pushes the rating to the bottom of every card */
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+/* FIX 3 — Headings/text invisible on user pages.
+   The .movie-title was being overridden by base.css's
+   .table > * > * rule leaking colour:#111827 into all elements.
+   Explicitly re-declare white on all card text. */
+.movie-card .movie-title {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #fff !important;
+  margin-bottom: 3px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.movie-card .movie-genre {
+  font-size: 0.72rem;
+  color: var(--text-muted) !important;
+  margin-bottom: 6px;
+}
+
+.movie-card .movie-rating {
+  background: rgba(245,158,11,0.12);
+  border: 1px solid rgba(245,158,11,0.3);
+  color: var(--gold);
+  border-radius: 20px;
+  padding: 2px 8px;
+  font-size: 0.7rem;
+  font-weight: 700;
+}
+
+/* Overlay buttons — compact inside poster */
+.movie-card .poster-overlay .btn-cinema {
+  padding: 5px 10px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  border-radius: 6px;
+  width: 100%;
+  text-align: center;
+  display: block;
+  margin-bottom: 4px;
+  box-shadow: none;
+}
+
+.movie-card .poster-overlay .btn-cinema-outline {
+  padding: 4px 10px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  border-radius: 6px;
+  border-width: 1px;
+  width: 100%;
+  text-align: center;
+  display: block;
+}
+
+.movie-card .poster-overlay .btn-cinema:hover {
+  transform: none;
+  box-shadow: none;
+  filter: brightness(1.1);
+}
+
+.movie-card .poster-overlay .btn-cinema-outline:hover {
+  background: rgba(255,106,0,0.25);
+  color: #fff;
+}
+
+/* ── Standalone movie meta elements ── */
+.movie-genre {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  margin-bottom: 4px;
+}
+
+.movie-lang {
+  font-size: 0.68rem;
+  color: var(--text-muted);
+}
+
+.lang-badge {
+  background: rgba(255,106,0,0.12);
+  border: 1px solid rgba(255,106,0,0.28);
+  color: var(--orange);
+  border-radius: 4px;
+  padding: 1px 6px;
+  font-size: 0.65rem;
+  font-weight: 600;
+}
+
+.lang-count-badge {
+  background: rgba(99,179,237,0.12);
+  border: 1px solid rgba(99,179,237,0.3);
+  color: #63b3ed;
+  border-radius: 4px;
+  padding: 2px 7px;
+  font-size: 0.65rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+
+.card-meta-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 4px;
+  margin-bottom: 6px;
+  flex-wrap: wrap;
+  row-gap: 4px;
+}
+
+.genre-tag {
+  font-size: 0.68rem;
+  color: var(--text-muted) !important;
+  background: rgba(255,255,255,0.05);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 4px;
+  padding: 2px 8px;
+  font-weight: 500;
+  white-space: nowrap;
+  line-height: 1.4;
+}
+
+.lang-inline {
+  font-size: 0.68rem;
+  color: rgba(217,108,44,0.85) !important;
+  font-weight: 600;
+  white-space: nowrap;
+  padding-left: 2px;
+}
+
+.card-meta-row .genre-tag + .lang-inline::before {
+  content: '';
+  display: inline-block;
+  width: 3px;
+  height: 3px;
+  background: rgba(255,255,255,0.2);
+  border-radius: 50%;
+  margin-right: 6px;
+  vertical-align: middle;
+}
+
+.lang-select-pill {
+  background: rgba(255,255,255,0.15);
+  border: 1px solid rgba(255,255,255,0.3);
+  color: #fff;
+  border-radius: 20px;
+  padding: 2px 9px;
+  font-size: 0.65rem;
+  font-weight: 600;
+  text-decoration: none;
+  transition: all 0.18s;
+  white-space: nowrap;
+}
+
+.lang-select-pill:hover {
+  background: rgba(217,108,44,0.7);
+  border-color: var(--orange);
+  color: #fff;
+}
+
+.card-rating-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 2px;
+}
+
+/* ============================================================
+   SECTION TITLES
+   FIX 4 — section-title color was being overridden to #111827
+   by the leaked admin table rule. Re-declare with !important.
+   ============================================================ */
+.section-title {
+  font-family: 'Platypi', serif;
+  font-size: 1.8rem;
+  font-weight: 700;
+  color: #fff !important;
+  position: relative;
+  padding-bottom: 12px;
+  margin-bottom: 30px;
+}
+
+.section-title::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 50px;
+  height: 3px;
+  background: linear-gradient(90deg, var(--orange), var(--primary));
+  border-radius: 3px;
+}
+
+.section-title.centered { text-align: center; }
+.section-title.centered::after { left: 50%; transform: translateX(-50%); }
+
+/* ============================================================
+   FILTERS BAR
+   ============================================================ */
+.filters-bar {
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 20px;
+  margin-bottom: 30px;
+}
+
+.filter-select {
+  background: var(--dark3) !important;
+  border: 1px solid var(--border) !important;
+  color: #fff !important;
+  border-radius: 8px;
+}
+
+.filter-select:focus {
+  border-color: var(--orange) !important;
+  box-shadow: none !important;
+  color: #fff !important;
+}
+
+.filter-select option { background: #14141A; color: #fff; }
+
+/* ── Filter Tags ── */
+.filter-tag {
+  display: inline-flex;
+  align-items: center;
+  background: rgba(255,106,0,0.12);
+  border: 1px solid rgba(255,106,0,0.3);
+  color: var(--orange);
+  border-radius: 20px;
+  padding: 3px 12px;
+  font-size: 0.78rem;
+  font-weight: 500;
+}
+
+.filter-tag a { color: inherit; opacity: 0.7; transition: opacity 0.2s; }
+.filter-tag a:hover { opacity: 1; }
+
+/* ── Version Pill (language/format toggle) ── */
+.version-pill {
+  display: inline-block;
+  padding: 7px 18px;
+  border-radius: 20px;
+  background: rgba(255,255,255,0.05);
+  border: 1px solid var(--border);
+  color: rgba(255,255,255,0.6);
+  font-size: 0.85rem;
+  transition: all 0.2s;
+  user-select: none;
+}
+
+input[type=radio]:checked + .version-pill {
+  background: rgba(255,106,0,0.15);
+  border-color: rgba(255,106,0,0.55);
+  color: var(--orange);
+  font-weight: 600;
+}
+
+.version-pill:hover { border-color: rgba(255,106,0,0.4); color: #fff; }
+
+/* ============================================================
+   CITY MODAL
+   ============================================================ */
+#cityModal .modal-content {
+  background: #1a1a2e !important;
+  border: 1px solid rgba(255,255,255,0.1) !important;
+  color: #fff !important;
+}
+
+#cityModal .modal-header {
+  background: #1a1a2e !important;
+  border-bottom: 1px solid rgba(255,255,255,0.1) !important;
+}
+
+#cityModal .modal-body  { background: #1a1a2e !important; }
+#cityModal .modal-footer {
+  background: #1a1a2e !important;
+  border-top: 1px solid rgba(255,255,255,0.1) !important;
+}
+
+#cityModal .form-select {
+  background: rgba(255,255,255,0.07) !important;
+  border: 1px solid rgba(255,255,255,0.15) !important;
+  color: #fff !important;
+}
+
+#cityModal .form-select option { background: #1C1C24; color: #fff; }
+#cityModal label { color: rgba(255,255,255,0.6) !important; }
+
+/* ============================================================
+   SEAT SELECTION
+   ============================================================ */
+.screen-curve { text-align: center; margin-bottom: 30px; }
+
+.screen-display {
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.15), transparent);
+  height: 6px;
+  border-radius: 50%;
+  margin-bottom: 8px;
+}
+
+.screen-label { color: var(--text-muted); font-size: 0.8rem; letter-spacing: 3px; text-transform: uppercase; }
+
+.seat-grid { display: flex; flex-direction: column; gap: 6px; align-items: center; }
+.seat-row  { display: flex; gap: 5px; align-items: center; flex-wrap: wrap; }
+
+.seat-row-label {
+  width: 24px;
+  text-align: center;
+  color: var(--text-muted);
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.seat-legend { display: flex; gap: 20px; justify-content: center; flex-wrap: wrap; margin: 20px 0; }
+.legend-item { display: flex; align-items: center; gap: 6px; font-size: 0.8rem; color: var(--text-muted); }
+.legend-dot  { width: 16px; height: 14px; border-radius: 3px 3px 2px 2px; }
+
+.seat-section-label {
+  font-size: 0.7rem;
+  text-align: center;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  margin: 14px 0 6px;
+  font-weight: 600;
+}
+
+.seat-section-row {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 6px;
+  margin-bottom: 10px;
+}
+
+.seat {
+  width: 36px;
+  height: 36px;
+  border-radius: 6px 6px 3px 3px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.6rem;
+  font-weight: 600;
+  cursor: pointer;
+  border: 1px solid var(--border);
+  background: rgba(255,255,255,0.05);
+  color: rgba(255,255,255,0.65);
+  transition: all 0.15s;
+  user-select: none;
+}
+
+.seat span { pointer-events: none; }
+.seat.seat-vip     { background: rgba(245,158,11,0.12); border-color: rgba(245,158,11,0.4);  color: var(--gold); }
+.seat.seat-premium { background: rgba(16,185,129,0.1);  border-color: rgba(16,185,129,0.3);  color: #10B981; }
+.seat.seat-regular { background: rgba(59,130,246,0.08); border-color: rgba(59,130,246,0.25); color: #60A5FA; }
+.seat.available:hover { transform: scale(1.12); filter: brightness(1.35); }
+
+.seat.selected {
+  background: var(--orange) !important;
+  border-color: var(--orange) !important;
+  color: #fff !important;
+  transform: scale(1.08);
+  box-shadow: 0 0 12px rgba(255,106,0,0.5);
+}
+
+.seat.booked {
+  background: rgba(229,9,20,0.08) !important;
+  border-color: rgba(229,9,20,0.2) !important;
+  color: rgba(229,9,20,0.35) !important;
+  cursor: not-allowed !important;
+  pointer-events: none;
+}
+
+.seat.vip.selected     { background: rgba(245,158,11,0.7) !important; border-color: var(--gold) !important; color: #000 !important; }
+.seat.premium.selected { background: rgba(16,185,129,0.7) !important; border-color: #10B981 !important;    color: #000 !important; }
+
+@media (max-width: 576px) {
+  .seat { width: 28px; height: 28px; font-size: 0.5rem; }
+}
+
+/* ============================================================
+   TICKET CARD
+   ============================================================ */
+.ticket-card {
+  background: linear-gradient(135deg, #14141A, #1C1C24);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  overflow: hidden;
+  position: relative;
+}
+
+.ticket-card::before, .ticket-card::after {
+  content: '';
+  position: absolute;
+  width: 30px;
+  height: 30px;
+  background: var(--dark);
+  border-radius: 50%;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+.ticket-card::before { left: -15px; }
+.ticket-card::after  { right: -15px; }
+
+.ticket-divider { border-top: 2px dashed rgba(255,255,255,0.1); margin: 0; }
+
+
+/* ============================================================
+   THEATER CARD
+   ============================================================ */
+.theater-card {
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 20px;
+  margin-bottom: 16px;
+  transition: border-color 0.2s;
+}
+
+.theater-card:hover { border-color: rgba(255,106,0,0.4); }
+
+.theater-name     { font-size: 0.95rem; font-weight: 700; color: #fff !important; }
+.theater-location { font-size: 0.78rem; color: var(--text-muted) !important; }
+
+/* FIX 5 — user-theater-card on home page had TWO style=""
+   attributes on the same element (the second one silently
+   wins). Move border/radius/cursor/transition into CSS. */
+.user-theater-card {
+  border: 1px solid rgba(217,108,44,0.2);
+  border-radius: 12px;
+  cursor: pointer;
+  transition: border-color 0.2s ease, background 0.2s ease;
+}
+
+.user-theater-card:hover {
+  border-color: rgba(217,108,44,0.5);
+  background: rgba(217,108,44,0.06) !important;
+}
+
+.show-time-btn {
+  background: rgba(255,255,255,0.05);
+  border: 1px solid var(--border);
+  color: #fff;
+  border-radius: 8px;
+  padding: 6px 14px;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  text-decoration: none;
+  display: inline-block;
+}
+
+.show-time-btn:hover {
+  border-color: var(--orange);
+  color: var(--orange);
+  background: rgba(255,106,0,0.08);
+}
+
+.show-time-btn.unavailable {
+  opacity: 0.4;
+  cursor: not-allowed;
+  border-color: rgba(229,9,20,0.3);
+  color: rgba(229,9,20,0.6);
+}
+
+/* ============================================================
+   MOVIES PAGE WRAPPER
+   FIX 6 — movies.html wraps everything in a div with an
+   inline background:#0d1117 and no CSS variable, making the
+   page subtly different from the dark body, and the heading
+   "Movies" + the counts <strong> tags were invisible because
+   of the base.css table colour leak.  Scoped fix:
+   ============================================================ */
+.movies-page-wrap {
+  background: var(--dark);
+  min-height: calc(100vh - 70px);
+  padding: 40px 0;
+}
+
+/* Ensure all text in the movies page header is white */
+.movies-page-wrap h2,
+.movies-page-wrap p,
+.movies-page-wrap strong {
+  color: var(--text-primary);
+}
+
+/* ============================================================
+   FOOTER
+   ============================================================ */
+.site-footer {
+  background: #060608;
+  border-top: 1px solid var(--border);
+  padding: 50px 0 20px;
+}
+
+.footer-brand { font-family: 'Platypi', serif; font-size: 1.5rem; font-weight: 800; color: #fff; }
+.footer-brand span { color: var(--orange); }
+.footer-desc  { color: var(--text-muted); font-size: 0.875rem; line-height: 1.7; }
+
+.footer-heading {
+  color: #fff;
+  font-size: 0.9rem;
+  font-weight: 600;
+  margin-bottom: 16px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.footer-links li { margin-bottom: 8px; }
+.footer-links a  { color: var(--text-muted); font-size: 0.875rem; transition: color 0.2s; }
+.footer-links a:hover { color: var(--orange); }
+
+.footer-social a {
+  width: 36px; height: 36px;
+  background: rgba(255,255,255,0.05);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  display: inline-flex; align-items: center; justify-content: center;
+  color: var(--text-muted);
+  margin-right: 8px;
+  transition: all 0.2s;
+}
+
+.footer-social a:hover { background: var(--orange); border-color: var(--orange); color: #fff; }
+
+.footer-bottom {
+  border-top: 1px solid var(--border);
+  margin-top: 40px;
+  padding-top: 20px;
+  color: var(--text-muted);
+  font-size: 0.8rem;
+}
+
+/* ============================================================
+   LOCATION SELECTOR
+   ============================================================ */
+.location-selector-wrap {
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 20px;
+}
+
+.location-selector-wrap .step-indicator { display: flex; gap: 6px; margin-bottom: 16px; }
+.location-step { flex: 1; height: 3px; background: rgba(255,255,255,0.08); border-radius: 3px; transition: background 0.3s; }
+.location-step.done   { background: var(--success); }
+.location-step.active { background: var(--orange); }
+
+/* ============================================================
+   PROFILE
+   ============================================================ */
+.profile-stat-card {
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 24px 16px;
+  text-align: center;
+}
+
+.profile-stat-value { font-size: 1.8rem; font-weight: 800; color: var(--orange); }
+.profile-stat-label { font-size: 0.8rem; color: var(--text-muted); margin-top: 4px; }
+
+/* ============================================================
+   CONTACT / PARTNER PAGES
+   ============================================================ */
+.contact-info-card {
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 20px;
+}
+
+.theater-brand-tag {
+  font-size: 0.72rem;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 2px 8px;
+  color: var(--text-muted);
+}

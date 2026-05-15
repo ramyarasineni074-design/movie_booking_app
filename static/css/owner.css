@@ -1,0 +1,275 @@
+/* ============================================================
+   CineBook — OWNER STYLES
+   Light panel theme with gold (#F59E0B) accent.
+   Depends on: base.css
+   ============================================================ */
+
+/* ── Body override for owner pages ── */
+body {
+  background: var(--admin-bg);
+  color: var(--admin-text);
+}
+
+/* ============================================================
+   OWNER SIDEBAR ACCENT — gold instead of red
+   ============================================================ */
+.owner-panel .sidebar-link.active {
+  background: rgba(245,158,11,0.1);
+  color: #B45309;
+}
+
+/* ============================================================
+   OWNER PANEL — Filter selects (dark themed, outside modals)
+   ============================================================ */
+.owner-panel .admin-page .form-select.search-input-dark,
+.owner-panel .admin-page select.search-input-dark,
+.owner-panel .admin-page .form-control.search-input-dark {
+  background: var(--dark3) !important;
+  border: 1px solid var(--border) !important;
+  color: #fff !important;
+}
+
+.owner-panel .admin-page .form-select.search-input-dark:focus,
+.owner-panel .admin-page select.search-input-dark:focus {
+  border-color: var(--gold) !important;
+  box-shadow: 0 0 0 3px rgba(245,158,11,0.15) !important;
+}
+
+.owner-panel .admin-page .form-select.search-input-dark option,
+.owner-panel .admin-page select.search-input-dark option {
+  background: #1C1C24;
+  color: #fff;
+}
+
+/* ============================================================
+   OWNER PANEL — modal-dark override to LIGHT theme
+   ============================================================ */
+.owner-panel .modal-dark {
+  background: var(--admin-card) !important;
+  border: 1px solid var(--admin-border) !important;
+  color: var(--admin-text) !important;
+  border-radius: 16px;
+}
+.owner-panel .modal-dark .modal-header {
+  background: var(--admin-card) !important;
+  border-bottom: 1px solid var(--admin-border) !important;
+  color: var(--admin-text) !important;
+}
+.owner-panel .modal-dark .modal-body {
+  background: var(--admin-card) !important;
+  color: var(--admin-text) !important;
+}
+.owner-panel .modal-dark .modal-footer {
+  background: var(--admin-card) !important;
+  border-top: 1px solid var(--admin-border) !important;
+  color: var(--admin-text) !important;
+}
+.owner-panel .modal-dark .modal-title {
+  color: var(--admin-text) !important;
+}
+.owner-panel .modal-dark .form-label,
+.owner-panel .modal-dark label {
+  color: var(--admin-muted) !important;
+}
+.owner-panel .modal-dark .form-control,
+.owner-panel .modal-dark .form-select,
+.owner-panel .modal-dark .search-input-dark,
+.owner-panel .modal-dark input,
+.owner-panel .modal-dark textarea,
+.owner-panel .modal-dark select {
+  background: #FFFFFF !important;
+  border: 1px solid var(--admin-border) !important;
+  color: var(--admin-text) !important;
+}
+.owner-panel .modal-dark .form-control::placeholder,
+.owner-panel .modal-dark textarea::placeholder {
+  color: #9CA3AF !important;
+}
+.owner-panel .modal-dark .form-select option,
+.owner-panel .modal-dark select option {
+  background: #ffffff !important;
+  color: var(--admin-text) !important;
+}
+.owner-panel .modal-dark .form-control:focus,
+.owner-panel .modal-dark .form-select:focus,
+.owner-panel .modal-dark input:focus,
+.owner-panel .modal-dark textarea:focus,
+.owner-panel .modal-dark select:focus {
+  border-color: var(--gold) !important;
+  box-shadow: 0 0 0 3px rgba(245,158,11,0.15) !important;
+}
+.owner-panel .modal-dark input[type="file"]::file-selector-button {
+  background: #F3F4F6;
+  border: 1px solid var(--admin-border);
+  color: var(--admin-text);
+  border-radius: 6px;
+  padding: 4px 10px;
+  margin-right: 8px;
+}
+.owner-panel .modal-dark .btn-close {
+  filter: invert(1) !important;
+}
+
+/* ============================================================
+   OWNER PANEL — General page text visibility (light bg)
+   ============================================================ */
+.owner-panel .admin-page p,
+.owner-panel .admin-page span:not(.badge):not([class*="icon"]),
+.owner-panel .admin-page label,
+.owner-panel .admin-page small,
+.owner-panel .admin-page h1,
+.owner-panel .admin-page h2,
+.owner-panel .admin-page h3,
+.owner-panel .admin-page h4,
+.owner-panel .admin-page h5,
+.owner-panel .admin-page h6 { color: #111827; }
+
+/* Modal text uses admin-text (light theme) */
+.owner-panel .modal-dark p,
+.owner-panel .modal-dark span,
+.owner-panel .modal-dark div,
+.owner-panel .modal-dark small,
+.owner-panel .modal-dark h1,
+.owner-panel .modal-dark h2,
+.owner-panel .modal-dark h3,
+.owner-panel .modal-dark h4,
+.owner-panel .modal-dark h5,
+.owner-panel .modal-dark h6 { color: var(--admin-text) !important; }
+
+/* ============================================================
+   OWNER PANEL — Search & filter inputs (light panel)
+   ============================================================ */
+.owner-panel .admin-page .form-control:not(.search-input-dark),
+.owner-panel .admin-page .form-select:not(.search-input-dark),
+.owner-panel .admin-page input[type="text"]:not(.search-input-dark),
+.owner-panel .admin-page input[type="search"]:not(.search-input-dark),
+.owner-panel .admin-page select:not(.search-input-dark) {
+  background: #FFFFFF !important;
+  border: 1px solid #D1D5DB !important;
+  color: #111827 !important;
+  border-radius: 8px !important;
+  height: 40px;
+  font-size: 0.875rem;
+  min-width: 130px;
+}
+
+.owner-panel .admin-page .form-control:not(.search-input-dark):focus,
+.owner-panel .admin-page .form-select:not(.search-input-dark):focus,
+.owner-panel .admin-page input[type="text"]:not(.search-input-dark):focus,
+.owner-panel .admin-page select:not(.search-input-dark):focus {
+  border-color: var(--gold) !important;
+  box-shadow: 0 0 0 3px rgba(245,158,11,0.12) !important;
+  outline: none !important;
+}
+
+.owner-panel .admin-page .form-control::placeholder,
+.owner-panel .admin-page input::placeholder { color: #9CA3AF !important; }
+
+.owner-panel .admin-page .form-select option,
+.owner-panel .admin-page select option { background: #fff; color: #111827; }
+
+/* Filter row layout */
+.owner-panel .admin-page .filter-row,
+.owner-panel .admin-page form.d-flex,
+.owner-panel .admin-page .filters-row {
+  display: flex !important;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+}
+
+/* Input group */
+.owner-panel .admin-page .input-group-text {
+  background: #F9FAFB !important;
+  border: 1px solid #D1D5DB !important;
+  color: #6B7280 !important;
+  border-right: none !important;
+}
+
+.owner-panel .admin-page .input-group .form-control { border-left: none !important; }
+
+/* ============================================================
+   OWNER PANEL — Buttons
+   ============================================================ */
+.owner-panel .admin-page .btn,
+.owner-panel .admin-page button { color: #111827; }
+
+.owner-panel .admin-page .btn.active,
+.owner-panel .admin-page .btn-primary { color: #fff !important; }
+
+.owner-panel .admin-page .btn-outline-secondary,
+.owner-panel .admin-page .btn-outline-warning,
+.owner-panel .admin-page .btn-outline-danger,
+.owner-panel .admin-page .btn-outline-success,
+.owner-panel .admin-page .btn-outline-info,
+.owner-panel .admin-page .btn-outline-primary {
+  color: #374151 !important;
+  border-color: #D1D5DB !important;
+  background: #fff !important;
+}
+
+.owner-panel .admin-page .btn-outline-secondary:hover,
+.owner-panel .admin-page .btn-outline-warning:hover,
+.owner-panel .admin-page .btn-outline-danger:hover,
+.owner-panel .admin-page .btn-outline-success:hover,
+.owner-panel .admin-page .btn-outline-info:hover,
+.owner-panel .admin-page .btn-outline-primary:hover {
+  background: #F3F4F6 !important;
+  color: #111827 !important;
+}
+
+/* ============================================================
+   OWNER PANEL — Stat cards
+   ============================================================ */
+.owner-panel .stat-value {
+  color: #111827 !important;
+  font-size: 2rem;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.owner-panel .stat-label { color: #6B7280 !important; font-size: 0.8rem; }
+
+/* ============================================================
+   OWNER PANEL — Modals (light)
+   ============================================================ */
+.owner-panel .admin-page .modal-content:not(.modal-dark),
+.owner-panel .admin-main .modal-content:not(.modal-dark) {
+  background: var(--admin-card) !important;
+  border: 1px solid var(--admin-border) !important;
+  color: var(--admin-text) !important;
+  border-radius: 16px;
+}
+
+.owner-panel .admin-page .modal-header:not(.modal-dark .modal-header),
+.owner-panel .admin-main .modal-content:not(.modal-dark) .modal-header {
+  border-bottom: 1px solid var(--admin-border) !important;
+  background: var(--admin-card) !important;
+  padding: 18px 24px;
+}
+
+.owner-panel .admin-page .modal-footer:not(.modal-dark .modal-footer),
+.owner-panel .admin-main .modal-content:not(.modal-dark) .modal-footer {
+  border-top: 1px solid var(--admin-border) !important;
+  background: var(--admin-card) !important;
+  padding: 16px 24px;
+}
+
+.owner-panel .admin-page .modal-body:not(.modal-dark .modal-body),
+.owner-panel .admin-main .modal-content:not(.modal-dark) .modal-body {
+  background: var(--admin-card) !important;
+  color: var(--admin-text) !important;
+}
+
+/* Modal focus ring uses gold for owner */
+.owner-panel .admin-page .modal .form-control:focus,
+.owner-panel .admin-page .modal .form-select:focus {
+  border-color: var(--gold) !important;
+  box-shadow: 0 0 0 3px rgba(245,158,11,0.12) !important;
+}
+
+/* ============================================================
+   OWNER PANEL — Scrollbar (light theme)
+   ============================================================ */
+.owner-panel .admin-main ::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.12); }
+.owner-panel .admin-main ::-webkit-scrollbar-thumb:hover { background: rgba(0,0,0,0.22); }

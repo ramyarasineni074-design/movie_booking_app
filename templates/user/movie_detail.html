@@ -1,0 +1,478 @@
+{% extends 'user/base.html' %}
+{% block title %}{{ movie.title }}{% endblock %}
+
+{% block content %}
+<div style="background:#0d1117;min-height:calc(100vh - 70px)">
+
+  <!-- MOVIE BANNER — BookMyShow style -->
+  <div style="position:relative;overflow:hidden;min-height:320px;display:flex;align-items:center">
+
+    <!-- Full-width blurred poster background -->
+    <div style="position:absolute;inset:0;
+                background:url('{{ movie.poster_url or url_for('static',filename='uploads/default.png') }}') center/cover no-repeat;
+                filter:blur(18px) brightness(0.35) saturate(1.4);
+                transform:scale(1.08);
+                pointer-events:none"></div>
+
+    <!-- Dark gradient overlays -->
+    <div style="position:absolute;inset:0;
+                background:linear-gradient(to right, rgba(13,17,23,0.82) 38%, rgba(13,17,23,0.18) 100%);
+                pointer-events:none"></div>
+    <div style="position:absolute;inset:0;
+                background:linear-gradient(to top, rgba(13,17,23,0.95) 0%, transparent 60%);
+                pointer-events:none"></div>
+
+    <div class="container" style="position:relative;padding:48px 16px 52px">
+      <div class="row align-items-center g-4">
+
+        <!-- LEFT: Poster -->
+        <div class="col-auto">
+          <div style="position:relative;width:170px;flex-shrink:0">
+            <img src="{{ movie.poster_url or url_for('static', filename='uploads/default.png') }}"
+                 alt="{{ movie.title }}"
+                 onerror="this.src='{{ url_for('static', filename='uploads/default.png') }}'"
+                 style="width:170px;height:250px;object-fit:cover;border-radius:14px;
+                        box-shadow:0 24px 56px rgba(0,0,0,0.85);
+                        border:2px solid rgba(255,255,255,0.08);display:block">
+            <div style="position:absolute;bottom:10px;left:0;right:0;text-align:center">
+              <span style="background:rgba(0,0,0,0.72);backdrop-filter:blur(6px);color:#fff;
+                           font-size:0.72rem;font-weight:600;padding:4px 10px;border-radius:20px;
+                           border:1px solid rgba(255,255,255,0.15);
+                           display:inline-flex;align-items:center;gap:5px">
+                <i class="fas fa-play-circle" style="color:#e50914"></i> Trailer
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <!-- RIGHT: Movie info -->
+        <div class="col">
+          <h1 style="color:#fff;font-size:clamp(1.6rem,4vw,2.5rem);font-weight:800;
+                     margin-bottom:10px;line-height:1.15;text-shadow:0 2px 12px rgba(0,0,0,0.6)">
+            {{ movie.title }}
+          </h1>
+
+          {% set display_rating = avg_rating or movie.rating %}
+          {% if display_rating %}
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;flex-wrap:wrap">
+            <div style="display:flex;align-items:center;gap:6px;
+                        background:rgba(243,156,18,0.12);border:1px solid rgba(243,156,18,0.35);
+                        border-radius:24px;padding:5px 14px">
+              <i class="fas fa-star" style="color:#f5c518;font-size:0.95rem"></i>
+              <span style="color:#fff;font-weight:700;font-size:1rem">{{ display_rating }}/10</span>
+            </div>
+            {% if reviews %}<span style="color:rgba(255,255,255,0.45);font-size:0.82rem">({{ reviews|length }}+ Votes) &rsaquo;</span>{% endif %}
+          </div>
+          {% endif %}
+
+          <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;
+                      color:rgba(255,255,255,0.7);font-size:0.88rem;margin-bottom:16px">
+            {% if movie.duration %}
+            <span>
+              {% set h = (movie.duration // 60) %}{% set m = (movie.duration % 60) %}
+              {% if h %}{{ h }}h {% endif %}{{ m }}m
+            </span>
+            <span style="color:rgba(255,255,255,0.25)">&#8226;</span>
+            {% endif %}
+            {% if movie.genre %}<span>{{ movie.genre }}</span><span style="color:rgba(255,255,255,0.25)">&#8226;</span>{% endif %}
+            {% if movie.certificate %}
+            <span style="border:1px solid rgba(255,255,255,0.35);border-radius:4px;padding:1px 7px;font-size:0.78rem;font-weight:600">{{ movie.certificate }}</span>
+            <span style="color:rgba(255,255,255,0.25)">&#8226;</span>
+            {% endif %}
+            {% if movie.release_date %}<span>{{ movie.release_date }}</span>{% endif %}
+          </div>
+
+          <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:18px">
+            <span style="background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.2);
+                         color:#fff;border-radius:6px;padding:4px 12px;font-size:0.8rem;font-weight:600">2D</span>
+            {% for lang in available_languages %}
+            <span style="background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);
+                         color:rgba(255,255,255,0.85);border-radius:6px;padding:4px 12px;font-size:0.8rem">{{ lang }}</span>
+            {% endfor %}
+            {% if movie.status != 'active' %}
+            <span style="background:rgba(255,165,0,0.15);border:1px solid rgba(255,165,0,0.4);
+                         color:#ffa500;border-radius:6px;padding:4px 12px;font-size:0.8rem;font-weight:600">Coming Soon</span>
+            {% endif %}
+          </div>
+
+          {% if movie.description %}
+          <p style="color:rgba(255,255,255,0.55);max-width:580px;line-height:1.7;font-size:0.87rem;margin:0">
+            {{ movie.description[:220] }}{% if movie.description|length > 220 %}&#8230;{% endif %}
+          </p>
+          {% endif %}
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- THEATERS SECTION -->
+  <div class="container" style="padding:40px 0">
+
+    <!-- DATE SELECTOR — 7-day scrollable strip -->
+    <div style="background:#0d1117;border-bottom:1px solid rgba(255,255,255,0.07);margin-bottom:28px">
+      <div class="container">
+        <div class="date-strip">
+          {% for d in date_range %}
+          {% set is_selected = (d == selected_date) %}
+          {% set label = 'Today' if loop.first else ('Tomorrow' if loop.index == 2 else d.strftime('%a')) %}
+          <a href="{{ url_for('user_bp.movie_detail', movie_id=movie.movie_id,
+                      date=d.isoformat(), language=selected_language, city=selected_city) }}"
+             class="date-pill {{ 'active' if is_selected else '' }}">
+            <span class="date-pill-label">{{ label }}</span>
+            <span class="date-pill-day">{{ d.strftime('%d') }}</span>
+            <span class="date-pill-mon">{{ d.strftime('%b') }}</span>
+          </a>
+          {% endfor %}
+
+          <span class="date-legend">
+            <span style="width:10px;height:10px;border-radius:2px;background:rgba(120,120,120,0.45);display:inline-block"></span>
+            Past slots disabled
+          </span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Language filter tabs -->
+    {% if available_languages|length > 1 %}
+    <div class="d-flex align-items-center gap-2 flex-wrap mb-4">
+      <span style="color:var(--text-muted);font-size:0.85rem;font-weight:500;white-space:nowrap">
+        <i class="fas fa-language me-1" style="color:var(--orange)"></i>Filter by language:
+      </span>
+      <a href="{{ url_for('user_bp.movie_detail', movie_id=movie.movie_id, date=selected_date.isoformat(), city=selected_city) }}"
+         class="lang-filter-tab {% if not selected_language %}active{% endif %}">All Languages</a>
+      {% for lang in available_languages %}
+      <a href="{{ url_for('user_bp.movie_detail', movie_id=movie.movie_id, language=lang, date=selected_date.isoformat(), city=selected_city) }}"
+         class="lang-filter-tab {% if selected_language == lang %}active{% endif %}">{{ lang }}</a>
+      {% endfor %}
+    </div>
+    {% endif %}
+
+    <!-- Header -->
+    <h4 style="color:#fff;margin-bottom:20px">
+      <i class="fas fa-map-marker-alt me-2" style="color:var(--orange)"></i>
+      Theaters
+      <small style="font-size:0.8rem;color:var(--text-muted);font-weight:400;margin-left:8px">
+        {{ theaters|length }} found{% if selected_city %} in <span style="color:var(--orange)">{{ selected_city }}</span>{% endif %}
+      </small>
+    </h4>
+
+    {% if theaters %}
+    <div class="row g-3">
+      {% for theater in theaters %}
+
+        {% if selected_language %}
+          {% if selected_language in theater.all_languages %}
+            {% set show_langs = [selected_language] %}
+          {% else %}
+            {% set show_langs = [] %}
+          {% endif %}
+        {% else %}
+          {% set show_langs = theater.all_languages %}
+        {% endif %}
+
+        {% if show_langs %}
+        <div class="col-md-6">
+        <div class="theater-card mb-3">
+
+          <!-- Theater header -->
+          <div class="d-flex align-items-start justify-content-between mb-3">
+            <div>
+              <div class="theater-name">{{ theater.name }}</div>
+              <div class="theater-location mt-1">
+                <i class="fas fa-map-marker-alt me-1" style="color:var(--orange)"></i>
+                {{ theater.location }}{% if theater.city %}, {{ theater.city }}{% endif %}{% if theater.state %}, {{ theater.state }}{% endif %}
+              </div>
+              {% if theater.brand %}
+              <div style="font-size:0.75rem;color:var(--text-muted);margin-top:4px">
+                <i class="fas fa-building me-1"></i>{{ theater.brand.brand_name }}
+              </div>
+              {% endif %}
+            </div>
+            <span class="badge-pill badge-success"><i class="fas fa-check me-1"></i>Available</span>
+          </div>
+
+          <!-- 4 FIXED TIME SLOTS -->
+          <div class="lang-show-group">
+            {% if show_langs|length > 1 %}
+            <div class="mb-2">
+              {% for lang in show_langs %}<span class="lang-badge">{{ lang }}</span>{% endfor %}
+            </div>
+            {% endif %}
+
+            <div class="d-flex flex-wrap gap-2">
+              {% for slot in fixed_show_slots %}
+                {%- set vid     = 'VS_' ~ movie.movie_id ~ '_' ~ selected_date.isoformat() ~ '_' ~ slot.time.strftime('%H%M') -%}
+                {%- set is_past = (selected_date == now_date) and (slot.time <= now_time) -%}
+
+                {% if is_past %}
+                <span class="show-time-btn unavailable" title="Show already started">
+                  <i class="fas fa-clock me-1" style="font-size:0.7rem"></i>{{ slot.display }}
+                  <small style="display:block;font-size:0.7rem;margin-top:2px">Expired</small>
+                </span>
+                {% else %}
+                <a href="{{ url_for('user_bp.select_seats', show_id=vid) }}" class="show-time-btn">
+                  <i class="fas fa-clock me-1" style="font-size:0.7rem;color:var(--orange)"></i>{{ slot.display }}
+                  <small style="color:var(--text-muted);font-size:0.7rem;display:block;margin-top:2px">Book Now</small>
+                </a>
+                {% endif %}
+              {% endfor %}
+            </div>
+          </div>
+
+        </div>
+        </div>
+        {% endif %}
+      {% endfor %}
+    </div>
+
+    {% if selected_language %}
+      {% set matched = [] %}
+      {% for t in theaters %}{% if selected_language in t.all_languages %}{% set _ = matched.append(1) %}{% endif %}{% endfor %}
+      {% if not matched %}
+      <div class="empty-state">
+        <i class="fas fa-language"></i>
+        <h5>No theaters for {{ selected_language }}</h5>
+        <p>
+          No shows in <strong style="color:var(--orange)">{{ selected_language }}</strong>
+          {% if selected_city %}in <strong style="color:var(--orange)">{{ selected_city }}</strong>{% endif %}.
+          <br>
+          <a href="{{ url_for('user_bp.movie_detail', movie_id=movie.movie_id, date=selected_date.isoformat(), city=selected_city) }}" style="color:var(--orange)">Show all languages</a>
+        </p>
+      </div>
+      {% endif %}
+    {% endif %}
+
+    {% else %}
+    <div class="empty-state">
+      <i class="fas fa-building"></i>
+      <h5>No theaters available</h5>
+      <p>
+        {% if selected_city %}
+          No shows found in <strong style="color:var(--orange)">{{ selected_city }}</strong>.
+          <br><a href="{{ url_for('user_bp.movie_detail', movie_id=movie.movie_id, date=selected_date.isoformat()) }}" style="color:var(--orange)">Show all cities</a>
+        {% else %}
+          No theaters found. Try a different date above.
+        {% endif %}
+      </p>
+    </div>
+    {% endif %}
+
+  </div>
+
+  <!-- REVIEWS -->
+  {% if reviews %}
+  <div style="background:rgba(255,255,255,0.02);border-top:1px solid var(--border);padding:50px 0">
+    <div class="container">
+      <div class="d-flex align-items-center gap-3 mb-4">
+        <h3 class="section-title mb-0">Audience Reviews</h3>
+        {% if avg_rating %}
+        <span style="background:rgba(243,156,18,0.15);color:var(--gold);border:1px solid rgba(243,156,18,0.3);border-radius:20px;padding:4px 14px;font-size:0.9rem;font-weight:700">
+          <i class="fas fa-star me-1"></i>{{ avg_rating }}/10
+        </span>
+        {% endif %}
+      </div>
+
+      {% if session.get('dataset_user_id') %}
+      <div class="data-card p-4 mb-4">
+        <h6 style="color:#fff;margin-bottom:16px"><i class="fas fa-pen me-2 text-orange"></i>Write Your Review</h6>
+        <div class="d-flex gap-2 mb-3 flex-wrap">
+          {% for i in range(1, 11) %}
+          <button type="button" class="star-btn btn btn-sm" data-val="{{ i }}" onclick="setRating({{ i }})"
+                  style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);color:rgba(255,255,255,0.4);border-radius:8px;padding:4px 10px;font-size:0.8rem;min-width:36px">
+            {{ i }}
+          </button>
+          {% endfor %}
+        </div>
+        <input type="hidden" id="reviewRating" value="">
+        <textarea id="reviewComment" class="form-control mb-3" rows="3" placeholder="Share your thoughtsâ¦"
+                  style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.12);color:#fff;resize:none"></textarea>
+        <button class="btn btn-cinema btn-sm" onclick="submitReview('{{ movie.movie_id }}')">
+          <i class="fas fa-paper-plane me-2"></i>Submit Review
+        </button>
+        <div id="reviewMsg" class="mt-2"></div>
+      </div>
+      {% endif %}
+
+      <div class="row g-3">
+        {% for review, reviewer in reviews[:8] %}
+        <div class="col-md-6">
+          <div class="data-card p-3">
+            <div class="d-flex align-items-center gap-3 mb-2">
+              <div style="width:38px;height:38px;background:linear-gradient(135deg,var(--orange),var(--primary));border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;color:#fff;font-size:0.85rem;flex-shrink:0">
+                {{ reviewer.name[0].upper() if reviewer and reviewer.name else '?' }}
+              </div>
+              <div class="flex-grow-1">
+                <div style="color:#fff;font-weight:600;font-size:0.9rem">{{ reviewer.name if reviewer else 'Anonymous' }}</div>
+                <div style="font-size:0.75rem;color:var(--text-muted)">{{ review.review_date.strftime('%d %b %Y') if review.review_date else '' }}</div>
+              </div>
+              <span style="background:rgba(243,156,18,0.15);color:var(--gold);border-radius:8px;padding:3px 10px;font-size:0.8rem;font-weight:700">
+                <i class="fas fa-star me-1" style="font-size:0.65rem"></i>{{ review.rating }}
+              </span>
+            </div>
+            {% if review.comment %}
+            <p style="color:rgba(255,255,255,0.65);font-size:0.85rem;margin:0;line-height:1.6">{{ review.comment }}</p>
+            {% endif %}
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+  {% endif %}
+
+</div>
+
+<style>
+/* ── Date strip ── */
+.date-strip {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 14px 0;
+  overflow-x: auto;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.date-strip::-webkit-scrollbar { display: none; }
+
+.date-pill {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  flex-shrink: 0;
+  min-width: 64px;
+  padding: 9px 14px;
+  border-radius: 10px;
+  text-decoration: none;
+  border: 1.5px solid rgba(255,255,255,0.12);
+  background: rgba(255,255,255,0.03);
+  transition: all 0.18s;
+}
+.date-pill:hover {
+  border-color: rgba(229,9,20,0.5);
+  background: rgba(229,9,20,0.07);
+}
+.date-pill.active {
+  border-color: rgba(229,9,20,0.8);
+  background: rgba(229,9,20,0.12);
+}
+.date-pill-label {
+  font-size: 0.66rem;
+  font-weight: 700;
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.4);
+}
+.date-pill.active .date-pill-label { color: #e50914; }
+.date-pill-day {
+  font-size: 1.05rem;
+  font-weight: 800;
+  line-height: 1;
+  color: rgba(255,255,255,0.7);
+}
+.date-pill.active .date-pill-day { color: #fff; }
+.date-pill-mon {
+  font-size: 0.66rem;
+  font-weight: 500;
+  color: rgba(255,255,255,0.35);
+}
+.date-pill.active .date-pill-mon { color: rgba(229,9,20,0.8); }
+.date-legend {
+  margin-left: auto;
+  flex-shrink: 0;
+  font-size: 0.73rem;
+  color: rgba(255,255,255,0.3);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+}
+
+/* ── Language filter ── */
+.lang-filter-tab {
+  display: inline-flex;
+  align-items: center;
+  padding: 6px 16px;
+  border-radius: 20px;
+  border: 1px solid rgba(255,255,255,0.15);
+  background: rgba(255,255,255,0.05);
+  color: rgba(255,255,255,0.7);
+  font-size: 0.82rem;
+  font-weight: 500;
+  text-decoration: none;
+  transition: all 0.18s;
+  white-space: nowrap;
+}
+.lang-filter-tab:hover {
+  border-color: var(--orange);
+  color: #fff;
+  background: rgba(255,106,0,0.1);
+}
+.lang-filter-tab.active {
+  background: rgba(255,106,0,0.18);
+  border-color: var(--orange);
+  color: var(--orange);
+  font-weight: 600;
+}
+
+/* ── Show group ── */
+.lang-show-group {
+  border-top: 1px solid rgba(255,255,255,0.06);
+  padding-top: 12px;
+  margin-top: 4px;
+}
+.lang-show-group:first-of-type {
+  border-top: none;
+  padding-top: 0;
+  margin-top: 0;
+}
+
+/* ── Expired / unavailable slot — grey, fully non-interactive ── */
+.show-time-btn.unavailable {
+  background: rgba(255,255,255,0.03) !important;
+  border: 1.5px solid rgba(255,255,255,0.07) !important;
+  color: rgba(255,255,255,0.22) !important;
+  cursor: not-allowed !important;
+  pointer-events: none !important;
+  opacity: 0.6;
+}
+.show-time-btn.unavailable i,
+.show-time-btn.unavailable small {
+  color: rgba(255,255,255,0.18) !important;
+}
+</style>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function setRating(val) {
+  document.getElementById('reviewRating').value = val;
+  document.querySelectorAll('.star-btn').forEach(btn => {
+    const v = parseInt(btn.dataset.val);
+    btn.style.background  = v <= val ? 'rgba(243,156,18,0.3)' : 'rgba(255,255,255,0.06)';
+    btn.style.color       = v <= val ? 'var(--gold)' : 'rgba(255,255,255,0.4)';
+    btn.style.borderColor = v <= val ? 'rgba(243,156,18,0.5)' : 'rgba(255,255,255,0.1)';
+  });
+}
+
+function submitReview(movieId) {
+  const rating = document.getElementById('reviewRating').value;
+  if (!rating) { showToast('Please select a rating first', 'warning'); return; }
+  const fd = new FormData();
+  fd.append('movie_id', movieId);
+  fd.append('rating',   rating);
+  fd.append('comment',  document.getElementById('reviewComment').value);
+  fetch('/submit-review', { method: 'POST', body: fd })
+    .then(r => r.json())
+    .then(d => {
+      showToast(d.message, d.success ? 'success' : 'danger');
+      if (d.success)
+        document.getElementById('reviewMsg').innerHTML =
+          '<div class="alert alert-success py-2 mt-2">Review submitted!</div>';
+    });
+}
+</script>
+{% endblock %}

@@ -1,0 +1,272 @@
+{% extends 'user/base.html' %}
+{% block title %}{{ theater.name }}{% endblock %}
+
+{% block content %}
+<div style="background:#0d1117;min-height:calc(100vh - 70px)">
+
+  <!-- ══════════════════════════════════════════
+       THEATER BANNER
+  ══════════════════════════════════════════ -->
+  <div style="background:linear-gradient(135deg,#0d1117 0%,#1a1f2e 100%);
+              border-bottom:1px solid var(--border);padding:50px 0">
+    <div class="container">
+      <div class="d-flex align-items-start gap-4 flex-wrap">
+
+        <!-- Icon -->
+        <div style="width:80px;height:80px;background:linear-gradient(135deg,var(--orange),#c0392b);
+                    border-radius:20px;display:flex;align-items:center;justify-content:center;
+                    flex-shrink:0;box-shadow:0 10px 30px rgba(217,108,44,0.3)">
+          <i class="fas fa-building" style="font-size:2rem;color:#fff"></i>
+        </div>
+
+        <!-- Info -->
+        <div class="flex-grow-1">
+          <!-- Breadcrumb -->
+          <div style="font-size:0.8rem;color:var(--text-muted);margin-bottom:8px">
+            <a href="{{ url_for('user_bp.home') }}"
+               style="color:var(--text-muted);text-decoration:none">Home</a>
+            <span class="mx-2">›</span>
+            <a href="{{ url_for('user_bp.theaters') }}"
+               style="color:var(--text-muted);text-decoration:none">Theaters</a>
+            <span class="mx-2">›</span>
+            <span style="color:#fff">{{ theater.name }}</span>
+          </div>
+
+          <h1 style="color:#fff;font-size:2rem;font-weight:800;margin-bottom:8px">
+            {{ theater.name }}
+          </h1>
+
+          <div class="d-flex flex-wrap gap-3"
+               style="font-size:0.875rem;color:rgba(255,255,255,0.6)">
+            {% if theater.location %}
+            <span>
+              <i class="fas fa-map-marker-alt me-1" style="color:var(--orange)"></i>
+              {{ theater.location }}
+            </span>
+            {% endif %}
+            {% if theater.city %}
+            <span>
+              <i class="fas fa-city me-1" style="color:var(--orange)"></i>
+              {{ theater.city }}{% if theater.state %}, {{ theater.state }}{% endif %}
+            </span>
+            {% endif %}
+            {% if theater.brand %}
+            <span>
+              <i class="fas fa-tag me-1" style="color:var(--orange)"></i>
+              {{ theater.brand.brand_name }}
+            </span>
+            {% endif %}
+          </div>
+
+          <!-- Stats row -->
+          <div class="d-flex flex-wrap gap-4 mt-4">
+            <div style="text-align:center">
+              <div style="font-size:1.4rem;font-weight:800;color:var(--orange)">
+                {{ total_movies }}
+              </div>
+              <div style="font-size:0.75rem;color:var(--text-muted)">Movies Playing</div>
+            </div>
+            <div style="text-align:center">
+              <div style="font-size:1.4rem;font-weight:800;color:#fff">
+                {{ total_shows }}
+              </div>
+              <div style="font-size:0.75rem;color:var(--text-muted)">Total Shows</div>
+            </div>
+            <div style="text-align:center">
+              <div style="font-size:1.4rem;font-weight:800;color:#fff">
+                {{ total_screens }}
+              </div>
+              <div style="font-size:0.75rem;color:var(--text-muted)">Screens</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Back button -->
+        <a href="{{ url_for('user_bp.theaters') }}"
+           class="btn btn-cinema-outline btn-sm align-self-start">
+          <i class="fas fa-arrow-left me-1"></i> All Theaters
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════
+       SCREENS INFO BAR
+  ══════════════════════════════════════════ -->
+  {% if screens %}
+  <div style="background:rgba(255,255,255,0.02);
+              border-bottom:1px solid var(--border);padding:16px 0">
+    <div class="container">
+      <div class="d-flex flex-wrap gap-3 align-items-center">
+        <span style="color:var(--text-muted);font-size:0.8rem;font-weight:600">
+          <i class="fas fa-film me-1"></i>SCREENS:
+        </span>
+        {% for screen in screens %}
+        <span style="background:rgba(255,255,255,0.05);
+                     border:1px solid rgba(255,255,255,0.1);
+                     border-radius:8px;padding:4px 12px;
+                     font-size:0.8rem;color:rgba(255,255,255,0.7)">
+          {{ screen.screen_name or ('Screen ' ~ loop.index) }}
+          {% if screen.total_seats %}
+          <span style="color:var(--text-muted);font-size:0.72rem">
+            · {{ screen.total_seats }} seats
+          </span>
+          {% endif %}
+        </span>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- ══════════════════════════════════════════
+       NOW PLAYING SECTION
+  ══════════════════════════════════════════ -->
+  <div class="container" style="padding:40px 0">
+
+    {% if now_playing %}
+    <div class="d-flex align-items-center justify-content-between mb-4">
+      <h2 class="section-title mb-0">
+        <i class="fas fa-play-circle me-2" style="color:var(--orange)"></i>
+        Now Playing
+      </h2>
+      <span style="color:var(--text-muted);font-size:0.85rem">
+        {{ total_movies }} movie{{ 's' if total_movies != 1 else '' }} ·
+        {{ total_shows }} show{{ 's' if total_shows != 1 else '' }}
+      </span>
+    </div>
+
+    <!-- Movie + Show cards -->
+    {% for item in now_playing %}
+    {% set movie = item.movie %}
+    {% set shows = item.shows %}
+
+    <div class="theater-card mb-4"
+         style="border:1px solid rgba(255,255,255,0.06);border-radius:16px;
+                padding:24px;background:rgba(255,255,255,0.02)">
+      <div class="row g-4 align-items-start">
+
+        <!-- Poster -->
+        <div class="col-3 col-md-2 col-lg-1">
+          <a href="{{ url_for('user_bp.movie_detail', movie_id=movie.movie_id) }}">
+            <img src="{{ movie.poster_url or url_for('static', filename='uploads/default.png') }}"
+                 alt="{{ movie.title }}"
+                 onerror="this.src='{{ url_for('static', filename='uploads/default.png') }}'"
+                 style="width:100%;border-radius:10px;
+                        box-shadow:0 8px 20px rgba(0,0,0,0.5)">
+          </a>
+        </div>
+
+        <!-- Movie Info + Shows -->
+        <div class="col-9 col-md-10 col-lg-11">
+
+          <!-- Title + badges -->
+          <div class="d-flex align-items-start justify-content-between flex-wrap gap-2 mb-2">
+            <div>
+              <a href="{{ url_for('user_bp.movie_detail', movie_id=movie.movie_id) }}"
+                 style="text-decoration:none">
+                <h4 style="color:#fff;font-weight:700;margin:0;font-size:1.1rem">
+                  {{ movie.title }}
+                </h4>
+              </a>
+              <div class="d-flex flex-wrap gap-2 mt-2">
+                {% if movie.genre %}
+                {% for g in movie.genre.split(',') %}
+                <span class="badge-pill badge-info" style="font-size:0.7rem">
+                  {{ g.strip() }}
+                </span>
+                {% endfor %}
+                {% endif %}
+                {% if movie.language %}
+                <span class="lang-badge" style="font-size:0.7rem">
+                  {{ movie.language }}
+                </span>
+                {% endif %}
+                {% if movie.duration %}
+                <span style="color:var(--text-muted);font-size:0.75rem">
+                  <i class="fas fa-clock me-1"></i>{{ movie.duration }} min
+                </span>
+                {% endif %}
+                {% if movie.rating %}
+                <span style="color:var(--gold);font-size:0.75rem">
+                  <i class="fas fa-star me-1"></i>{{ movie.rating }}
+                </span>
+                {% endif %}
+              </div>
+            </div>
+
+            <!-- View Movie Detail -->
+            <a href="{{ url_for('user_bp.movie_detail', movie_id=movie.movie_id) }}"
+               class="btn btn-cinema-outline btn-sm flex-shrink-0">
+              <i class="fas fa-info-circle me-1"></i>Details
+            </a>
+          </div>
+
+          <!-- Show time buttons -->
+          <div style="margin-top:16px">
+            <div style="font-size:0.75rem;color:var(--text-muted);
+                        font-weight:600;letter-spacing:0.05em;
+                        text-transform:uppercase;margin-bottom:10px">
+              <i class="fas fa-calendar me-1"></i>Available Shows
+            </div>
+            <div class="d-flex flex-wrap gap-2">
+              {% for show in shows %}
+              {% if show.available_seats > 0 %}
+              <a href="{{ url_for('user_bp.select_seats', show_id=show.show_id) }}"
+                 class="show-time-btn"
+                 title="{{ show.available_seats }} seats · ₹{{ show.price|int if show.price else 0 }}">
+                <i class="fas fa-clock me-1"
+                   style="font-size:0.7rem;color:var(--orange)"></i>
+                {{ show.start_time.strftime('%I:%M %p') if show.start_time else '–' }}
+                {% if show.show_date %}
+                <small style="display:block;color:var(--text-muted);
+                              font-size:0.68rem;margin-top:1px">
+                  {{ show.show_date.strftime('%d %b') }}
+                </small>
+                {% endif %}
+                <small style="display:block;color:var(--text-muted);
+                              font-size:0.68rem">
+                  {{ show.available_seats }} seats · ₹{{ show.price|int if show.price else 0 }}
+                </small>
+              </a>
+              {% else %}
+              <span class="show-time-btn unavailable"
+                    title="Housefull">
+                {{ show.start_time.strftime('%I:%M %p') if show.start_time else '–' }}
+                {% if show.show_date %}
+                <small style="display:block;font-size:0.68rem;margin-top:1px">
+                  {{ show.show_date.strftime('%d %b') }}
+                </small>
+                {% endif %}
+                <small style="display:block;font-size:0.7rem;margin-top:2px">
+                  Housefull
+                </small>
+              </span>
+              {% endif %}
+              {% endfor %}
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+    {% endfor %}
+
+    {% else %}
+    <!-- Empty state -->
+    <div class="empty-state">
+      <i class="fas fa-film"></i>
+      <h5>No Shows Currently</h5>
+      <p style="color:var(--text-muted)">
+        This theater has no active shows right now.<br>
+        Check back soon or
+        <a href="{{ url_for('user_bp.movies') }}"
+           style="color:var(--orange)">browse all movies</a>.
+      </p>
+    </div>
+    {% endif %}
+
+  </div>
+</div>
+{% endblock %}

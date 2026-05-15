@@ -1,0 +1,157 @@
+{% extends 'owner/base.html' %}
+{% block title %}Revenue Analytics{% endblock %}
+{% block page_title %}Revenue Analytics{% endblock %}
+
+{% block content %}
+
+<!-- Summary Stats -->
+<div class="row g-3 mb-4">
+    {% for stat in [
+        {'label': 'Total Revenue', 'value': '₹' ~ (total_revenue|int), 'icon': 'fa-rupee-sign', 'color': '#3fb950', 'bg': 'rgba(63,185,80,0.12)'},
+        {'label': 'Paid Bookings', 'value': total_paid_bookings, 'icon': 'fa-ticket-alt', 'color': '#f39c12', 'bg': 'rgba(243,156,18,0.12)'},
+        {'label': 'Avg Ticket Value', 'value': '₹' ~ (avg_ticket|int), 'icon': 'fa-tags', 'color': '#388bfd', 'bg': 'rgba(56,139,253,0.12)'},
+        {'label': 'Top Movies', 'value': movie_revenue|length, 'icon': 'fa-film', 'color': '#e50914', 'bg': 'rgba(229,9,20,0.12)'}
+    ] %}
+    <div class="col-6 col-xl-3">
+        <div class="stat-card">
+            <div class="stat-icon" style="background:{{ stat.bg }};color:{{ stat.color }}">
+                <i class="fas {{ stat.icon }}"></i>
+            </div>
+            <div class="stat-value mt-2">{{ stat.value }}</div>
+            <div class="stat-label">{{ stat.label }}</div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+<!-- Monthly Revenue + Theater Breakdown -->
+<div class="row g-4 mb-4">
+
+    <!-- Monthly Trend -->
+    <div class="col-lg-7">
+        <div class="data-card">
+            <div class="data-card-header">
+                <h6 class="data-card-title"><i class="fas fa-chart-bar me-2" style="color:#f39c12"></i>Monthly Revenue Trend</h6>
+            </div>
+            <div class="p-3">
+                {% if monthly_revenue %}
+                {% set max_rev = monthly_revenue | map(attribute='revenue') | max %}
+                {% for row in monthly_revenue %}
+                <div class="mb-3">
+                    <div class="d-flex justify-content-between align-items-center mb-1">
+                        <span style="color:#e6edf3;font-size:0.85rem;font-weight:600">{{ row.month }}</span>
+                        <span style="color:#f39c12;font-weight:700">₹{{ (row.revenue or 0)|int }}</span>
+                    </div>
+                    <div style="background:var(--admin-border);border-radius:6px;height:10px;overflow:hidden">
+                        <div style="width:{{ ((row.revenue or 0) / max_rev * 100)|int }}%;height:100%;background:linear-gradient(90deg,#f39c12,#e67e22);border-radius:6px;transition:width 0.6s ease"></div>
+                    </div>
+                    <div style="font-size:0.75rem;color:var(--text-muted);margin-top:2px">{{ row.bookings }} bookings</div>
+                </div>
+                {% endfor %}
+                {% else %}
+                <div class="empty-state py-4"><i class="fas fa-chart-bar"></i><p>No monthly data yet</p></div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Revenue by Theater -->
+    <div class="col-lg-5">
+        <div class="data-card">
+            <div class="data-card-header">
+                <h6 class="data-card-title"><i class="fas fa-building me-2" style="color:#f39c12"></i>By Theater</h6>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-borderless">
+                    <thead>
+                        <tr>
+                            <th>Theater</th>
+                            <th>Bookings</th>
+                            <th>Revenue</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for row in theater_revenue %}
+                        <tr>
+                            <td>
+                                <div style="color:var(--admin-text);font-weight:600;font-size:0.875rem">{{ row.name }}</div>
+                                <div style="color:var(--text-muted);font-size:0.75rem">{{ row.city }}</div>
+                            </td>
+                            <td style="color:#e6edf3">{{ row.bookings }}</td>
+                            <td style="color:#f39c12;font-weight:700">₹{{ (row.revenue or 0)|int }}</td>
+                        </tr>
+                        {% else %}
+                        <tr><td colspan="3" class="text-center py-4" style="color:var(--text-muted)">No data yet</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Top Movies by Revenue -->
+<div class="row g-4">
+    <div class="col-lg-7">
+        <div class="data-card">
+            <div class="data-card-header">
+                <h6 class="data-card-title"><i class="fas fa-film me-2" style="color:#f39c12"></i>Top Movies by Revenue</h6>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-borderless">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Movie</th>
+                            <th>Bookings</th>
+                            <th>Revenue</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for movie in movie_revenue %}
+                        <tr>
+                            <td style="color:var(--text-muted)">{{ loop.index }}</td>
+                            <td style="color:var(--admin-text);font-weight:600">{{ movie.title }}</td>
+                            <td><span class="badge-pill badge-info">{{ movie.bookings }}</span></td>
+                            <td style="color:#f39c12;font-weight:700">₹{{ (movie.revenue or 0)|int }}</td>
+                        </tr>
+                        {% else %}
+                        <tr><td colspan="4" class="text-center py-4" style="color:var(--text-muted)">No data yet</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Transactions -->
+    <div class="col-lg-5">
+        <div class="data-card">
+            <div class="data-card-header">
+                <h6 class="data-card-title"><i class="fas fa-receipt me-2" style="color:#f39c12"></i>Recent Transactions</h6>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-borderless">
+                    <thead>
+                        <tr><th>Movie</th><th>Theater</th><th>Amount</th></tr>
+                    </thead>
+                    <tbody>
+                        {% for b, s, m, t in recent_transactions %}
+                        <tr>
+                            <td style="font-size:0.8rem;color:var(--admin-text);max-width:110px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">
+                                {{ m.title if m else '–' }}
+                            </td>
+                            <td style="font-size:0.8rem;color:var(--text-muted)">{{ t.name if t else '–' }}</td>
+                            <td style="color:#f39c12;font-weight:700">₹{{ (b.total_amount or 0)|int }}</td>
+                        </tr>
+                        {% else %}
+                        <tr><td colspan="3" class="text-center py-4" style="color:var(--text-muted)">No transactions</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}

@@ -1,0 +1,137 @@
+{% extends 'admin/base.html' %}
+{% block title %}Reports{% endblock %}
+{% block page_title %}Reports & Analytics{% endblock %}
+
+{% block content %}
+
+<!-- Date Range Filter -->
+<div class="data-card p-3 mb-4">
+    <form method="GET" class="row g-3 align-items-end">
+        <div class="col-md-2">
+            <label style="color:var(--text-muted);font-size:0.8rem">From</label>
+            <input type="date" name="from" class="form-control search-input-dark" value="{{ request.args.get('from', '') }}">
+        </div>
+        <div class="col-md-2">
+            <label style="color:var(--text-muted);font-size:0.8rem">To</label>
+            <input type="date" name="to" class="form-control search-input-dark" value="{{ request.args.get('to', '') }}">
+        </div>
+        <div class="col-md-2">
+            <label style="color:var(--text-muted);font-size:0.8rem">State</label>
+            <select name="state" class="form-select search-input-dark" id="filter_state">
+                <option value="">All States</option>
+            </select>
+        </div>
+        <div class="col-md-2">
+            <label style="color:var(--text-muted);font-size:0.8rem">City</label>
+            <select name="city" class="form-select search-input-dark" id="filter_city" disabled>
+                <option value="">All Cities</option>
+            </select>
+        </div>
+        <div class="col-md-2">
+            <label style="color:var(--text-muted);font-size:0.8rem">Group By</label>
+            <select name="group" class="form-select search-input-dark">
+                <option value="day">Day</option>
+                <option value="week">Week</option>
+                <option value="month" selected>Month</option>
+            </select>
+        </div>
+        <div class="col-auto">
+            <button type="submit" class="btn btn-admin-primary">Generate Report</button>
+        </div>
+    </form>
+</div>
+
+<!-- Summary Stats -->
+<div class="row g-3 mb-4">
+    {% for stat in [
+        {'label':'Total Revenue', 'value':'₹'~(total_revenue|int), 'icon':'fa-rupee-sign', 'color':'#3fb950', 'bg':'rgba(63,185,80,0.1)'},
+        {'label':'Total Bookings', 'value': total_bookings, 'icon':'fa-ticket-alt', 'color':'#f39c12', 'bg':'rgba(243,156,18,0.1)'},
+        {'label':'Top Cities', 'value': city_revenue|length, 'icon':'fa-city', 'color':'#388bfd', 'bg':'rgba(56,139,253,0.1)'},
+        {'label':'Top Movies', 'value': movie_revenue|length, 'icon':'fa-film', 'color':'#e50914', 'bg':'rgba(229,9,20,0.1)'}
+    ] %}
+    <div class="col-6 col-md-3">
+        <div class="stat-card">
+            <div class="stat-icon" style="background:{{ stat.bg }};color:{{ stat.color }}"><i class="fas {{ stat.icon }}"></i></div>
+            <div class="stat-value mt-2" style="font-size:1.5rem">{{ stat.value }}</div>
+            <div class="stat-label">{{ stat.label }}</div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+<!-- Revenue by City Table -->
+<div class="row g-4">
+    <div class="col-lg-6">
+        <div class="data-card">
+            <div class="data-card-header">
+                <h6 class="data-card-title"><i class="fas fa-city me-2 text-orange"></i>Revenue by City</h6>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-borderless">
+                    <thead><tr><th>City</th><th>State</th><th>Bookings</th><th>Revenue</th></tr></thead>
+                    <tbody>
+                        {% for row in city_revenue %}
+                        <tr>
+                            <td style="color:#fff;font-weight:600">{{ row.city }}</td>
+                            <td style="color:var(--text-muted);font-size:0.8rem">{{ row.state or '–' }}</td>
+                            <td>{{ row.total_bookings }}</td>
+                            <td style="color:var(--orange);font-weight:700">₹{{ (row.total_revenue or 0)|int }}</td>
+                        </tr>
+                        {% else %}
+                        <tr><td colspan="4" class="text-center py-4" style="color:var(--text-muted)">No data</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-6">
+        <div class="data-card">
+            <div class="data-card-header">
+                <h6 class="data-card-title"><i class="fas fa-film me-2 text-orange"></i>Top Movies by Revenue</h6>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-borderless">
+                    <thead><tr><th>#</th><th>Movie</th><th>Tickets Sold</th><th>Revenue</th></tr></thead>
+                    <tbody>
+                        {% for movie in movie_revenue %}
+                        <tr>
+                            <td style="color:var(--text-muted)">{{ loop.index }}</td>
+                            <td style="color:#fff;font-weight:600;font-size:0.875rem">{{ movie.title }}</td>
+                            <td>{{ movie.total_bookings }}</td>
+                            <td style="color:var(--orange);font-weight:700">₹{{ (movie.total_revenue or 0)|int }}</td>
+                        </tr>
+                        {% else %}
+                        <tr><td colspan="4" class="text-center py-4" style="color:var(--text-muted)">No data</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Wait for main.js to finish loading DB_LOCATIONS
+document.addEventListener('DOMContentLoaded', async function() {
+  await loadLocationsFromDB();  // safe to call again, it's idempotent
+  
+  const stateEl = document.getElementById('filter_state');
+  const cityEl  = document.getElementById('filter_city');
+
+  populateStateSelect(stateEl, '{{ request.args.get("state", "") }}');
+
+  stateEl.addEventListener('change', function() {
+    populateCitySelect(cityEl, this.value);
+  });
+
+  if (stateEl.value) {
+    populateCitySelect(cityEl, stateEl.value, '{{ request.args.get("city", "") }}');
+  }
+});
+</script>
+{% endblock %}

@@ -1,0 +1,787 @@
+{% extends 'owner/base.html' %}
+{% block title %}Movies{% endblock %}
+{% block page_title %}Movies{% endblock %}
+
+{% block content %}
+
+{% with messages = get_flashed_messages(with_categories=true) %}
+{% if messages %}{% for cat,msg in messages %}
+<div class="alert alert-{{ cat }} alert-dismissible fade show mb-3" role="alert">
+  {{ msg }}<button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+</div>{% endfor %}{% endif %}{% endwith %}
+
+<!-- ── Filters ── -->
+<div class="data-card p-3 mb-4">
+  <form method="GET" action="{{ url_for('owner_bp.movies') }}" class="row g-3 align-items-end">
+    <div class="col-md-3">
+      <div class="input-group">
+        <span class="input-group-text search-input-dark" style="border-right:none"><i class="fas fa-search" style="color:#666"></i></span>
+        <input type="text" name="search" class="form-control search-input-dark" placeholder="Search title..." value="{{ search or '' }}" style="border-left:none">
+      </div>
+    </div>
+    <div class="col-md-2">
+      <select name="genre" class="form-select search-input-dark">
+        <option value="">All Genres</option>
+        {% for g in all_genres %}<option value="{{ g }}" {% if genre==g %}selected{% endif %}>{{ g }}</option>{% endfor %}
+      </select>
+    </div>
+    <div class="col-md-2">
+      <select name="language" class="form-select search-input-dark">
+        <option value="">All Languages</option>
+        {% for l in all_langs %}<option value="{{ l }}" {% if language==l %}selected{% endif %}>{{ l }}</option>{% endfor %}
+      </select>
+    </div>
+    <div class="col-md-2">
+      <select name="status" class="form-select search-input-dark">
+        <option value="">All Status</option>
+        <option value="active" {% if status=='active' %}selected{% endif %}>Active</option>
+        <option value="inactive" {% if status=='inactive' %}selected{% endif %}>Inactive</option>
+      </select>
+    </div>
+    <div class="col-md-1"><button type="submit" class="btn btn-owner-primary w-100"><i class="fas fa-filter"></i></button></div>
+    <div class="col-md-2 text-end">
+      <button type="button" class="btn btn-owner-primary" data-bs-toggle="modal" data-bs-target="#addMovieModal">
+        <i class="fas fa-plus me-1"></i>Add Movie
+      </button>
+    </div>
+  </form>
+</div>
+
+<!-- ── Movies Table ── -->
+<div class="data-card">
+  <div class="data-card-header">
+    <h6 class="data-card-title"><i class="fas fa-film me-2" style="color:#f39c12"></i>Movies
+      <span style="color:var(--text-muted);font-size:0.8rem;font-weight:400;margin-left:8px">{{ total or 0 }} total</span>
+    </h6>
+  </div>
+  <div class="table-responsive">
+    <table class="table table-borderless">
+      <thead>
+        <tr>
+          <th style="width:60px">Poster</th>
+          <th>Title</th>
+          <th>Genre</th>
+          <th>Language</th>
+          <th>Duration</th>
+          <th>Release</th>
+          <th>Assign</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for movie in movies %}
+        <tr>
+          <td>
+            <img src="{{ movie.poster_url or url_for('static', filename='uploads/default.png') }}"
+              onerror="this.src='{{ url_for('static', filename='uploads/default.png') }}'"
+              style="width:42px;height:58px;object-fit:cover;border-radius:6px">
+          </td>
+          <td style="max-width:200px">
+            <div style="color:var(--admin-text);font-weight:600;font-size:0.875rem">{{ movie.title }}</div>
+            {% if movie.description %}
+            <div style="font-size:0.72rem;color:var(--text-muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:180px">
+              {{ movie.description[:60] }}...
+            </div>{% endif %}
+          </td>
+          <td style="font-size:0.85rem;color:var(--text-muted)">{{ movie.genre or '–' }}</td>
+          <td><span class="lang-badge">{{ movie.language or '–' }}</span></td>
+          <td style="font-size:0.85rem;color:var(--text-muted)">{{ movie.duration or '–' }} min</td>
+          <td style="font-size:0.8rem;color:var(--text-muted)">{{ movie.release_date or '–' }}</td>
+          <td style="text-align:center">
+            <button class="btn btn-sm" title="Assign to Theaters"
+              style="background:rgba(243,156,18,0.15);color:#f39c12;border:1px solid rgba(243,156,18,0.3);border-radius:7px;padding:4px 10px;font-size:0.8rem"
+              data-id="{{ movie.movie_id }}" data-title="{{ movie.title|e }}"
+              data-poster="{{ movie.poster_url or '' }}"
+              onclick="openAssignModal(this.dataset.id, this.dataset.title, this.dataset.poster)">
+              <i class="fas fa-map-marker-alt me-1"></i>Assign
+            </button>
+          </td>
+          <td>
+            <div class="d-flex gap-1 flex-wrap">
+              <!-- View -->
+              <button class="btn btn-sm" title="View Details"
+                style="background:rgba(63,185,80,0.1);color:#3fb950;border:none;border-radius:7px"
+                data-movie='{{ movie.to_dict()|tojson }}' onclick="viewMovie(JSON.parse(this.dataset.movie))">
+                <i class="fas fa-eye"></i>
+              </button>
+              <!-- Edit -->
+              <button class="btn btn-sm" title="Edit"
+                style="background:rgba(56,139,253,0.1);color:#388bfd;border:none;border-radius:7px"
+                data-movie='{{ movie.to_dict()|tojson }}' data-id="{{ movie.movie_id }}"
+                onclick="editMovie(this.dataset.id, JSON.parse(this.dataset.movie))">
+                <i class="fas fa-edit"></i>
+              </button>
+              <!-- Delete -->
+              <button class="btn btn-sm" title="Delete"
+                style="background:rgba(229,9,20,0.1);color:#e50914;border:none;border-radius:7px"
+                onclick="deleteMovie('{{ movie.movie_id }}', '{{ movie.title|e }}')">
+                <i class="fas fa-trash"></i>
+              </button>
+            </div>
+          </td>
+        </tr>
+        {% else %}
+        <tr>
+          <td colspan="7" class="text-center py-5">
+            <div class="empty-state"><i class="fas fa-film"></i>
+              <h5>No movies found</h5>
+              <p style="color:var(--text-muted)">Add a movie to get started</p>
+            </div>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  {% if total_pages and total_pages > 1 %}
+  <div class="d-flex justify-content-between align-items-center px-3 pb-3 flex-wrap gap-2">
+    <span style="color:var(--text-muted);font-size:0.85rem">
+      Showing {{ ((page-1)*per_page)+1 }}–{{ [page*per_page, total]|min }} of {{ total }} movies
+      &nbsp;·&nbsp; Page {{ page }} of {{ total_pages }}
+    </span>
+    <div class="d-flex gap-1 flex-wrap">
+      {% if page > 1 %}
+      <a href="?page=1&search={{ search }}&genre={{ genre }}&language={{ language }}&status={{ status }}"
+        class="btn btn-sm btn-owner-primary" style="opacity:0.7" title="First"><i class="fas fa-angle-double-left"></i></a>
+      <a href="?page={{ page-1 }}&search={{ search }}&genre={{ genre }}&language={{ language }}&status={{ status }}"
+        class="btn btn-sm btn-owner-primary" style="opacity:0.7"><i class="fas fa-chevron-left"></i></a>
+      {% endif %}
+      {% for p in range([1, page-2]|max, [total_pages+1, page+3]|min) %}
+      <a href="?page={{ p }}&search={{ search }}&genre={{ genre }}&language={{ language }}&status={{ status }}"
+        class="btn btn-sm btn-owner-primary {% if p != page %}opacity-50{% endif %}">{{ p }}</a>
+      {% endfor %}
+      {% if page < total_pages %}
+      <a href="?page={{ page+1 }}&search={{ search }}&genre={{ genre }}&language={{ language }}&status={{ status }}"
+        class="btn btn-sm btn-owner-primary" style="opacity:0.7"><i class="fas fa-chevron-right"></i></a>
+      <a href="?page={{ total_pages }}&search={{ search }}&genre={{ genre }}&language={{ language }}&status={{ status }}"
+        class="btn btn-sm btn-owner-primary" style="opacity:0.7" title="Last"><i class="fas fa-angle-double-right"></i></a>
+      {% endif %}
+    </div>
+  </div>
+  {% endif %}
+</div>
+
+
+<!-- ════════════════════════════════════════════
+     VIEW MOVIE MODAL
+════════════════════════════════════════════ -->
+<div class="modal fade" id="viewMovieModal" tabindex="-1">
+  <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+    <div class="modal-content modal-dark">
+      <div class="modal-header">
+        <h5 class="modal-title"><i class="fas fa-film me-2" style="color:#f39c12"></i>Movie Details</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <div class="row g-4">
+          <div class="col-md-3 text-center">
+            <img id="vPoster" src="" alt=""
+              style="width:100%;max-width:160px;border-radius:12px;box-shadow:0 8px 24px rgba(0,0,0,0.5)"
+              onerror="this.src='{{ url_for('static', filename='uploads/default.png') }}'">
+          </div>
+          <div class="col-md-9">
+            <h4 id="vTitle" style="color:var(--admin-text);font-weight:800;margin-bottom:12px"></h4>
+            <div class="row g-3">
+              <div class="col-6"><div class="admin-detail-row"><span class="detail-label">Genre</span><span id="vGenre" class="detail-val"></span></div></div>
+              <div class="col-6"><div class="admin-detail-row"><span class="detail-label">Language</span><span id="vLang" class="detail-val"></span></div></div>
+              <div class="col-6"><div class="admin-detail-row"><span class="detail-label">Duration</span><span id="vDuration" class="detail-val"></span></div></div>
+              <div class="col-6"><div class="admin-detail-row"><span class="detail-label">Rating</span><span id="vRating" class="detail-val" style="color:var(--gold)"></span></div></div>
+              <div class="col-6"><div class="admin-detail-row"><span class="detail-label">Release Date</span><span id="vRelease" class="detail-val"></span></div></div>
+              <div class="col-6"><div class="admin-detail-row"><span class="detail-label">Status</span><span id="vStatus" class="detail-val"></span></div></div>
+              <div class="col-12"><div class="admin-detail-row"><span class="detail-label">Description</span><span id="vDesc" class="detail-val" style="white-space:pre-wrap"></span></div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<!-- ════════════════════════════════════════════
+     ADD MOVIE MODAL
+════════════════════════════════════════════ -->
+<div class="modal fade" id="addMovieModal" tabindex="-1">
+  <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+    <div class="modal-content modal-dark">
+      <div class="modal-header" style="border-bottom:1px solid rgba(243,156,18,0.2)">
+        <h5 class="modal-title"><i class="fas fa-plus-circle me-2" style="color:#f39c12"></i>Add New Movie</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <form method="POST" action="{{ url_for('owner_bp.add_movie') }}" enctype="multipart/form-data">
+        <div class="modal-body">
+
+          <!-- STEP 1: Movie Info -->
+          <div class="mb-4">
+            <div class="d-flex align-items-center gap-2 mb-3">
+              <div style="width:26px;height:26px;border-radius:50%;background:linear-gradient(135deg,#f39c12,#e67e22);display:flex;align-items:center;justify-content:center;font-size:0.75rem;font-weight:700;color:#000">1</div>
+              <span style="font-weight:600;color:var(--admin-text);font-size:0.95rem">Movie Information</span>
+            </div>
+
+            <!-- Poster preview at the top -->
+            <div class="text-center mb-4">
+              <div id="addPosterPreview"
+                style="width:110px;height:155px;margin:0 auto;background:var(--admin-bg);border-radius:12px;border:2px dashed rgba(243,156,18,0.4);display:flex;align-items:center;justify-content:center;overflow:hidden;cursor:pointer;transition:border-color 0.2s"
+                onclick="document.getElementById('addPosterFile').click()">
+                <div id="addPosterIcon" style="text-align:center">
+                  <i class="fas fa-camera" style="font-size:1.8rem;color:rgba(243,156,18,0.5);display:block;margin-bottom:6px"></i>
+                  <span style="font-size:0.7rem;color:var(--admin-muted)">Click to upload</span>
+                </div>
+              </div>
+              <div style="font-size:0.75rem;color:var(--text-muted);margin-top:8px">Movie Poster</div>
+            </div>
+
+            <div class="row g-3">
+              <div class="col-12">
+                <label class="form-label">Movie Title *</label>
+                <input type="text" name="title" class="form-control" placeholder="Enter movie title" required>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">Genre</label>
+                <input type="text" name="genre" class="form-control" placeholder="e.g. Action, Thriller, Drama">
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">Language</label>
+                <select name="language" class="form-select">
+                  <option value="">Select Language</option>
+                  {% for l in ['Hindi','English','Telugu','Tamil','Kannada','Malayalam','Bengali','Marathi','Punjabi'] %}
+                  <option>{{ l }}</option>{% endfor %}
+                </select>
+              </div>
+              <div class="col-md-4">
+                <label class="form-label">Duration (min)</label>
+                <input type="number" name="duration" class="form-control" placeholder="120" min="1">
+              </div>
+              <div class="col-md-4">
+                <label class="form-label">Rating (0–10)</label>
+                <input type="number" name="rating" class="form-control" placeholder="7.5" min="0" max="10" step="0.1">
+              </div>
+              <div class="col-md-4">
+                <label class="form-label">Release Date</label>
+                <input type="date" name="release_date" class="form-control">
+              </div>
+              <div class="col-md-8">
+                <label class="form-label">Status</label>
+                <select name="status" class="form-select">
+                  <option value="active">Active (Now Showing)</option>
+                  <option value="inactive">Inactive (Coming Soon)</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <!-- STEP 2: Photo Upload -->
+          <div class="mb-4" style="border-top:1px solid var(--admin-border);padding-top:20px">
+            <div class="d-flex align-items-center gap-2 mb-3">
+              <div style="width:26px;height:26px;border-radius:50%;background:linear-gradient(135deg,#f39c12,#e67e22);display:flex;align-items:center;justify-content:center;font-size:0.75rem;font-weight:700;color:#000">2</div>
+              <span style="font-weight:600;color:var(--admin-text);font-size:0.95rem">Movie Photo / Poster</span>
+            </div>
+            <div class="row g-3">
+              <div class="col-12">
+                <label class="form-label">Upload Poster Image</label>
+                <input type="file" name="poster_file" id="addPosterFile" class="form-control" accept="image/*"
+                  onchange="previewAddPoster(this)">
+                <div style="font-size:0.75rem;color:var(--text-muted);margin-top:4px">Supports JPG, PNG, WebP. Recommended size 300×420px.</div>
+              </div>
+              <div class="col-12">
+                <label class="form-label">Or enter Poster URL</label>
+                <input type="text" name="poster_url" id="addPosterUrl" class="form-control" placeholder="https://..."
+                  oninput="previewAddPosterUrl(this.value)">
+              </div>
+            </div>
+          </div>
+
+          <!-- STEP 3: Description -->
+          <div style="border-top:1px solid var(--admin-border);padding-top:20px">
+            <div class="d-flex align-items-center gap-2 mb-3">
+              <div style="width:26px;height:26px;border-radius:50%;background:linear-gradient(135deg,#f39c12,#e67e22);display:flex;align-items:center;justify-content:center;font-size:0.75rem;font-weight:700;color:#000">3</div>
+              <span style="font-weight:600;color:var(--admin-text);font-size:0.95rem">Movie Details</span>
+            </div>
+            <label class="form-label">Description / Synopsis</label>
+            <textarea name="description" class="form-control" rows="4" placeholder="Write a brief description of the movie, its plot, cast, and highlights..."></textarea>
+          </div>
+
+        </div>
+        <div class="modal-footer" style="border-top:1px solid rgba(243,156,18,0.2)">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-owner-primary"><i class="fas fa-save me-1"></i>Save Movie</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+
+<!-- ════════════════════════════════════════════
+     EDIT MOVIE MODAL
+════════════════════════════════════════════ -->
+<div class="modal fade" id="editMovieModal" tabindex="-1">
+  <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+    <div class="modal-content modal-dark">
+      <div class="modal-header" style="border-bottom:1px solid rgba(56,139,253,0.2)">
+        <h5 class="modal-title"><i class="fas fa-edit me-2" style="color:#388bfd"></i>Edit Movie</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <form method="POST" id="editMovieForm" enctype="multipart/form-data">
+        <div class="modal-body">
+          <div class="row g-3">
+            <div class="col-md-8">
+              <label class="form-label">Movie Title *</label>
+              <input type="text" name="title" id="em_title" class="form-control" required>
+            </div>
+            <div class="col-md-4">
+              <label class="form-label">Status</label>
+              <select name="status" id="em_status" class="form-select">
+                <option value="active">Active</option>
+                <option value="inactive">Inactive</option>
+              </select>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Genre</label>
+              <input type="text" name="genre" id="em_genre" class="form-control">
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Language</label>
+              <select name="language" id="em_language" class="form-select">
+                {% for l in ['Hindi','English','Telugu','Tamil','Kannada','Malayalam','Bengali','Marathi','Punjabi'] %}
+                <option>{{ l }}</option>{% endfor %}
+              </select>
+            </div>
+            <div class="col-md-4">
+              <label class="form-label">Duration (min)</label>
+              <input type="number" name="duration" id="em_duration" class="form-control">
+            </div>
+            <div class="col-md-4">
+              <label class="form-label">Rating</label>
+              <input type="number" name="rating" id="em_rating" class="form-control" step="0.1" min="0" max="10">
+            </div>
+            <div class="col-md-4">
+              <label class="form-label">Release Date</label>
+              <input type="date" name="release_date" id="em_release" class="form-control">
+            </div>
+            <div class="col-12">
+              <label class="form-label">Description</label>
+              <textarea name="description" id="em_desc" class="form-control" rows="3"></textarea>
+            </div>
+            <div class="col-12">
+              <label class="form-label">Current Poster</label>
+              <div class="d-flex gap-3 align-items-center">
+                <img id="em_posterImg" src="" style="width:50px;height:70px;object-fit:cover;border-radius:8px"
+                  onerror="this.src='{{ url_for('static', filename='uploads/default.png') }}'">
+                <div class="flex-grow-1">
+                  <input type="text" name="poster_url" id="em_posterUrl" class="form-control mb-2" placeholder="Poster URL">
+                  <input type="file" name="poster_file" class="form-control" accept="image/*"
+                    onchange="previewThumb(this,'em_posterImg')">
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-owner-primary"><i class="fas fa-save me-1"></i>Save Changes</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+
+<!-- ════════════════════════════════════════════
+     ASSIGN MOVIE TO THEATERS MODAL
+════════════════════════════════════════════ -->
+<div class="modal fade" id="assignMovieModal" tabindex="-1">
+  <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
+    <div class="modal-content modal-dark">
+      <div class="modal-header" style="border-bottom:1px solid rgba(243,156,18,0.25)">
+        <div class="d-flex align-items-center gap-3">
+          <img id="assignPosterThumb" src="" style="width:36px;height:50px;border-radius:6px;object-fit:cover" onerror="this.style.display='none'">
+          <div>
+            <h5 class="modal-title mb-0"><i class="fas fa-map-marker-alt me-2" style="color:#f39c12"></i>Assign Movie to Theaters</h5>
+            <div id="assignMovieTitle" style="font-size:0.8rem;color:var(--text-muted)"></div>
+          </div>
+        </div>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+
+      <form method="POST" id="assignMovieForm" action="{{ url_for('owner_bp.assign_movie_theaters') }}">
+        <input type="hidden" name="movie_id" id="assignMovieId">
+
+        <div class="modal-body">
+          <!-- Location cascade filters -->
+          <div class="data-card p-3 mb-4" style="background:var(--admin-bg);border:1px solid rgba(243,156,18,0.15)">
+            <div style="font-size:0.75rem;color:#f39c12;text-transform:uppercase;letter-spacing:1px;font-weight:600;margin-bottom:12px">
+              <i class="fas fa-filter me-1"></i>Filter Theaters by Location
+            </div>
+            <div class="row g-3">
+              <div class="col-md-4">
+                <label class="form-label" style="font-size:0.8rem">State</label>
+                <select class="form-select search-input-dark" id="assign_state" onchange="onAssignStateChange()">
+                  <option value="">All States</option>
+                  {% for state in all_states %}<option value="{{ state }}">{{ state }}</option>{% endfor %}
+                </select>
+              </div>
+              <div class="col-md-4">
+                <label class="form-label" style="font-size:0.8rem">City</label>
+                <select class="form-select search-input-dark" id="assign_city" onchange="onAssignCityChange()" disabled>
+                  <option value="">All Cities</option>
+                </select>
+              </div>
+              <div class="col-md-4">
+                <label class="form-label" style="font-size:0.8rem">Theater</label>
+                <select class="form-select search-input-dark" id="assign_theater_filter" onchange="filterAssignTheaters()">
+                  <option value="">All Theaters</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <!-- Info banner -->
+          <div class="d-flex align-items-center gap-2 mb-3" style="font-size:0.82rem;color:var(--text-muted)">
+            <i class="fas fa-info-circle" style="color:#f39c12"></i>
+            Select one or multiple theaters across different locations to assign this movie. You can assign the same movie to theaters in different states and cities.
+          </div>
+
+          <!-- Select All -->
+          <div class="d-flex align-items-center justify-content-between mb-3">
+            <div class="form-check">
+              <input class="form-check-input" type="checkbox" id="selectAllTheaters" onchange="toggleSelectAll(this)">
+              <label class="form-check-label" for="selectAllTheaters" style="color:var(--admin-text);font-size:0.875rem;font-weight:600">
+                Select All Visible Theaters
+              </label>
+            </div>
+            <span id="selectedCount" style="font-size:0.8rem;color:#f39c12;font-weight:600">0 selected</span>
+          </div>
+
+          <!-- Theaters grid -->
+          <div id="assignTheatersList" class="row g-3">
+            {% for theater in all_theaters %}
+            <div class="col-md-6 col-lg-4 assign-theater-item"
+              data-state="{{ theater.state or '' }}"
+              data-city="{{ theater.city or '' }}"
+              data-theater-id="{{ theater.theater_id }}">
+              <label class="assign-theater-card" for="th_{{ theater.theater_id }}" style="display:block;cursor:pointer">
+                <div class="data-card p-3" style="border:2px solid transparent;transition:all 0.2s;margin-bottom:0" id="thCard_{{ theater.theater_id }}">
+                  <div class="d-flex align-items-start gap-2">
+                    <input class="form-check-input mt-1 theater-checkbox" type="checkbox"
+                      name="theater_ids" value="{{ theater.theater_id }}"
+                      id="th_{{ theater.theater_id }}"
+                      onchange="onTheaterCheckChange()">
+                    <div style="flex:1;min-width:0">
+                      <div style="font-weight:600;color:var(--admin-text);font-size:0.875rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">
+                        {{ theater.name }}
+                      </div>
+                      <div style="font-size:0.75rem;color:#f39c12;margin-top:2px">
+                        <i class="fas fa-map-marker-alt me-1"></i>{{ theater.city or '' }}{% if theater.state %}, {{ theater.state }}{% endif %}
+                      </div>
+                      {% if theater.location %}
+                      <div style="font-size:0.72rem;color:var(--text-muted);margin-top:2px">
+                        <i class="fas fa-road me-1"></i>{{ theater.location }}
+                      </div>
+                      {% endif %}
+                      {% if theater.screens %}
+                      <div style="font-size:0.7rem;color:var(--text-muted);margin-top:4px">
+                        <i class="fas fa-desktop me-1"></i>{{ theater.screens|length }} screen(s)
+                      </div>
+                      {% endif %}
+                    </div>
+                  </div>
+                </div>
+              </label>
+            </div>
+            {% else %}
+            <div class="col-12 text-center py-4">
+              <div style="color:var(--text-muted)">No theaters available. Add theaters first.</div>
+            </div>
+            {% endfor %}
+          </div>
+
+          <!-- No results message -->
+          <div id="assignNoResults" class="text-center py-4" style="display:none">
+            <div style="color:var(--text-muted)"><i class="fas fa-search me-2"></i>No theaters found for this filter</div>
+          </div>
+        </div>
+
+        <div class="modal-footer" style="border-top:1px solid rgba(243,156,18,0.2)">
+          <div class="me-auto">
+            <span id="assignSummary" style="font-size:0.82rem;color:var(--text-muted)">No theaters selected</span>
+          </div>
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-owner-primary" id="assignSubmitBtn" disabled>
+            <i class="fas fa-check me-1"></i>Assign to Selected Theaters
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+
+<!-- Delete form -->
+<form method="POST" id="deleteMovieForm">
+  <input type="hidden" name="_method" value="DELETE">
+</form>
+
+{% endblock %}
+
+
+{% block extra_js %}
+<script>
+// ─── Theater data for cascade filters ───
+const ALL_THEATERS = {{ all_theaters_json | tojson | safe }};
+
+// State → cities map
+const STATE_CITIES = {};
+const CITY_THEATERS = {};
+ALL_THEATERS.forEach(t => {
+  if (t.state) {
+    if (!STATE_CITIES[t.state]) STATE_CITIES[t.state] = new Set();
+    STATE_CITIES[t.state].add(t.city || '');
+  }
+  const key = `${t.state}|${t.city}`;
+  if (!CITY_THEATERS[key]) CITY_THEATERS[key] = [];
+  CITY_THEATERS[key].push(t);
+});
+
+// ─── View modal ───
+function viewMovie(data) {
+  document.getElementById('vTitle').textContent = data.title || '';
+  document.getElementById('vGenre').textContent = data.genre || '–';
+  document.getElementById('vLang').textContent = data.language || '–';
+  document.getElementById('vDuration').textContent = data.duration ? data.duration + ' min' : '–';
+  document.getElementById('vRating').textContent = data.rating ? '⭐ ' + data.rating : '–';
+  document.getElementById('vRelease').textContent = data.release_date || '–';
+  document.getElementById('vStatus').textContent = data.status || '–';
+  document.getElementById('vDesc').textContent = data.description || 'No description.';
+  document.getElementById('vPoster').src = data.poster_url || '{{ url_for("static", filename="uploads/default.png") }}';
+  new bootstrap.Modal(document.getElementById('viewMovieModal')).show();
+}
+
+// ─── Edit modal ───
+function editMovie(id, data) {
+  const f = document.getElementById('editMovieForm');
+  f.action = `/owner/movies/edit/${id}`;
+  document.getElementById('em_title').value = data.title || '';
+  document.getElementById('em_genre').value = data.genre || '';
+  document.getElementById('em_language').value = data.language || '';
+  document.getElementById('em_duration').value = data.duration || '';
+  document.getElementById('em_rating').value = data.rating || '';
+  document.getElementById('em_release').value = data.release_date || '';
+  document.getElementById('em_status').value = data.status || 'active';
+  document.getElementById('em_desc').value = data.description || '';
+  document.getElementById('em_posterUrl').value = data.poster_url || '';
+  document.getElementById('em_posterImg').src = data.poster_url || '{{ url_for("static", filename="uploads/default.png") }}';
+  new bootstrap.Modal(document.getElementById('editMovieModal')).show();
+}
+
+// ─── Delete ───
+function deleteMovie(id, title) {
+  if (!confirm(`Delete "${title}"? This cannot be undone.`)) return;
+  const f = document.getElementById('deleteMovieForm');
+  f.action = `/owner/movies/delete/${id}`;
+  f.submit();
+}
+
+// ─── Poster preview (add modal) ───
+function previewAddPoster(input) {
+  const file = input.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    const preview = document.getElementById('addPosterPreview');
+    preview.innerHTML = `<img src="${e.target.result}" style="width:100%;height:100%;object-fit:cover">`;
+  };
+  reader.readAsDataURL(file);
+}
+function previewAddPosterUrl(url) {
+  if (!url) return;
+  const preview = document.getElementById('addPosterPreview');
+  preview.innerHTML = `<img src="${url}" style="width:100%;height:100%;object-fit:cover" onerror="this.parentElement.innerHTML='<i class=\\'fas fa-image\\' style=\\'font-size:1.8rem;color:var(--admin-muted)\\'></i>'">`;
+}
+function previewThumb(input, targetId) {
+  const file = input.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    const el = document.getElementById(targetId);
+    if (el) el.src = e.target.result;
+  };
+  reader.readAsDataURL(file);
+}
+
+// ─── ASSIGN MODAL ───
+function openAssignModal(movieId, movieTitle, posterUrl) {
+  document.getElementById('assignMovieId').value = movieId;
+  document.getElementById('assignMovieTitle').textContent = movieTitle;
+  const thumb = document.getElementById('assignPosterThumb');
+  if (posterUrl) { thumb.src = posterUrl; thumb.style.display = ''; }
+  else { thumb.style.display = 'none'; }
+
+  // Reset filters
+  document.getElementById('assign_state').value = '';
+  document.getElementById('assign_city').value = '';
+  document.getElementById('assign_city').disabled = true;
+  document.getElementById('assign_theater_filter').value = '';
+  document.getElementById('assign_theater_filter').disabled = true;
+
+  // Uncheck all
+  document.querySelectorAll('.theater-checkbox').forEach(cb => {
+    cb.checked = false;
+    highlightCard(cb);
+  });
+  document.getElementById('selectAllTheaters').checked = false;
+  updateSelectedCount();
+  showAllAssignItems();
+  new bootstrap.Modal(document.getElementById('assignMovieModal')).show();
+}
+
+function onAssignStateChange() {
+  const state = document.getElementById('assign_state').value;
+  const citySelect = document.getElementById('assign_city');
+  const theaterSelect = document.getElementById('assign_theater_filter');
+
+  citySelect.innerHTML = '<option value="">All Cities</option>';
+  theaterSelect.innerHTML = '<option value="">All Theaters</option>';
+
+  if (state && STATE_CITIES[state]) {
+    [...STATE_CITIES[state]].filter(Boolean).sort().forEach(city => {
+      citySelect.innerHTML += `<option value="${city}">${city}</option>`;
+    });
+    citySelect.disabled = false;
+  } else {
+    citySelect.disabled = true;
+    theaterSelect.disabled = true;
+  }
+  filterAssignTheaters();
+}
+
+function onAssignCityChange() {
+  const state = document.getElementById('assign_state').value;
+  const city = document.getElementById('assign_city').value;
+  const theaterSelect = document.getElementById('assign_theater_filter');
+  theaterSelect.innerHTML = '<option value="">All Theaters</option>';
+
+  if (city) {
+    const key = `${state}|${city}`;
+    (CITY_THEATERS[key] || []).forEach(t => {
+      theaterSelect.innerHTML += `<option value="${t.theater_id}">${t.name}</option>`;
+    });
+    theaterSelect.disabled = false;
+  } else {
+    // populate all theaters in state
+    if (state && STATE_CITIES[state]) {
+      [...STATE_CITIES[state]].filter(Boolean).forEach(c => {
+        const key = `${state}|${c}`;
+        (CITY_THEATERS[key] || []).forEach(t => {
+          theaterSelect.innerHTML += `<option value="${t.theater_id}">${t.name} (${c})</option>`;
+        });
+      });
+      theaterSelect.disabled = false;
+    } else {
+      theaterSelect.disabled = true;
+    }
+  }
+  filterAssignTheaters();
+}
+
+function filterAssignTheaters() {
+  const state = document.getElementById('assign_state').value.toLowerCase();
+  const city = document.getElementById('assign_city').value.toLowerCase();
+  const theaterId = document.getElementById('assign_theater_filter').value;
+
+  const items = document.querySelectorAll('.assign-theater-item');
+  let visibleCount = 0;
+
+  items.forEach(item => {
+    const iState = (item.dataset.state || '').toLowerCase();
+    const iCity = (item.dataset.city || '').toLowerCase();
+    const iId = item.dataset.theaterId;
+
+    const matchState = !state || iState === state;
+    const matchCity = !city || iCity === city;
+    const matchTheater = !theaterId || iId === theaterId;
+
+    if (matchState && matchCity && matchTheater) {
+      item.style.display = '';
+      visibleCount++;
+    } else {
+      item.style.display = 'none';
+    }
+  });
+
+  document.getElementById('assignNoResults').style.display = visibleCount === 0 ? '' : 'none';
+  document.getElementById('selectAllTheaters').checked = false;
+}
+
+function showAllAssignItems() {
+  document.querySelectorAll('.assign-theater-item').forEach(i => i.style.display = '');
+  document.getElementById('assignNoResults').style.display = 'none';
+}
+
+function toggleSelectAll(checkbox) {
+  const visibleCheckboxes = [...document.querySelectorAll('.assign-theater-item')]
+    .filter(i => i.style.display !== 'none')
+    .map(i => i.querySelector('.theater-checkbox'));
+
+  visibleCheckboxes.forEach(cb => {
+    cb.checked = checkbox.checked;
+    highlightCard(cb);
+  });
+  updateSelectedCount();
+}
+
+function onTheaterCheckChange() {
+  updateSelectedCount();
+  const visibleCbs = [...document.querySelectorAll('.assign-theater-item')]
+    .filter(i => i.style.display !== 'none')
+    .map(i => i.querySelector('.theater-checkbox'));
+  const allChecked = visibleCbs.length > 0 && visibleCbs.every(cb => cb.checked);
+  document.getElementById('selectAllTheaters').checked = allChecked;
+}
+
+function highlightCard(cb) {
+  const card = cb.closest('.data-card');
+  if (!card) return;
+  if (cb.checked) {
+    card.style.borderColor = '#f39c12';
+    card.style.background = 'rgba(243,156,18,0.08)';
+  } else {
+    card.style.borderColor = 'transparent';
+    card.style.background = '';
+  }
+}
+
+function updateSelectedCount() {
+  const checked = document.querySelectorAll('.theater-checkbox:checked').length;
+  document.getElementById('selectedCount').textContent = `${checked} selected`;
+  const submitBtn = document.getElementById('assignSubmitBtn');
+  submitBtn.disabled = checked === 0;
+  if (checked > 0) {
+    document.getElementById('assignSummary').textContent = `Assigning movie to ${checked} theater(s)`;
+    document.getElementById('assignSummary').style.color = '#f39c12';
+  } else {
+    document.getElementById('assignSummary').textContent = 'No theaters selected';
+    document.getElementById('assignSummary').style.color = 'var(--text-muted)';
+  }
+}
+
+// Highlight on checkbox change
+document.addEventListener('change', e => {
+  if (e.target.classList.contains('theater-checkbox')) {
+    highlightCard(e.target);
+    updateSelectedCount();
+  }
+});
+</script>
+
+<style>
+.assign-theater-card .data-card:hover {
+  border-color: rgba(243,156,18,0.5) !important;
+  background: rgba(243,156,18,0.04) !important;
+}
+</style>
+{% endblock %}

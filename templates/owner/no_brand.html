@@ -1,0 +1,21 @@
+{% extends 'owner/base.html' %}
+{% block title %}No Brand Assigned{% endblock %}
+{% block page_title %}No Brand Assigned{% endblock %}
+
+{% block content %}
+<div class="d-flex align-items-center justify-content-center" style="min-height:60vh">
+    <div class="text-center">
+        <div style="font-size:4rem;margin-bottom:20px;opacity:0.3">
+            <i class="fas fa-building"></i>
+        </div>
+        <h3 style="color:#fff;font-weight:700;margin-bottom:12px">No Theater Brand Assigned</h3>
+        <p style="color:var(--text-muted);max-width:400px;margin:0 auto 24px">
+            Your account does not have a theater brand assigned yet.
+            Please contact the admin to set up your brand and theaters.
+        </p>
+        <a href="{{ url_for('auth_bp.logout') }}" class="btn btn-cinema-outline btn-sm">
+            <i class="fas fa-sign-out-alt me-2"></i>Logout
+        </a>
+    </div>
+</div>
+{% endblock %}

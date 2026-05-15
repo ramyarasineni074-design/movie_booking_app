@@ -1,0 +1,265 @@
+{% extends 'user/base.html' %}
+{% block title %}Theaters{% endblock %}
+
+{% block content %}
+<div style="background:#0d1117;min-height:calc(100vh - 70px);padding:40px 0">
+  <div class="container">
+
+    <!-- Header -->
+    <div class="d-flex align-items-center justify-content-between mb-4">
+      <div>
+        <h2 class="section-title mb-1">Theaters</h2>
+        <p style="color:var(--text-muted);font-size:0.875rem;margin:0">
+          {% if selected_city %}
+            Theaters in <strong style="color:var(--orange)">{{ selected_city }}</strong>
+          {% else %}
+            All Theaters
+          {% endif %}
+          &nbsp;·&nbsp;
+          <span style="color:var(--orange);font-weight:600">{{ total }}</span> found
+        </p>
+      </div>
+    </div>
+
+    <!-- Filters -->
+    <div class="filters-bar mb-4">
+      <form method="GET" action="{{ url_for('user_bp.theaters') }}" id="theaterFilterForm">
+        <div class="row g-3 align-items-end">
+
+          <!-- Search -->
+          <div class="col-12 col-md-4">
+            <label style="color:rgba(255,255,255,0.5);font-size:0.8rem;margin-bottom:6px">
+              Search Theater
+            </label>
+            <div class="input-group">
+              <span class="input-group-text"
+                style="background:rgba(255,255,255,0.06);
+                       border:1px solid rgba(255,255,255,0.12);
+                       border-right:none;color:#666">
+                <i class="fas fa-search"></i>
+              </span>
+              <input type="text" name="q" class="form-control filter-select"
+                     placeholder="Theater name…"
+                     style="border-left:none"
+                     value="{{ search }}">
+            </div>
+          </div>
+
+          <!-- State -->
+          <div class="col-6 col-md-3">
+            <label style="color:rgba(255,255,255,0.5);font-size:0.8rem;margin-bottom:6px">
+              State
+            </label>
+            <select name="state" class="form-select filter-select">
+              <option value="">All States</option>
+              {% for s in all_states %}
+              <option value="{{ s }}"
+                      {% if selected_state == s %}selected{% endif %}>{{ s }}</option>
+              {% endfor %}
+            </select>
+          </div>
+
+          <!-- City -->
+          <div class="col-6 col-md-3">
+            <label style="color:rgba(255,255,255,0.5);font-size:0.8rem;margin-bottom:6px">
+              City
+            </label>
+            <select name="city" class="form-select filter-select">
+              <option value="">All Cities</option>
+              {% for c in all_cities %}
+              <option value="{{ c }}"
+                      {% if selected_city == c %}selected{% endif %}>{{ c }}</option>
+              {% endfor %}
+            </select>
+          </div>
+
+          <!-- Submit -->
+          <div class="col-12 col-md-2">
+            <button type="submit" class="btn btn-cinema w-100">
+              <i class="fas fa-filter me-1"></i>Filter
+            </button>
+          </div>
+        </div>
+      </form>
+
+      <!-- Clear filters -->
+      {% if search or selected_city or selected_state %}
+      <div class="d-flex gap-2 mt-3 align-items-center flex-wrap">
+        <span style="color:var(--text-muted);font-size:0.8rem">Active:</span>
+        {% if search %}
+        <span class="filter-tag">
+          <i class="fas fa-search me-1"></i>{{ search }}
+          <a href="{{ url_for('user_bp.theaters', city=selected_city, state=selected_state) }}"
+             style="color:inherit;margin-left:6px">×</a>
+        </span>
+        {% endif %}
+        {% if selected_city %}
+        <span class="filter-tag">
+          <i class="fas fa-city me-1"></i>{{ selected_city }}
+          <a href="{{ url_for('user_bp.theaters', q=search, state=selected_state) }}"
+             style="color:inherit;margin-left:6px">×</a>
+        </span>
+        {% endif %}
+        {% if selected_state %}
+        <span class="filter-tag">
+          <i class="fas fa-map me-1"></i>{{ selected_state }}
+          <a href="{{ url_for('user_bp.theaters', q=search, city=selected_city) }}"
+             style="color:inherit;margin-left:6px">×</a>
+        </span>
+        {% endif %}
+        <a href="{{ url_for('user_bp.theaters') }}"
+           class="btn btn-sm"
+           style="background:rgba(229,9,20,0.12);border:1px solid rgba(229,9,20,0.3);
+                  color:#e50914;border-radius:8px;font-size:0.78rem;padding:3px 12px">
+          <i class="fas fa-times me-1"></i>Clear All
+        </a>
+      </div>
+      {% endif %}
+    </div>
+
+    <!-- Theater Grid -->
+    <div class="row g-3">
+      {% for theater in theaters %}
+      <div class="col-12 col-md-6 col-lg-4">
+        <a href="{{ url_for('user_bp.theater_detail', theater_id=theater.theater_id) }}"
+           style="text-decoration:none;display:block">
+          <div class="data-card p-4 h-100"
+               style="border:1px solid rgba(255,255,255,0.06);
+                      border-radius:14px;
+                      transition:all 0.2s ease;cursor:pointer"
+               onmouseover="this.style.borderColor='rgba(217,108,44,0.4)';
+                            this.style.background='rgba(217,108,44,0.04)'"
+               onmouseout="this.style.borderColor='rgba(255,255,255,0.06)';
+                           this.style.background=''">
+
+            <div class="d-flex align-items-start gap-3">
+
+              <!-- Icon -->
+              <div style="width:46px;height:46px;flex-shrink:0;
+                          background:linear-gradient(135deg,rgba(217,108,44,0.2),rgba(192,57,43,0.2));
+                          border:1px solid rgba(217,108,44,0.3);
+                          border-radius:12px;display:flex;
+                          align-items:center;justify-content:center">
+                <i class="fas fa-building" style="color:var(--orange);font-size:1.1rem"></i>
+              </div>
+
+              <!-- Info -->
+              <div class="flex-grow-1 min-w-0">
+                <div class="theater-name"
+                     style="font-size:0.95rem;white-space:nowrap;
+                            overflow:hidden;text-overflow:ellipsis">
+                  {{ theater.name }}
+                </div>
+                {% if theater.location %}
+                <div style="font-size:0.78rem;color:var(--text-muted);margin-top:4px">
+                  <i class="fas fa-map-marker-alt me-1"
+                     style="color:var(--orange)"></i>
+                  {{ theater.location }}
+                </div>
+                {% endif %}
+                {% if theater.city %}
+                <div style="font-size:0.78rem;color:var(--text-muted);margin-top:2px">
+                  <i class="fas fa-city me-1"
+                     style="color:rgba(217,108,44,0.5)"></i>
+                  {{ theater.city }}{% if theater.state %}, {{ theater.state }}{% endif %}
+                </div>
+                {% endif %}
+                {% if theater.brand %}
+                <div style="font-size:0.72rem;color:var(--text-muted);margin-top:4px">
+                  <i class="fas fa-tag me-1"></i>{{ theater.brand.brand_name }}
+                </div>
+                {% endif %}
+              </div>
+
+              <!-- Shows badge -->
+              <div style="flex-shrink:0;text-align:center">
+                {% if theater._show_count > 0 %}
+                <div style="background:rgba(39,174,96,0.15);
+                            border:1px solid rgba(39,174,96,0.3);
+                            border-radius:8px;padding:4px 10px">
+                  <div style="font-size:1rem;font-weight:700;color:#27ae60">
+                    {{ theater._show_count }}
+                  </div>
+                  <div style="font-size:0.65rem;color:var(--text-muted)">shows</div>
+                </div>
+                {% else %}
+                <div style="background:rgba(255,255,255,0.04);
+                            border:1px solid rgba(255,255,255,0.08);
+                            border-radius:8px;padding:4px 10px">
+                  <div style="font-size:0.7rem;color:var(--text-muted)">No shows</div>
+                </div>
+                {% endif %}
+              </div>
+            </div>
+
+            <!-- Footer -->
+            <div class="d-flex align-items-center justify-content-between mt-3 pt-3"
+                 style="border-top:1px solid rgba(255,255,255,0.06)">
+              <span style="font-size:0.75rem;color:var(--text-muted)">
+                <i class="fas fa-film me-1"></i>Click to see movies
+              </span>
+              <i class="fas fa-chevron-right"
+                 style="color:var(--orange);font-size:0.75rem"></i>
+            </div>
+
+          </div>
+        </a>
+      </div>
+      {% else %}
+      <div class="col-12 empty-state">
+        <i class="fas fa-building"></i>
+        <h5>No theaters found</h5>
+        <p>Try adjusting your filters.</p>
+      </div>
+      {% endfor %}
+    </div>
+
+    <!-- Pagination -->
+    {% if total_pages > 1 %}
+    <div class="d-flex justify-content-center align-items-center gap-2 mt-5 flex-wrap">
+      {% if page > 1 %}
+      <a href="{{ url_for('user_bp.theaters', page=page-1,
+                          q=search, city=selected_city, state=selected_state) }}"
+         class="btn btn-cinema-outline btn-sm">
+        <i class="fas fa-chevron-left"></i>
+      </a>
+      {% endif %}
+
+      {% for p in range([1, page-2]|max, [total_pages+1, page+3]|min) %}
+        {% if p == page %}
+        <span class="btn btn-cinema btn-sm" style="min-width:36px">{{ p }}</span>
+        {% else %}
+        <a href="{{ url_for('user_bp.theaters', page=p,
+                            q=search, city=selected_city, state=selected_state) }}"
+           class="btn btn-cinema-outline btn-sm" style="min-width:36px">{{ p }}</a>
+        {% endif %}
+      {% endfor %}
+
+      {% if page < total_pages %}
+      <a href="{{ url_for('user_bp.theaters', page=page+1,
+                          q=search, city=selected_city, state=selected_state) }}"
+         class="btn btn-cinema-outline btn-sm">
+        <i class="fas fa-chevron-right"></i>
+      </a>
+      {% endif %}
+    </div>
+    <p class="text-center mt-2" style="color:var(--text-muted);font-size:0.8rem">
+      Page {{ page }} of {{ total_pages }} · {{ total }} theaters
+    </p>
+    {% endif %}
+
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+(function () {
+  const form = document.getElementById('theaterFilterForm');
+  if (!form) return;
+  form.querySelectorAll('select').forEach(function (sel) {
+    sel.addEventListener('change', function () { form.submit(); });
+  });
+})();
+</script>
+{% endblock %}

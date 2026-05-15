@@ -1,0 +1,143 @@
+{% extends 'user/base.html' %}
+{% block title %}Register{% endblock %}
+
+{% block content %}
+<div style="background:#0d1117;min-height:calc(100vh - 70px);display:flex;align-items:center;justify-content:center;padding:40px 16px">
+<div class="w-100" style="max-width:500px">
+
+    <div class="auth-card">
+        <div class="text-center mb-4">
+            <div class="auth-logo">🎬 CineBook</div>
+            <p class="text-white-50 mt-2 mb-0" style="font-size:0.9rem">Create your account</p>
+        </div>
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+        {% for category, message in messages %}
+        <div class="alert alert-{{ category }} alert-dismissible fade show py-2" style="font-size:0.875rem">
+            {{ message }}<button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+        {% endfor %}
+        {% endwith %}
+
+        <form method="POST" action="{{ url_for('auth_bp.register') }}">
+            <div class="row g-3">
+                <div class="col-12">
+                    <label>Full Name</label>
+                    <div class="input-group">
+                        <span class="input-group-text" style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.15);border-right:none;color:#888">
+                            <i class="fas fa-user"></i>
+                        </span>
+                        <input type="text" name="name" class="form-control" placeholder="John Doe" required style="border-left:none">
+                    </div>
+                </div>
+                <div class="col-12">
+                    <label>Email Address</label>
+                    <div class="input-group">
+                        <span class="input-group-text" style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.15);border-right:none;color:#888">
+                            <i class="fas fa-envelope"></i>
+                        </span>
+                        <input type="email" name="email" class="form-control" placeholder="your@email.com" required style="border-left:none">
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <label>Phone Number</label>
+                    <div class="input-group">
+                        <span class="input-group-text" style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.15);border-right:none;color:#888">
+                            <i class="fas fa-phone"></i>
+                        </span>
+                        <input type="tel" name="phone" class="form-control" placeholder="10-digit number" pattern="[0-9]{10}" style="border-left:none">
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <label>Date of Birth</label>
+                    <div class="input-group">
+                        <span class="input-group-text" style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.15);border-right:none;color:#888">
+                            <i class="fas fa-calendar"></i>
+                        </span>
+                        <input type="date" name="dob" class="form-control" style="border-left:none">
+                    </div>
+                </div>
+                <div class="col-12">
+                    <label>Password</label>
+                    <div class="input-group">
+                        <span class="input-group-text" style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.15);border-right:none;color:#888">
+                            <i class="fas fa-lock"></i>
+                        </span>
+                        <input type="password" name="password" id="regPwd" class="form-control"
+                               placeholder="Min 6 characters" required
+                               style="border-left:none;border-right:none;border-radius:0" minlength="6">
+                        <button type="button" class="input-group-text"
+                                style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.15);border-left:none;color:#888;cursor:pointer"
+                                onclick="togglePassword('regPwd','regPwdIcon')">
+                            <i class="fas fa-eye" id="regPwdIcon"></i>
+                        </button>
+                    </div>
+                    <div class="mt-2 d-flex gap-1" id="strengthBars">
+                        <div class="flex-fill rounded" style="height:3px;background:rgba(255,255,255,0.1)" id="bar1"></div>
+                        <div class="flex-fill rounded" style="height:3px;background:rgba(255,255,255,0.1)" id="bar2"></div>
+                        <div class="flex-fill rounded" style="height:3px;background:rgba(255,255,255,0.1)" id="bar3"></div>
+                        <div class="flex-fill rounded" style="height:3px;background:rgba(255,255,255,0.1)" id="bar4"></div>
+                    </div>
+                </div>
+                <div class="col-12">
+                    <label>Confirm Password</label>
+                    <div class="input-group">
+                        <span class="input-group-text" style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.15);border-right:none;color:#888">
+                            <i class="fas fa-lock"></i>
+                        </span>
+                        <input type="password" name="confirm_password" id="regConfirm" class="form-control"
+                               placeholder="Re-enter password" required style="border-left:none">
+                    </div>
+                    <div id="pwdMatch" style="font-size:0.75rem;margin-top:4px"></div>
+                </div>
+            </div>
+
+            <div class="form-check mt-3 mb-4">
+                <input class="form-check-input" type="checkbox" id="agreeTerms" required style="border-color:rgba(255,255,255,0.3)">
+                <label class="form-check-label" for="agreeTerms" style="color:rgba(255,255,255,0.5);font-size:0.85rem">
+                    I agree to the <a href="#" style="color:var(--orange)">Terms of Service</a> and
+                    <a href="#" style="color:var(--orange)">Privacy Policy</a>
+                </label>
+            </div>
+
+            <button type="submit" class="btn btn-auth text-white w-100">
+                <i class="fas fa-user-plus me-2"></i>Create Account
+            </button>
+        </form>
+
+        <hr style="border-color:rgba(255,255,255,0.08);margin:24px 0">
+        <div class="text-center" style="color:rgba(255,255,255,0.45);font-size:0.875rem">
+            Already have an account?
+            <a href="{{ url_for('auth_bp.login') }}" style="color:var(--orange);font-weight:600">Sign In</a>
+        </div>
+    </div>
+</div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.getElementById('regPwd').addEventListener('input', function() {
+    const v = this.value;
+    const bars = ['bar1','bar2','bar3','bar4'].map(id => document.getElementById(id));
+    const colors = ['#e50914','#f39c12','#3fb950','#3fb950'];
+    let score = 0;
+    if (v.length >= 6) score++;
+    if (/[A-Z]/.test(v)) score++;
+    if (/[0-9]/.test(v)) score++;
+    if (/[^A-Za-z0-9]/.test(v)) score++;
+    bars.forEach((b, i) => b.style.background = i < score ? colors[score-1] : 'rgba(255,255,255,0.1)');
+});
+
+document.getElementById('regConfirm').addEventListener('input', function() {
+    const match = this.value === document.getElementById('regPwd').value;
+    const el = document.getElementById('pwdMatch');
+    el.innerHTML = this.value
+        ? (match
+            ? '<span style="color:#3fb950"><i class="fas fa-check me-1"></i>Passwords match</span>'
+            : '<span style="color:#e50914"><i class="fas fa-times me-1"></i>Passwords do not match</span>')
+        : '';
+});
+</script>
+{% endblock %}

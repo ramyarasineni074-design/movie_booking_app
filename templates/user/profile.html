@@ -1,0 +1,721 @@
+{% extends 'user/base.html' %}
+{% block title %}My Profile — CineBook{% endblock %}
+
+{% block extra_css %}
+<style>
+    #profilePage {
+        background: var(--dark);
+        min-height: calc(100vh - 70px);
+        padding: 40px 0;
+    }
+
+    .profile-avatar {
+        width: 90px;
+        height: 90px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #FF6A00, #cc5500);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 2.2rem;
+        font-weight: 700;
+        color: #fff;
+        flex-shrink: 0;
+    }
+
+    .profile-header-card {
+        background: var(--card-bg);
+        border: 1px solid var(--border);
+        border-radius: 16px;
+        padding: 28px 32px;
+        display: flex;
+        align-items: center;
+        gap: 24px;
+        margin-bottom: 28px;
+    }
+
+    .profile-name {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: #fff;
+        margin: 0 0 4px;
+    }
+
+    .profile-email {
+        font-size: 0.9rem;
+        color: var(--text-muted);
+        margin: 0;
+    }
+
+    .stat-card {
+        background: var(--card-bg);
+        border: 1px solid var(--border);
+        border-radius: 14px;
+        padding: 22px 24px;
+        text-align: center;
+    }
+
+    .stat-value {
+        font-size: 1.8rem;
+        font-weight: 700;
+        color: var(--orange);
+        line-height: 1;
+    }
+
+    .stat-label {
+        font-size: 0.8rem;
+        color: var(--text-muted);
+        margin-top: 6px;
+    }
+
+    .info-card {
+        background: var(--card-bg);
+        border: 1px solid var(--border);
+        border-radius: 14px;
+        padding: 24px 28px;
+        margin-bottom: 24px;
+    }
+
+    .info-card-title {
+        font-size: 1rem;
+        font-weight: 700;
+        color: #fff;
+        margin-bottom: 20px;
+        padding-bottom: 12px;
+        border-bottom: 1px solid var(--border);
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .info-row {
+        display: flex;
+        align-items: center;
+        padding: 10px 0;
+        border-bottom: 1px solid rgba(255,255,255,0.05);
+        gap: 12px;
+    }
+
+    .info-row:last-child {
+        border-bottom: none;
+        padding-bottom: 0;
+    }
+
+    .info-row-label {
+        font-size: 0.8rem;
+        color: var(--text-muted);
+        width: 130px;
+        flex-shrink: 0;
+    }
+
+    .info-row-value {
+        font-size: 0.92rem;
+        color: rgba(255,255,255,0.85);
+        font-weight: 500;
+    }
+
+    .wallet-badge {
+        background: rgba(255, 106, 0, 0.12);
+        border: 1px solid rgba(255, 106, 0, 0.3);
+        border-radius: 8px;
+        padding: 4px 12px;
+        font-size: 0.85rem;
+        font-weight: 700;
+        color: var(--orange);
+    }
+
+    .btn-edit-profile {
+        background: transparent;
+        border: 1px solid rgba(255,255,255,0.2);
+        color: rgba(255,255,255,0.75);
+        border-radius: 8px;
+        padding: 7px 18px;
+        font-size: 0.83rem;
+        transition: all 0.2s;
+        text-decoration: none;
+    }
+
+    .btn-edit-profile:hover {
+        border-color: var(--orange);
+        color: var(--orange);
+    }
+
+    /* ── Wallet action forms ── */
+    .wallet-action-row {
+        display: flex;
+        gap: 10px;
+        align-items: center;
+        flex-wrap: wrap;
+    }
+
+    .wallet-action-row input[type="number"] {
+        background: rgba(255,255,255,0.06);
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        color: #fff;
+        padding: 8px 14px;
+        font-size: 0.9rem;
+        width: 150px;
+        outline: none;
+        transition: border-color 0.2s;
+    }
+
+    .wallet-action-row input[type="number"]:focus {
+        border-color: var(--orange);
+    }
+
+    .btn-add-money {
+        background: linear-gradient(135deg, #cc5500, #FF6A00);
+        border: none;
+        border-radius: 8px;
+        color: #fff;
+        font-weight: 600;
+        padding: 8px 20px;
+        font-size: 0.88rem;
+        cursor: pointer;
+        transition: opacity 0.2s;
+    }
+
+    .btn-add-money:hover { opacity: 0.88; }
+
+    /* ── Withdraw button ── */
+    .btn-withdraw {
+        background: transparent;
+        border: 1.5px solid rgba(231, 76, 60, 0.5);
+        border-radius: 8px;
+        color: rgba(231, 76, 60, 0.85);
+        font-weight: 600;
+        padding: 8px 20px;
+        font-size: 0.88rem;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+
+    .btn-withdraw:hover {
+        background: rgba(231, 76, 60, 0.1);
+        border-color: #e74c3c;
+        color: #e74c3c;
+    }
+
+    .btn-withdraw:disabled {
+        opacity: 0.4;
+        cursor: not-allowed;
+    }
+
+    /* ── Wallet section divider ── */
+    .wallet-divider {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin: 16px 0;
+    }
+
+    .wallet-divider::before,
+    .wallet-divider::after {
+        content: '';
+        flex: 1;
+        height: 1px;
+        background: rgba(255,255,255,0.08);
+    }
+
+    .wallet-divider span {
+        font-size: 0.72rem;
+        color: rgba(255,255,255,0.3);
+        white-space: nowrap;
+    }
+
+    /* ── Withdraw modal overlay ── */
+    .withdraw-modal-overlay {
+        display: none;
+        position: fixed;
+        inset: 0;
+        background: rgba(0,0,0,0.7);
+        z-index: 9000;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .withdraw-modal-overlay.active {
+        display: flex;
+    }
+
+    .withdraw-modal {
+        background: #1a1a24;
+        border: 1px solid rgba(255,255,255,0.12);
+        border-radius: 16px;
+        padding: 32px;
+        width: 100%;
+        max-width: 440px;
+        position: relative;
+        animation: modalSlideUp 0.22s ease;
+    }
+
+    @keyframes modalSlideUp {
+        from { opacity: 0; transform: translateY(20px); }
+        to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .withdraw-modal h5 {
+        color: #fff;
+        font-size: 1.05rem;
+        font-weight: 700;
+        margin-bottom: 6px;
+    }
+
+    .withdraw-modal .sub {
+        font-size: 0.82rem;
+        color: rgba(255,255,255,0.45);
+        margin-bottom: 20px;
+    }
+
+    .withdraw-method-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+        margin-bottom: 20px;
+    }
+
+    .withdraw-method-card {
+        border: 1.5px solid rgba(255,255,255,0.1);
+        border-radius: 10px;
+        padding: 14px 10px;
+        text-align: center;
+        cursor: pointer;
+        transition: border-color 0.18s, background 0.18s;
+        background: rgba(255,255,255,0.03);
+    }
+
+    .withdraw-method-card:hover {
+        border-color: rgba(255,106,0,0.5);
+        background: rgba(255,106,0,0.05);
+    }
+
+    .withdraw-method-card.selected {
+        border-color: var(--orange);
+        background: rgba(255,106,0,0.1);
+    }
+
+    .withdraw-method-card i {
+        display: block;
+        font-size: 1.3rem;
+        margin-bottom: 6px;
+    }
+
+    .withdraw-method-card span {
+        font-size: 0.78rem;
+        font-weight: 600;
+        color: rgba(255,255,255,0.8);
+    }
+
+    .withdraw-amount-input {
+        background: rgba(255,255,255,0.06);
+        border: 1px solid rgba(255,255,255,0.14);
+        border-radius: 8px;
+        color: #fff;
+        padding: 10px 16px;
+        font-size: 1rem;
+        width: 100%;
+        outline: none;
+        margin-bottom: 6px;
+        box-sizing: border-box;
+    }
+
+    .withdraw-amount-input:focus {
+        border-color: var(--orange);
+    }
+
+    .withdraw-note {
+        font-size: 0.76rem;
+        color: rgba(255,255,255,0.35);
+        margin-bottom: 18px;
+    }
+
+    .withdraw-info-box {
+        background: rgba(243,156,18,0.07);
+        border: 1px solid rgba(243,156,18,0.2);
+        border-radius: 8px;
+        padding: 10px 13px;
+        font-size: 0.76rem;
+        color: rgba(255,255,255,0.5);
+        margin-bottom: 18px;
+        line-height: 1.6;
+    }
+
+    .withdraw-modal-footer {
+        display: flex;
+        gap: 10px;
+    }
+
+    .btn-modal-cancel {
+        flex: 1;
+        padding: 10px;
+        background: transparent;
+        border: 1px solid rgba(255,255,255,0.15);
+        border-radius: 8px;
+        color: rgba(255,255,255,0.6);
+        font-size: 0.88rem;
+        cursor: pointer;
+        transition: border-color 0.2s;
+    }
+
+    .btn-modal-cancel:hover {
+        border-color: rgba(255,255,255,0.3);
+    }
+
+    .btn-modal-confirm {
+        flex: 2;
+        padding: 10px;
+        background: linear-gradient(135deg, #cc5500, #FF6A00);
+        border: none;
+        border-radius: 8px;
+        color: #fff;
+        font-size: 0.88rem;
+        font-weight: 700;
+        cursor: pointer;
+        transition: opacity 0.2s;
+    }
+
+    .btn-modal-confirm:hover { opacity: 0.88; }
+    .btn-modal-confirm:disabled { opacity: 0.45; cursor: not-allowed; }
+
+    .withdraw-error {
+        font-size: 0.78rem;
+        color: #e74c3c;
+        margin-bottom: 10px;
+        min-height: 18px;
+    }
+
+    .section-title {
+        font-size: 1.4rem;
+        font-weight: 700;
+        color: #fff;
+        margin-bottom: 8px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div id="profilePage">
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-lg-9 col-xl-8">
+
+                <!-- ── Header card ── -->
+                <div class="profile-header-card">
+                    <div class="profile-avatar">
+                        {{ (user.name[0] if user and user.name else '?') | upper }}
+                    </div>
+                    <div class="flex-grow-1">
+                        <h1 class="profile-name">{{ user.name if user else 'Guest' }}</h1>
+                        <p class="profile-email">
+                            <i class="fas fa-envelope me-1"></i>
+                            {{ user.email if user else '—' }}
+                        </p>
+                    </div>
+                    <a href="{{ url_for('auth_bp.change_password') }}" class="btn-edit-profile ms-auto">
+                        <i class="fas fa-lock me-1"></i> Change Password
+                    </a>
+                </div>
+
+                <!-- ── Stats row ── -->
+                <div class="row g-3 mb-4">
+                    <div class="col-6 col-md-4">
+                        <div class="stat-card">
+                            <div class="stat-value">{{ total_bookings }}</div>
+                            <div class="stat-label">Bookings Made</div>
+                        </div>
+                    </div>
+                    <div class="col-6 col-md-4">
+                        <div class="stat-card">
+                            <div class="stat-value">₹{{ total_spent | int }}</div>
+                            <div class="stat-label">Total Spent</div>
+                        </div>
+                    </div>
+                    <div class="col-12 col-md-4">
+                        <div class="stat-card">
+                            <div class="stat-value" style="color:var(--orange)">
+                                ₹{{ (user.wallet_balance | int) if user else 0 }}
+                            </div>
+                            <div class="stat-label">Wallet Balance</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ── Personal info ── -->
+                <div class="info-card">
+                    <div class="info-card-title">
+                        <i class="fas fa-user-circle" style="color:var(--orange)"></i>
+                        Personal Information
+                    </div>
+
+                    <div class="info-row">
+                        <span class="info-row-label">Full Name</span>
+                        <span class="info-row-value">{{ user.name if user else '—' }}</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-row-label">Email</span>
+                        <span class="info-row-value">{{ user.email if user else '—' }}</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-row-label">Phone</span>
+                        <span class="info-row-value">{{ user.phone_number if user and user.phone_number else '—' }}</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-row-label">Date of Birth</span>
+                        <span class="info-row-value">
+                            {% if user and user.dob %}
+                                {{ user.dob.strftime('%d %B %Y') }}
+                            {% else %}—{% endif %}
+                        </span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-row-label">Member Since</span>
+                        <span class="info-row-value">
+                            {% if user and user.created_at %}
+                                {{ user.created_at.strftime('%B %Y') }}
+                            {% else %}—{% endif %}
+                        </span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-row-label">Account Status</span>
+                        <span class="info-row-value">
+                            {% if user and user.is_active %}
+                                <span style="color:var(--orange)"><i class="fas fa-circle me-1" style="font-size:0.6rem"></i>Active</span>
+                            {% else %}
+                                <span style="color:#9CA3AF"><i class="fas fa-circle me-1" style="font-size:0.6rem"></i>Inactive</span>
+                            {% endif %}
+                        </span>
+                    </div>
+                </div>
+
+                <!-- ── Wallet ── -->
+                <div class="info-card">
+                    <div class="info-card-title">
+                        <i class="fas fa-wallet" style="color:var(--orange)"></i>
+                        Wallet
+                    </div>
+
+                    <!-- Balance display -->
+                    <div class="d-flex align-items-center gap-3 flex-wrap mb-3">
+                        <span style="color:var(--text-muted);font-size:0.9rem">Current Balance:</span>
+                        <span class="wallet-badge" id="walletBadgeDisplay">
+                            ₹{{ (user.wallet_balance | int) if user else 0 }}
+                        </span>
+                    </div>
+
+                    <!-- Add Money -->
+                    <div style="margin-bottom:8px">
+                        <div style="font-size:0.8rem;color:rgba(255,255,255,0.45);margin-bottom:8px;text-transform:uppercase;letter-spacing:0.5px">
+                            <i class="fas fa-plus me-1" style="color:#2ecc71"></i> Add Money
+                        </div>
+                        <form class="wallet-action-row" method="POST" action="{{ url_for('user_bp.add_wallet_money') }}">
+                            <input type="number" name="amount" min="1" max="50000" placeholder="Enter amount (₹)" required>
+                            <button type="submit" class="btn-add-money">
+                                <i class="fas fa-plus me-1"></i> Add Money
+                            </button>
+                        </form>
+                    </div>
+
+                    <!-- Divider -->
+                    <div class="wallet-divider">
+                        <span>or</span>
+                    </div>
+
+                    <!-- Withdraw -->
+                    <div>
+                        <div style="font-size:0.8rem;color:rgba(255,255,255,0.45);margin-bottom:8px;text-transform:uppercase;letter-spacing:0.5px">
+                            <i class="fas fa-arrow-up me-1" style="color:#e74c3c"></i> Withdraw to Payment Method
+                        </div>
+                        {% set wb = (user.wallet_balance | float) if user else 0 %}
+                        {% if wb > 0 %}
+                        <div class="wallet-action-row">
+                            <input type="number" id="withdrawAmountQuick" min="1" max="{{ wb | int }}"
+                                   placeholder="Enter amount (₹)" style="background:rgba(255,255,255,0.06);border:1px solid var(--border);border-radius:8px;color:#fff;padding:8px 14px;font-size:0.9rem;width:150px;outline:none;">
+                            <button type="button" class="btn-withdraw" id="openWithdrawModal">
+                                <i class="fas fa-arrow-circle-up me-1"></i> Withdraw
+                            </button>
+                        </div>
+                        <div style="font-size:0.74rem;color:rgba(255,255,255,0.3);margin-top:6px">
+                            Max withdrawal: ₹{{ wb | int }}
+                        </div>
+                        {% else %}
+                        <div style="font-size:0.85rem;color:rgba(255,255,255,0.35);padding:10px 0">
+                            <i class="fas fa-info-circle me-1"></i>
+                            No balance to withdraw. Add money to your wallet first.
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- ── Quick links ── -->
+                <div class="info-card">
+                    <div class="info-card-title">
+                        <i class="fas fa-link" style="color:var(--orange)"></i>
+                        Quick Links
+                    </div>
+                    <div class="d-flex flex-wrap gap-3">
+                        <a href="{{ url_for('user_bp.my_bookings') }}" class="btn-edit-profile">
+                            <i class="fas fa-ticket-alt me-1"></i> My Bookings
+                        </a>
+                        <a href="{{ url_for('user_bp.home') }}" class="btn-edit-profile">
+                            <i class="fas fa-film me-1"></i> Browse Movies
+                        </a>
+                        <a href="{{ url_for('auth_bp.change_password') }}" class="btn-edit-profile">
+                            <i class="fas fa-lock me-1"></i> Change Password
+                        </a>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ══════════════════════════════════════
+     WITHDRAW MODAL
+══════════════════════════════════════ -->
+<div class="withdraw-modal-overlay" id="withdrawModalOverlay">
+    <div class="withdraw-modal">
+        <h5><i class="fas fa-arrow-circle-up me-2" style="color:var(--orange)"></i>Withdraw from Wallet</h5>
+        <p class="sub">
+            Select where to send your money. This will deduct from your CineBook wallet balance.
+        </p>
+
+        <!-- Amount display (pre-filled from quick input) -->
+        <div style="margin-bottom:16px">
+            <div style="font-size:0.8rem;color:rgba(255,255,255,0.5);margin-bottom:6px">Withdrawal Amount (₹)</div>
+            <input type="number" id="withdrawAmountModal" class="withdraw-amount-input"
+                   min="1" max="{{ (user.wallet_balance | int) if user else 0 }}"
+                   placeholder="Enter amount">
+            <div class="withdraw-note">
+                Available: ₹{{ (user.wallet_balance | int) if user else 0 }}
+            </div>
+        </div>
+
+        <!-- Method selection -->
+        <div style="font-size:0.8rem;color:rgba(255,255,255,0.5);margin-bottom:10px">Withdraw to</div>
+        <div class="withdraw-method-grid">
+            <div class="withdraw-method-card selected" data-method="bank">
+                <i class="fas fa-university" style="color:var(--orange)"></i>
+                <span>Bank Account</span>
+            </div>
+            <div class="withdraw-method-card" data-method="upi">
+                <i class="fas fa-mobile-alt" style="color:var(--orange)"></i>
+                <span>UPI</span>
+            </div>
+            <div class="withdraw-method-card" data-method="card">
+                <i class="fas fa-credit-card" style="color:var(--orange)"></i>
+                <span>Debit Card</span>
+            </div>
+            <div class="withdraw-method-card" data-method="paytm">
+                <i class="fas fa-wallet" style="color:#00B9F1"></i>
+                <span>Paytm / PhonePe</span>
+            </div>
+        </div>
+
+        <!-- Info note -->
+        <div class="withdraw-info-box">
+            <i class="fas fa-info-circle me-1" style="color:#f39c12"></i>
+            <strong style="color:#f39c12">Demo mode:</strong>
+            This will deduct the amount from your CineBook wallet. In production, the money would be
+            transferred to your selected payment method within 2–5 business days.
+        </div>
+
+        <div class="withdraw-error" id="withdrawError"></div>
+
+        <div class="withdraw-modal-footer">
+            <button type="button" class="btn-modal-cancel" id="closeWithdrawModal">Cancel</button>
+            <button type="button" class="btn-modal-confirm" id="confirmWithdraw">
+                <i class="fas fa-check me-1"></i> Confirm Withdrawal
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Hidden form for withdraw POST -->
+<form id="withdrawForm" method="POST" action="{{ url_for('user_bp.withdraw_wallet_money') }}" style="display:none">
+    <input type="hidden" name="amount"         id="withdrawFormAmount">
+    <input type="hidden" name="withdraw_method" id="withdrawFormMethod">
+</form>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    /* ═══════════════════════════════════
+       WITHDRAW MODAL LOGIC
+    ═══════════════════════════════════ */
+    var selectedWithdrawMethod = 'bank';
+    var maxBalance = {{ (user.wallet_balance | float) if user else 0 }};
+
+    var overlay        = document.getElementById('withdrawModalOverlay');
+    var openBtn        = document.getElementById('openWithdrawModal');
+    var closeBtn       = document.getElementById('closeWithdrawModal');
+    var confirmBtn     = document.getElementById('confirmWithdraw');
+    var errorEl        = document.getElementById('withdrawError');
+    var quickAmtInput  = document.getElementById('withdrawAmountQuick');
+    var modalAmtInput  = document.getElementById('withdrawAmountModal');
+
+    /* Open modal — pre-fill amount from quick input */
+    if (openBtn) {
+        openBtn.addEventListener('click', function () {
+            var quickVal = (quickAmtInput && quickAmtInput.value) ? parseFloat(quickAmtInput.value) : '';
+            if (modalAmtInput && quickVal) modalAmtInput.value = quickVal;
+            if (errorEl) errorEl.textContent = '';
+            if (overlay) overlay.classList.add('active');
+        });
+    }
+
+    /* Close modal */
+    if (closeBtn) {
+        closeBtn.addEventListener('click', function () {
+            if (overlay) overlay.classList.remove('active');
+        });
+    }
+
+    /* Close on overlay click */
+    if (overlay) {
+        overlay.addEventListener('click', function (e) {
+            if (e.target === overlay) overlay.classList.remove('active');
+        });
+    }
+
+    /* Method selection */
+    document.querySelectorAll('.withdraw-method-card').forEach(function (card) {
+        card.addEventListener('click', function () {
+            document.querySelectorAll('.withdraw-method-card').forEach(function (c) {
+                c.classList.remove('selected');
+            });
+            card.classList.add('selected');
+            selectedWithdrawMethod = card.dataset.method;
+        });
+    });
+
+    /* Confirm withdrawal */
+    if (confirmBtn) {
+        confirmBtn.addEventListener('click', function () {
+            if (errorEl) errorEl.textContent = '';
+
+            var amt = parseFloat(modalAmtInput ? modalAmtInput.value : 0);
+            if (!amt || isNaN(amt) || amt <= 0) {
+                if (errorEl) errorEl.textContent = 'Please enter a valid amount.';
+                return;
+            }
+            if (amt > maxBalance) {
+                if (errorEl) errorEl.textContent = 'Amount exceeds your wallet balance (₹' + maxBalance.toFixed(2) + ').';
+                return;
+            }
+            if (amt < 1) {
+                if (errorEl) errorEl.textContent = 'Minimum withdrawal is ₹1.';
+                return;
+            }
+
+            /* Fill the hidden form and submit */
+            document.getElementById('withdrawFormAmount').value = amt;
+            document.getElementById('withdrawFormMethod').value = selectedWithdrawMethod;
+            confirmBtn.disabled   = true;
+            confirmBtn.innerHTML  = '<i class="fas fa-spinner fa-spin me-1"></i> Processing…';
+            document.getElementById('withdrawForm').submit();
+        });
+    }
+</script>
+{% endblock %}

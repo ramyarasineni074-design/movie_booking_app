@@ -1,0 +1,1296 @@
+{% extends 'user/base.html' %}
+{% block title %}Payment — CineBook{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* ── 0. Page wrapper ── */
+    #payPage {
+        background: #0d1117;
+        min-height: calc(100vh - 70px);
+        padding: 40px 0;
+    }
+
+    /* ── 1. CRITICAL — neutralise user.css flex-column on col children ── */
+    #payPage .col-lg-7,
+    #payPage .col-lg-5 {
+        display: block !important;
+    }
+
+    .pay-col-inner {
+        display: block;
+        width: 100%;
+    }
+
+    /* ── 2. data-card reset inside the payment page ── */
+    #payPage .data-card {
+        display: block !important;
+        flex-direction: initial !important;
+        background: var(--card-bg);
+        border: 1px solid var(--border);
+        border-radius: 14px;
+        padding: 24px;
+        width: 100%;
+        box-sizing: border-box;
+    }
+
+    /* ── 3. Payment method grid ── */
+    #paymentMethods {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        grid-auto-rows: auto;
+        gap: 12px;
+        margin-bottom: 24px;
+        position: relative;
+        z-index: 1;
+    }
+
+    /* ── 4. Payment method cards ── */
+    .pmc {
+        display: block;
+        position: relative;
+        z-index: 2;
+        background: rgba(255, 255, 255, 0.04);
+        border: 2px solid var(--border);
+        border-radius: 12px;
+        padding: 18px 12px 14px;
+        text-align: center;
+        cursor: pointer;
+        user-select: none;
+        transition: border-color 0.18s ease, background 0.18s ease, transform 0.12s ease;
+        min-height: 80px;
+        box-sizing: border-box;
+        width: 100%;
+    }
+
+    .pmc:hover {
+        border-color: rgba(255, 106, 0, 0.55);
+        background: rgba(255, 106, 0, 0.06);
+        transform: translateY(-1px);
+    }
+
+    .pmc.active {
+        border-color: var(--orange);
+        background: rgba(255, 106, 0, 0.10);
+    }
+
+    .pmc-icon {
+        display: block;
+        font-size: 1.4rem;
+        margin-bottom: 8px;
+        line-height: 1;
+    }
+
+    .pmc-label {
+        display: block;
+        color: #fff;
+        font-weight: 600;
+        font-size: 0.875rem;
+        line-height: 1.2;
+    }
+
+    /* ── 5. Payment panels ── */
+    .payment-panel {
+        display: block;
+    }
+
+    /* ── 6. UPI app quick-launch buttons ── */
+    .upi-app-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-bottom: 14px;
+    }
+
+    .upi-app-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        background: rgba(255, 255, 255, 0.06);
+        border: 1px solid rgba(255, 255, 255, 0.14);
+        color: #fff;
+        border-radius: 10px;
+        padding: 8px 14px;
+        font-size: 0.8rem;
+        cursor: pointer;
+        transition: background 0.15s, border-color 0.15s;
+        white-space: nowrap;
+    }
+
+    .upi-app-btn:hover {
+        background: rgba(255, 255, 255, 0.12);
+        border-color: rgba(255, 255, 255, 0.3);
+    }
+
+    /* ── 7. Form inputs ── */
+    .fc-dark {
+        background: rgba(255, 255, 255, 0.06) !important;
+        border: 1px solid rgba(255, 255, 255, 0.14) !important;
+        color: #fff !important;
+        border-radius: 8px;
+    }
+
+    .fc-dark::placeholder {
+        color: rgba(255, 255, 255, 0.28);
+    }
+
+    .fc-dark:focus {
+        border-color: rgba(255, 106, 0, 0.55) !important;
+        box-shadow: 0 0 0 3px rgba(255, 106, 0, 0.12) !important;
+        outline: none;
+    }
+
+    .ig-dark {
+        background: rgba(255, 255, 255, 0.06);
+        border: 1px solid rgba(255, 255, 255, 0.14);
+        border-right: none;
+        color: rgba(255, 255, 255, 0.45);
+    }
+
+    .field-label {
+        display: block;
+        color: rgba(255, 255, 255, 0.6);
+        font-size: 0.84rem;
+        margin-bottom: 6px;
+    }
+
+    /* ── 8. Verify button ── */
+    .btn-verify {
+        background: rgba(217, 108, 44, 0.18);
+        border: 1px solid var(--orange);
+        color: var(--orange);
+        font-size: 0.8rem;
+        padding: 0 16px;
+        cursor: pointer;
+        border-radius: 0 8px 8px 0;
+        transition: background 0.15s, color 0.15s;
+        white-space: nowrap;
+    }
+
+    .btn-verify:hover {
+        background: var(--orange);
+        color: #fff;
+    }
+
+    /* ── 9. Feedback boxes ── */
+    .verify-msg {
+        font-size: 0.8rem;
+        min-height: 20px;
+        margin: 6px 0 10px;
+        line-height: 1.4;
+    }
+
+    .info-box {
+        padding: 10px 13px;
+        border-radius: 8px;
+        font-size: 0.76rem;
+        margin-bottom: 14px;
+        line-height: 1.6;
+    }
+
+    .info-box code {
+        color: #fff;
+        background: rgba(255, 255, 255, 0.09);
+        padding: 1px 5px;
+        border-radius: 3px;
+    }
+
+    .info-yellow {
+        background: rgba(243, 156, 18, 0.08);
+        border: 1px solid rgba(243, 156, 18, 0.25);
+        color: rgba(255, 255, 255, 0.55);
+    }
+
+    .info-blue {
+        background: rgba(51, 149, 255, 0.08);
+        border: 1px solid rgba(51, 149, 255, 0.25);
+    }
+
+    .info-green {
+        background: rgba(63, 185, 80, 0.07);
+        border: 1px solid rgba(63, 185, 80, 0.20);
+    }
+
+    .error-msg {
+        padding: 10px 14px;
+        border-radius: 8px;
+        font-size: 0.82rem;
+        background: rgba(231, 76, 60, 0.12);
+        border: 1px solid rgba(231, 76, 60, 0.35);
+        color: #e74c3c;
+        line-height: 1.5;
+        margin-top: 10px;
+    }
+
+    .or-divider {
+        text-align: center;
+        color: rgba(255, 255, 255, 0.28);
+        font-size: 0.74rem;
+        margin: 12px 0;
+    }
+
+    .panel-hint {
+        color: rgba(255, 255, 255, 0.48);
+        font-size: 0.8rem;
+        margin-bottom: 14px;
+    }
+
+    /* ── 10. Pay buttons ── */
+    #payPage .btn-cinema {
+        background: linear-gradient(135deg, var(--orange), #e05a00);
+        color: #fff;
+        border: none;
+        border-radius: 10px;
+        font-weight: 700;
+        font-size: 1rem;
+        cursor: pointer;
+        transition: opacity 0.18s, transform 0.12s;
+        display: block;
+        width: 100%;
+        text-align: center;
+    }
+
+    #payPage .btn-cinema:hover {
+        opacity: .88;
+        transform: translateY(-1px);
+        color: #fff;
+    }
+
+    #payPage .btn-cinema:disabled {
+        opacity: .55;
+        cursor: not-allowed;
+        transform: none;
+    }
+
+    .rzp-pay-btn {
+        background: linear-gradient(135deg, #3395FF, #1a6fd4);
+        color: #fff;
+        border: none;
+        border-radius: 10px;
+        font-weight: 700;
+        font-size: 1rem;
+        cursor: pointer;
+        transition: opacity 0.18s;
+        display: block;
+        width: 100%;
+    }
+
+    .rzp-pay-btn:hover {
+        opacity: .88;
+        color: #fff;
+    }
+
+    .rzp-pay-btn:disabled {
+        opacity: .55;
+        cursor: not-allowed;
+    }
+
+    /* ── 11. Order summary ── */
+    .order-movie-row {
+        display: flex;
+        gap: 16px;
+        margin-bottom: 20px;
+        padding: 14px;
+        border-radius: 10px;
+        background: rgba(255, 255, 255, 0.03);
+        border: 1px solid rgba(255, 255, 255, 0.06);
+    }
+
+    .order-poster {
+        width: 62px;
+        height: 88px;
+        object-fit: cover;
+        border-radius: 8px;
+        flex-shrink: 0;
+    }
+
+    .price-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 9px 0;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+        font-size: 0.875rem;
+    }
+
+    .price-row:last-child {
+        border-bottom: none;
+    }
+
+    .price-label { color: var(--text-muted); }
+    .price-value { color: #fff; font-weight: 500; }
+    .price-total { padding-top: 14px; }
+
+    /* ── 12. SSL badge ── */
+    .ssl-badge {
+        text-align: center;
+        font-size: 0.74rem;
+        color: var(--text-muted);
+        margin-top: 14px;
+    }
+
+    /* ── 13. Animations ── */
+    @keyframes fadeSlideIn {
+        from { opacity: 0; transform: translateY(6px); }
+        to   { opacity: 1; transform: translateY(0);   }
+    }
+
+    .payment-panel { animation: fadeSlideIn 0.18s ease; }
+
+    /* ── 14. Net banking select ── */
+    #bankSelect {
+        background: #1C1C24 !important;
+        color: #fff !important;
+        border: 1px solid rgba(255, 255, 255, 0.15) !important;
+    }
+
+    #bankSelect option { background: #1C1C24; color: #fff; }
+
+    #bankSelect:focus {
+        background: #1C1C24 !important;
+        color: #fff !important;
+        border-color: var(--orange) !important;
+        box-shadow: 0 0 0 3px rgba(255, 106, 0, 0.2) !important;
+    }
+
+    /* ── 15. Cancel booking button ── */
+    .btn-cancel-booking {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        width: 100%;
+        padding: 12px;
+        margin-top: 12px;
+        background: transparent;
+        border: 1.5px solid rgba(231, 76, 60, 0.4);
+        border-radius: 10px;
+        color: rgba(231, 76, 60, 0.8);
+        font-size: 0.88rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s;
+        text-decoration: none;
+    }
+
+    .btn-cancel-booking:hover {
+        background: rgba(231, 76, 60, 0.1);
+        border-color: #e74c3c;
+        color: #e74c3c;
+    }
+
+    /* ── 16. Wallet insufficient state ── */
+    .wallet-add-money-link {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        margin-top: 14px;
+        padding: 10px 20px;
+        background: rgba(51, 149, 255, 0.1);
+        border: 1px solid rgba(51, 149, 255, 0.3);
+        border-radius: 8px;
+        color: #3395FF;
+        font-size: 0.85rem;
+        font-weight: 600;
+        text-decoration: none;
+        transition: all 0.18s;
+    }
+
+    .wallet-add-money-link:hover {
+        background: rgba(51, 149, 255, 0.18);
+        color: #3395FF;
+    }
+</style>
+{% endblock %}
+
+
+{% block content %}
+<div id="payPage">
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-lg-10">
+
+                <h3 style="color:#fff;margin-bottom:28px">
+                    <i class="fas fa-credit-card me-2" style="color:var(--orange)"></i>
+                    Complete Your Booking
+                </h3>
+
+                <div class="row g-4">
+
+                    <!-- ════════════════════════════════
+                         LEFT — Payment methods + form
+                    ════════════════════════════════ -->
+                    <div class="col-lg-7">
+                        <div class="pay-col-inner">
+                            <div class="data-card">
+
+                                <h5 style="color:#fff;margin-bottom:20px;font-size:1rem;font-weight:700">
+                                    Select Payment Method
+                                </h5>
+
+                                <div id="paymentMethods">
+                                    <div class="pmc active" data-method="upi">
+                                        <span class="pmc-icon">
+                                            <i class="fas fa-mobile-alt" style="color:var(--orange)"></i>
+                                        </span>
+                                        <span class="pmc-label">UPI</span>
+                                    </div>
+
+                                    <div class="pmc" data-method="razorpay">
+                                        <span class="pmc-icon">
+                                            <i class="fas fa-bolt" style="color:#3395FF"></i>
+                                        </span>
+                                        <span class="pmc-label">Razorpay</span>
+                                    </div>
+
+                                    <div class="pmc" data-method="card">
+                                        <span class="pmc-icon">
+                                            <i class="fas fa-credit-card" style="color:var(--orange)"></i>
+                                        </span>
+                                        <span class="pmc-label">Credit / Debit Card</span>
+                                    </div>
+
+                                    <div class="pmc" data-method="netbanking">
+                                        <span class="pmc-icon">
+                                            <i class="fas fa-university" style="color:var(--orange)"></i>
+                                        </span>
+                                        <span class="pmc-label">Net Banking</span>
+                                    </div>
+
+                                    <div class="pmc" data-method="wallet">
+                                        <span class="pmc-icon">
+                                            <i class="fas fa-wallet" style="color:#2ecc71"></i>
+                                        </span>
+                                        <span class="pmc-label">
+                                            Wallet
+                                            <span id="walletBalBadge" style="font-size:0.72rem;color:#2ecc71;font-weight:600;margin-left:6px">
+                                                ₹{{ wallet_balance|default(0)|int }}
+                                            </span>
+                                        </span>
+                                    </div>
+                                </div><!-- /#paymentMethods -->
+
+                                <form id="paymentForm" method="POST"
+                                    action="{{ url_for('payment_bp.confirm_booking') }}">
+
+                                    <input type="hidden" name="show_id"            value="{{ show.show_id }}">
+                                    <input type="hidden" name="selected_seats"     value="{{ selected_seats }}">
+                                    <input type="hidden" name="seat_ids"           value="{{ seat_ids }}">
+                                    <input type="hidden" name="payment_method"     id="selectedMethod" value="UPI">
+                                    <input type="hidden" name="razorpay_payment_id" id="rzp_payment_id" value="">
+
+                                    <!-- ══ UPI Panel (shown by default) ══ -->
+                                    <div id="panel_upi" class="payment-panel">
+                                        <p class="panel-hint">Pay with any UPI app, or enter your UPI ID manually.</p>
+
+                                        <div class="upi-app-row" id="upiAppRow">
+                                            <button type="button" class="upi-app-btn" data-app="gpay">
+                                                <i class="fab fa-google" style="color:#4285F4"></i> GPay
+                                            </button>
+                                            <button type="button" class="upi-app-btn" data-app="phonepe">
+                                                <i class="fas fa-bolt" style="color:#5C2D91"></i> PhonePe
+                                            </button>
+                                            <button type="button" class="upi-app-btn" data-app="paytm">
+                                                <i class="fas fa-wallet" style="color:#00B9F1"></i> Paytm
+                                            </button>
+                                            <button type="button" class="upi-app-btn" data-app="bhim">
+                                                <i class="fas fa-university" style="color:#00804A"></i> BHIM
+                                            </button>
+                                        </div>
+
+                                        <div class="or-divider">— or enter UPI ID manually —</div>
+
+                                        <label class="field-label" for="upiId">UPI ID</label>
+                                        <div class="input-group mb-1">
+                                            <span class="input-group-text ig-dark">
+                                                <i class="fas fa-at"></i>
+                                            </span>
+                                            <input type="text" id="upiId" name="upi_id"
+                                                class="form-control fc-dark"
+                                                placeholder="yourname@upi  or  9876543210@paytm"
+                                                autocomplete="off" spellcheck="false">
+                                            <button type="button" id="verifyUpiBtn" class="btn-verify">
+                                                Verify
+                                            </button>
+                                        </div>
+
+                                        <div id="upiVerifyMsg" class="verify-msg"></div>
+
+                                        <div class="info-box info-yellow">
+                                            <i class="fas fa-info-circle me-1" style="color:#f39c12"></i>
+                                            <strong style="color:#f39c12">Format:</strong>
+                                            <code>name@upi</code> &nbsp;
+                                            <code>9876543210@paytm</code> &nbsp;
+                                            <code>user@ybl</code> &nbsp;
+                                            <code>user@okaxis</code>
+                                        </div>
+
+                                        <button type="button" id="upiPayBtn" class="btn btn-cinema py-3">
+                                            <i class="fas fa-lock me-2"></i>
+                                            Pay ₹{{ grand_total }} via UPI
+                                        </button>
+                                    </div><!-- /#panel_upi -->
+
+                                    <!-- ══ Razorpay Panel ══ -->
+                                    <div id="panel_razorpay" class="payment-panel" style="display:none">
+                                        <div class="info-box info-blue" style="margin-bottom:14px">
+                                            <div style="color:#3395FF;font-weight:700;margin-bottom:4px">
+                                                <i class="fas fa-bolt me-1"></i>Razorpay Secure Checkout
+                                            </div>
+                                            <div class="panel-hint" style="margin:0">
+                                                Cards, UPI, Net Banking &amp; Wallets — all in one popup.
+                                            </div>
+                                        </div>
+
+                                        <div class="info-box info-yellow">
+                                            <i class="fas fa-flask me-1" style="color:#f39c12"></i>
+                                            <strong style="color:#f39c12">Test Card:</strong>
+                                            <code>4111 1111 1111 1111</code>
+                                            Exp&nbsp;<code>12/27</code> CVV&nbsp;<code>123</code><br>
+                                            <strong style="color:#f39c12">Test UPI:</strong>
+                                            <code>success@razorpay</code>
+                                        </div>
+
+                                        <button type="button" id="rzpPayBtn" class="rzp-pay-btn py-3">
+                                            <i class="fas fa-bolt me-2"></i>
+                                            Pay ₹{{ grand_total }} with Razorpay
+                                        </button>
+
+                                        <div id="rzpErrorMsg" class="error-msg" style="display:none"></div>
+
+                                        <p style="color:rgba(255,255,255,0.28);font-size:0.72rem;
+                                           text-align:center;margin-top:8px;margin-bottom:0">
+                                            Razorpay popup will open — complete payment there
+                                        </p>
+                                    </div><!-- /#panel_razorpay -->
+
+                                    <!-- ══ Card Panel ══ -->
+                                    <div id="panel_card" class="payment-panel" style="display:none">
+                                        <div class="mb-3">
+                                            <label class="field-label" for="cardNumber">Card Number</label>
+                                            <input type="text" id="cardNumber" class="form-control fc-dark"
+                                                placeholder="1234  5678  9012  3456" maxlength="19"
+                                                inputmode="numeric" autocomplete="cc-number">
+                                        </div>
+
+                                        <div style="display:flex;gap:14px;margin-bottom:14px">
+                                            <div style="flex:1">
+                                                <label class="field-label" for="cardExpiry">Expiry (MM/YY)</label>
+                                                <input type="text" id="cardExpiry" class="form-control fc-dark"
+                                                    placeholder="MM/YY" maxlength="5" inputmode="numeric"
+                                                    autocomplete="cc-exp">
+                                            </div>
+                                            <div style="flex:1">
+                                                <label class="field-label" for="cardCvv">CVV</label>
+                                                <input type="password" id="cardCvv" class="form-control fc-dark"
+                                                    placeholder="•••" maxlength="4" inputmode="numeric"
+                                                    autocomplete="cc-csc">
+                                            </div>
+                                        </div>
+
+                                        <div class="mb-3">
+                                            <label class="field-label" for="cardName">Name on Card</label>
+                                            <input type="text" id="cardName" class="form-control fc-dark"
+                                                placeholder="Full Name" autocomplete="cc-name">
+                                        </div>
+
+                                        <div id="cardErrorMsg" class="error-msg" style="display:none"></div>
+
+                                        <button type="button" id="cardPayBtn" class="btn btn-cinema py-3">
+                                            <i class="fas fa-lock me-2"></i>
+                                            Pay ₹{{ grand_total }} Securely
+                                        </button>
+                                    </div><!-- /#panel_card -->
+
+                                    <!-- ══ Net Banking Panel ══ -->
+                                    <div id="panel_netbanking" class="payment-panel" style="display:none">
+                                        <label class="field-label" for="bankSelect">Select Your Bank</label>
+                                        <select id="bankSelect" class="form-select fc-dark mb-3">
+                                            <option value="">— Choose bank —</option>
+                                            {% for bank in [
+                                                'SBI','HDFC Bank','ICICI Bank','Axis Bank',
+                                                'Kotak Bank','Bank of Baroda','PNB','Canara Bank'
+                                            ] %}
+                                            <option value="{{ bank }}">{{ bank }}</option>
+                                            {% endfor %}
+                                        </select>
+
+                                        <div id="netbankingErrorMsg" class="error-msg" style="display:none"></div>
+
+                                        <button type="button" id="netbankingPayBtn" class="btn btn-cinema py-3">
+                                            <i class="fas fa-lock me-2"></i>
+                                            Pay ₹{{ grand_total }} via Net Banking
+                                        </button>
+                                    </div><!-- /#panel_netbanking -->
+
+                                    <!-- ══ Wallet Panel ══ -->
+                                    <div id="panel_wallet" class="payment-panel" style="display:none">
+                                        <div style="background:rgba(46,204,113,0.08);border:1.5px solid rgba(46,204,113,0.3);
+                                                    border-radius:12px;padding:20px;margin-bottom:18px;text-align:center">
+                                            <div style="color:rgba(255,255,255,0.55);font-size:0.8rem;margin-bottom:6px;text-transform:uppercase;letter-spacing:1px">
+                                                Available Wallet Balance
+                                            </div>
+                                            <div style="color:#2ecc71;font-size:2rem;font-weight:800;line-height:1">
+                                                ₹{{ wallet_balance|default(0)|round(2) }}
+                                            </div>
+                                        </div>
+
+                                        {% set wb = wallet_balance|default(0) %}
+                                        {% if wb >= grand_total %}
+                                        <!-- SUFFICIENT BALANCE -->
+                                        <div class="info-box" style="background:rgba(46,204,113,0.08);border:1px solid rgba(46,204,113,0.25);margin-bottom:16px">
+                                            <i class="fas fa-check-circle me-2" style="color:#2ecc71"></i>
+                                            <span style="color:rgba(255,255,255,0.75)">
+                                                Your wallet has sufficient balance to pay
+                                                <strong style="color:#fff">₹{{ grand_total }}</strong>.
+                                                After payment your balance will be
+                                                <strong style="color:#2ecc71">₹{{ (wb - grand_total)|round(2) }}</strong>.
+                                            </span>
+                                        </div>
+                                        <div style="text-align:center;margin-top:8px">
+                                            <button type="button" id="walletPayBtn" class="btn btn-cinema py-3"
+                                                    style="background:linear-gradient(135deg,#27ae60,#2ecc71);border:none;
+                                                           min-width:260px;margin:0 auto;display:inline-block">
+                                                <i class="fas fa-wallet me-2"></i>
+                                                Pay ₹{{ grand_total }} from Wallet
+                                            </button>
+                                        </div>
+                                        {% else %}
+                                        <!-- INSUFFICIENT BALANCE — show clear message + add money link -->
+                                        <div class="info-box info-yellow" style="margin-bottom:12px">
+                                            <i class="fas fa-exclamation-triangle me-2" style="color:#f39c12"></i>
+                                            <span style="color:rgba(255,255,255,0.8)">
+                                                <strong style="color:#fff">Insufficient balance!</strong><br>
+                                                You need <strong style="color:#fff">₹{{ grand_total }}</strong>
+                                                but your wallet only has
+                                                <strong style="color:#f39c12">₹{{ wb|round(2) }}</strong>.
+                                                You need <strong style="color:#e74c3c">₹{{ (grand_total - wb)|round(2) }}</strong> more.
+                                            </span>
+                                        </div>
+                                        <div style="text-align:center">
+                                            <a href="{{ url_for('user_bp.profile') }}"
+                                               class="wallet-add-money-link">
+                                                <i class="fas fa-plus-circle"></i>
+                                                Add Money to Wallet
+                                            </a>
+                                        </div>
+                                        <div style="margin-top:14px">
+                                            <button type="button" id="walletPayBtn"
+                                                    class="btn btn-cinema py-3"
+                                                    disabled
+                                                    style="opacity:0.45;cursor:not-allowed;background:linear-gradient(135deg,#27ae60,#2ecc71);border:none;">
+                                                <i class="fas fa-wallet me-2"></i>
+                                                Pay ₹{{ grand_total }} from Wallet
+                                            </button>
+                                            <p style="text-align:center;font-size:0.76rem;color:rgba(255,255,255,0.35);margin-top:6px;margin-bottom:0">
+                                                Add money to your wallet first, then retry.
+                                            </p>
+                                        </div>
+                                        {% endif %}
+                                    </div><!-- /#panel_wallet -->
+
+                                </form><!-- /#paymentForm -->
+
+                                <!-- ══ CANCEL BOOKING — releases seat locks and goes back ══ -->
+                                <button type="button" id="cancelBookingBtn" class="btn-cancel-booking">
+                                    <i class="fas fa-times-circle"></i>
+                                    Cancel &amp; Go Back to Seat Selection
+                                </button>
+
+                                <div class="ssl-badge">
+                                    <i class="fas fa-shield-alt me-1" style="color:var(--success)"></i>
+                                    256-bit SSL encrypted
+                                    &nbsp;·&nbsp;
+                                    <i class="fas fa-bolt me-1" style="color:#3395FF"></i>
+                                    Powered by Razorpay
+                                </div>
+
+                            </div><!-- /.data-card -->
+                        </div><!-- /.pay-col-inner -->
+                    </div><!-- /.col-lg-7 -->
+
+                    <!-- ════════════════════════════════
+                         RIGHT — Order summary
+                    ════════════════════════════════ -->
+                    <div class="col-lg-5">
+                        <div class="pay-col-inner">
+                            <div class="data-card">
+
+                                <h5 style="color:#fff;margin-bottom:20px;font-size:1rem;font-weight:700">
+                                    Order Summary
+                                </h5>
+
+                                {% if lock_expires_at %}
+                                <div id="lockCountdown"
+                                    style="background:rgba(229,9,20,0.1);border:1px solid rgba(229,9,20,0.35);
+                                           border-radius:8px;padding:9px 14px;margin-bottom:16px;
+                                           font-size:0.8rem;text-align:center;">
+                                    <i class="fas fa-lock me-1" style="color:#ff6b6b"></i>
+                                    <span style="color:rgba(255,255,255,0.7)">Seats reserved for </span>
+                                    <span id="lockTimerDisplay" style="color:#ff6b6b;font-weight:700">--:--</span>
+                                    <span style="color:rgba(255,255,255,0.7)"> — complete payment before it expires.</span>
+                                </div>
+                                {% endif %}
+
+                                <div class="order-movie-row">
+                                    <img src="{{ movie.poster_url or url_for('static', filename='uploads/default.png') }}"
+                                        onerror="this.src='{{ url_for('static', filename='uploads/default.png') }}'"
+                                        class="order-poster" alt="{{ movie.title if movie else '' }}">
+                                    <div style="flex:1;min-width:0">
+                                        <div style="color:#fff;font-weight:700;font-size:1rem;
+                                                    white-space:nowrap;overflow:hidden;text-overflow:ellipsis">
+                                            {{ movie.title if movie else '–' }}
+                                        </div>
+                                        <div style="font-size:0.8rem;color:var(--text-muted);margin-top:5px">
+                                            <i class="fas fa-building me-1"></i>
+                                            {{ theater.name if theater else '–' }}
+                                        </div>
+                                        <div style="font-size:0.8rem;color:var(--text-muted);margin-top:2px">
+                                            <i class="fas fa-calendar me-1"></i>
+                                            {{ show.show_date if show else '' }}
+                                            {% if show and show.start_time %}
+                                            &nbsp;·&nbsp;{{ show.start_time.strftime('%I:%M %p') }}
+                                            {% endif %}
+                                        </div>
+                                        <div style="margin-top:8px">
+                                            <span style="background:rgba(255,255,255,0.08);
+                                                         border:1px solid rgba(255,255,255,0.12);
+                                                         border-radius:6px;padding:2px 10px;
+                                                         font-size:0.76rem;color:rgba(255,255,255,0.75)">
+                                                {{ selected_seats }}
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div style="margin-bottom:16px">
+                                    <div class="price-row">
+                                        <span class="price-label">{{ num_seats }} × Ticket</span>
+                                        <span class="price-value">₹{{ total_price }}</span>
+                                    </div>
+                                    <div class="price-row">
+                                        <span class="price-label">Convenience Fee (2%)</span>
+                                        <span class="price-value">₹{{ conv }}</span>
+                                    </div>
+                                    <div class="price-row">
+                                        <span class="price-label">GST (18%)</span>
+                                        <span class="price-value">₹{{ gst }}</span>
+                                    </div>
+                                    <div class="price-row price-total">
+                                        <span style="color:#fff;font-weight:700;font-size:1rem">Grand Total</span>
+                                        <span style="color:var(--orange);font-weight:800;font-size:1.35rem">
+                                            ₹{{ grand_total }}
+                                        </span>
+                                    </div>
+                                </div>
+
+                                <div class="info-box info-green" style="margin-bottom:0">
+                                    <div style="color:#3fb950;font-weight:600;margin-bottom:3px">
+                                        <i class="fas fa-check-circle me-1"></i>
+                                        Instant Booking Confirmation
+                                    </div>
+                                    <div style="font-size:0.74rem;color:rgba(255,255,255,0.45)">
+                                        E-ticket emailed to you immediately after payment.
+                                    </div>
+                                </div>
+
+                            </div><!-- /.data-card -->
+                        </div><!-- /.pay-col-inner -->
+                    </div><!-- /.col-lg-5 -->
+
+                </div><!-- /.row g-4 -->
+            </div><!-- /.col-lg-10 -->
+        </div><!-- /.row.justify-content-center -->
+    </div><!-- /.container -->
+</div><!-- /#payPage -->
+{% endblock %}
+
+
+{% block extra_js %}
+<script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+
+<script>
+    /* ── Jinja → JS ── */
+    const GRAND_TOTAL        = {{ grand_total | int }};
+    const WALLET_BALANCE     = {{ wallet_balance | default(0) | float }};
+    const MOVIE_TITLE        = {{ (movie.title if movie else 'Movie Ticket') | tojson }};
+    const RZP_KEY_ID         = "rzp_test_SgoyxFiTcInE0N";
+    const SHOW_ID            = {{ show.show_id | tojson }};
+    const SEAT_SELECTION_URL = '{{ url_for("user_bp.select_seats", show_id=show.show_id) }}';
+
+    /* ════════════════════════════════════════════════════════════
+       SEAT LOCK COUNTDOWN TIMER
+    ════════════════════════════════════════════════════════════ */
+    {% if lock_expires_at %}
+    (function () {
+        var expiresAt = new Date("{{ lock_expires_at }}".replace(' ', 'T') + 'Z');
+        var timerEl   = document.getElementById('lockTimerDisplay');
+        var bannerEl  = document.getElementById('lockCountdown');
+        if (!timerEl || !bannerEl) return;
+
+        function tick() {
+            var now  = new Date();
+            var diff = Math.floor((expiresAt - now) / 1000);
+
+            if (diff <= 0) {
+                timerEl.textContent = '00:00';
+
+                bannerEl.innerHTML =
+                    '<i class="fas fa-exclamation-triangle me-1" style="color:#ff6b6b"></i>' +
+                    '<span style="color:#ff6b6b;font-weight:600">' +
+                    'Seat reservation expired — redirecting to seat selection…' +
+                    '</span>';
+
+                clearInterval(_lockInterval);
+
+                /* Disable all pay buttons immediately during the redirect delay */
+                document.querySelectorAll('#upiPayBtn, #rzpPayBtn, #cardPayBtn, #netbankingPayBtn, #walletPayBtn')
+                    .forEach(function (btn) {
+                        btn.disabled          = true;
+                        btn.style.opacity     = '0.4';
+                        btn.style.cursor      = 'not-allowed';
+                        btn.title             = 'Seat lock expired';
+                    });
+
+                setTimeout(function () {
+                    window.location.href = SEAT_SELECTION_URL;
+                }, 2000);
+
+                return;
+            }
+
+            var m = Math.floor(diff / 60);
+            var s = diff % 60;
+            timerEl.textContent = (m < 10 ? '0' : '') + m + ':' + (s < 10 ? '0' : '') + s;
+
+            if (diff <= 60) {
+                timerEl.style.color       = '#e74c3c';
+                bannerEl.style.background = 'rgba(229,9,20,0.2)';
+            }
+        }
+
+        tick();
+        var _lockInterval = setInterval(tick, 1000);
+    })();
+    {% endif %}
+
+    var activeMethod = 'upi';
+    var upiVerified  = false;
+
+    /* ════════════════════════════════════════════════════════════
+       METHOD SWITCHER
+    ════════════════════════════════════════════════════════════ */
+    function selectMethod(method) {
+        document.querySelectorAll('#paymentMethods .pmc').forEach(function (card) {
+            card.classList.toggle('active', card.dataset.method === method);
+        });
+
+        var methodMap = { upi: 'UPI', razorpay: 'RAZORPAY', card: 'CARD', netbanking: 'NETBANKING', wallet: 'WALLET' };
+        var selEl = document.getElementById('selectedMethod');
+        if (selEl) selEl.value = methodMap[method] || method.toUpperCase();
+
+        document.querySelectorAll('.payment-panel').forEach(function (p) {
+            p.style.display = 'none';
+        });
+        var panel = document.getElementById('panel_' + method);
+        if (panel) panel.style.display = '';
+
+        ['rzpErrorMsg', 'cardErrorMsg', 'netbankingErrorMsg'].forEach(function (id) {
+            var el = document.getElementById(id);
+            if (el) { el.innerHTML = ''; el.style.display = 'none'; }
+        });
+        setUpiMsg('');
+
+        activeMethod = method;
+        upiVerified  = false;
+    }
+
+    /* ════════════════════════════════════════════════════════════
+       UPI
+    ════════════════════════════════════════════════════════════ */
+    function setUpiMsg(html) {
+        var el = document.getElementById('upiVerifyMsg');
+        if (el) el.innerHTML = html;
+    }
+
+    function isValidUpiFormat(id) {
+        return /^[\w.\-]{2,256}@[a-zA-Z]{2,64}$/.test((id || '').trim());
+    }
+
+    async function verifyUpi() {
+        var inp = document.getElementById('upiId');
+        var val = inp ? inp.value.trim() : '';
+
+        if (!val) {
+            upiVerified = false;
+            setUpiMsg('<span style="color:#e74c3c"><i class="fas fa-times-circle me-1"></i>Enter a UPI ID first.</span>');
+            return;
+        }
+        if (!isValidUpiFormat(val)) {
+            upiVerified = false;
+            setUpiMsg('<span style="color:#e74c3c"><i class="fas fa-times-circle me-1"></i>Invalid format — try: name@upi, 9876543210@paytm, user@ybl</span>');
+            return;
+        }
+
+        setUpiMsg('<span style="color:rgba(255,255,255,0.4)"><i class="fas fa-spinner fa-spin me-1"></i>Verifying…</span>');
+
+        try {
+            var res  = await fetch('/api/verify-upi', {
+                method:  'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body:    JSON.stringify({ upi_id: val })
+            });
+            var data = await res.json();
+            if (data.valid) {
+                upiVerified = true;
+                setUpiMsg('<span style="color:#3fb950"><i class="fas fa-check-circle me-1"></i>' + (data.message || 'Verified!') + '</span>');
+            } else {
+                upiVerified = false;
+                setUpiMsg('<span style="color:#e74c3c"><i class="fas fa-times-circle me-1"></i>' + (data.message || 'UPI ID not found.') + '</span>');
+            }
+        } catch (_) {
+            upiVerified = true;
+            setUpiMsg('<span style="color:#f39c12"><i class="fas fa-exclamation-triangle me-1"></i>Could not reach server — proceeding anyway.</span>');
+        }
+    }
+
+    function openUpiApp(app) {
+        var pa   = 'merchant@razorpay';
+        var pn   = encodeURIComponent('CineBook');
+        var am   = GRAND_TOTAL.toFixed(2);
+        var tn   = encodeURIComponent('Movie ticket');
+        var base = 'upi://pay?pa=' + pa + '&pn=' + pn + '&am=' + am + '&tn=' + tn + '&cu=INR';
+        var links = {
+            gpay:    'tez://upi/pay?pa='    + pa + '&pn=' + pn + '&am=' + am + '&tn=' + tn + '&cu=INR',
+            phonepe: 'phonepe://pay?pa='    + pa + '&pn=' + pn + '&am=' + am + '&tn=' + tn + '&cu=INR',
+            paytm:   'paytmmp://pay?pa='    + pa + '&pn=' + pn + '&am=' + am + '&tn=' + tn + '&cu=INR',
+            bhim:    base
+        };
+        var iframe = document.createElement('iframe');
+        iframe.style.cssText = 'position:absolute;width:1px;height:1px;opacity:0;pointer-events:none';
+        iframe.src = links[app] || base;
+        document.body.appendChild(iframe);
+        setTimeout(function () { iframe.remove(); }, 2500);
+
+        upiVerified = true;
+        var names = { gpay: 'Google Pay', phonepe: 'PhonePe', paytm: 'Paytm', bhim: 'BHIM' };
+        setUpiMsg('<span style="color:#3fb950"><i class="fas fa-spinner fa-spin me-1"></i>Opening ' + (names[app] || app) + '… complete payment there, then click Pay.</span>');
+    }
+
+    function handleUpiPayment() {
+        var inp   = document.getElementById('upiId');
+        var upiId = inp ? inp.value.trim() : '';
+
+        if (!upiId && !upiVerified) {
+            setUpiMsg('<span style="color:#e74c3c"><i class="fas fa-times-circle me-1"></i>Enter your UPI ID or tap a UPI app above.</span>');
+            if (inp) inp.focus();
+            return;
+        }
+
+        if (upiId && !isValidUpiFormat(upiId)) {
+            setUpiMsg('<span style="color:#e74c3c"><i class="fas fa-times-circle me-1"></i>Invalid UPI ID format — try: name@upi or 9876543210@paytm</span>');
+            if (inp) inp.focus();
+            return;
+        }
+
+        document.getElementById('selectedMethod').value = 'UPI';
+        document.getElementById('paymentForm').submit();
+    }
+
+    /* ════════════════════════════════════════════════════════════
+       RAZORPAY
+    ════════════════════════════════════════════════════════════ */
+    function showRzpError(html) {
+        var el = document.getElementById('rzpErrorMsg');
+        if (!el) return;
+        el.innerHTML     = '<i class="fas fa-exclamation-circle me-1"></i>' + html;
+        el.style.display = '';
+    }
+
+    function resetRzpBtn(btn) {
+        btn.disabled  = false;
+        btn.innerHTML = '<i class="fas fa-bolt me-2"></i>Pay ₹' + GRAND_TOTAL + ' with Razorpay';
+    }
+
+    function launchRazorpay() {
+        var btn   = document.getElementById('rzpPayBtn');
+        var errEl = document.getElementById('rzpErrorMsg');
+        if (errEl) { errEl.innerHTML = ''; errEl.style.display = 'none'; }
+
+        if (typeof Razorpay === 'undefined') {
+            showRzpError('Razorpay SDK not loaded. Check your internet and refresh.');
+            return;
+        }
+
+        btn.disabled  = true;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Opening Razorpay…';
+
+        var rzp = new Razorpay({
+            key:         RZP_KEY_ID,
+            amount:      Math.round(GRAND_TOTAL * 100),
+            currency:    'INR',
+            name:        'CineBook',
+            description: 'Movie Ticket: ' + MOVIE_TITLE,
+            theme:       { color: '#d96c2c' },
+            modal: {
+                ondismiss: function () {
+                    resetRzpBtn(btn);
+                    showRzpError('Payment cancelled. Click the button to try again.');
+                }
+            },
+            handler: function (response) {
+                document.getElementById('rzp_payment_id').value = response.razorpay_payment_id || 'RZP_OK';
+                document.getElementById('selectedMethod').value  = 'RAZORPAY';
+                document.getElementById('paymentForm').submit();
+            }
+        });
+
+        rzp.on('payment.failed', function (r) {
+            resetRzpBtn(btn);
+            var desc = r.error ? (r.error.description || 'Unknown error') : 'Unknown error';
+            showRzpError('Payment failed: ' + desc + '. Please retry.');
+        });
+
+        try { rzp.open(); }
+        catch (e) { resetRzpBtn(btn); showRzpError('Could not open Razorpay: ' + e.message); }
+    }
+
+    /* ════════════════════════════════════════════════════════════
+       CARD
+    ════════════════════════════════════════════════════════════ */
+    function showCardError(msg) {
+        var el = document.getElementById('cardErrorMsg');
+        if (!el) return;
+        el.innerHTML     = '<i class="fas fa-times-circle me-1"></i>' + msg;
+        el.style.display = '';
+    }
+
+    function handleCardPayment() {
+        var el = document.getElementById('cardErrorMsg');
+        if (el) { el.innerHTML = ''; el.style.display = 'none'; }
+
+        var num  = (document.getElementById('cardNumber').value || '').replace(/\s/g, '');
+        var exp  = (document.getElementById('cardExpiry').value || '').trim();
+        var cvv  = (document.getElementById('cardCvv').value   || '').trim();
+        var name = (document.getElementById('cardName').value  || '').trim();
+
+        if (num.length < 15)              { showCardError('Enter a valid card number (15–16 digits).'); document.getElementById('cardNumber').focus(); return; }
+        if (!/^\d{2}\/\d{2}$/.test(exp)) { showCardError('Enter expiry as MM/YY.');                    document.getElementById('cardExpiry').focus(); return; }
+        if (cvv.length < 3)              { showCardError('Enter a valid CVV (3–4 digits).');            document.getElementById('cardCvv').focus();    return; }
+        if (!name)                       { showCardError('Enter the name on your card.');               document.getElementById('cardName').focus();   return; }
+
+        document.getElementById('selectedMethod').value = 'CARD';
+        document.getElementById('paymentForm').submit();
+    }
+
+    /* ════════════════════════════════════════════════════════════
+       NET BANKING
+    ════════════════════════════════════════════════════════════ */
+    function handleNetBankingPayment() {
+        var el = document.getElementById('netbankingErrorMsg');
+        if (el) { el.innerHTML = ''; el.style.display = 'none'; }
+
+        var bank = (document.getElementById('bankSelect').value || '').trim();
+        if (!bank) {
+            if (el) {
+                el.innerHTML     = '<i class="fas fa-times-circle me-1"></i>Please select a bank.';
+                el.style.display = '';
+            }
+            document.getElementById('bankSelect').focus();
+            return;
+        }
+
+        var bnEl = document.getElementById('bank_name_hidden');
+        if (bnEl) bnEl.value = bank;
+
+        document.getElementById('selectedMethod').value = 'NETBANKING';
+        document.getElementById('paymentForm').submit();
+    }
+
+    /* ════════════════════════════════════════════════════════════
+       WALLET
+       FIX: Previously this listener was buried inside
+       handleNetBankingPayment() — wrong scope, never fired.
+       Now correctly wired in DOMContentLoaded below.
+    ════════════════════════════════════════════════════════════ */
+    function handleWalletPayment() {
+        /* Client-side balance guard — server also checks, this is UX only */
+        if (WALLET_BALANCE < GRAND_TOTAL) {
+            /* Show a styled message without navigating away */
+            var panel = document.getElementById('panel_wallet');
+            var existingAlert = document.getElementById('walletClientAlert');
+            if (!existingAlert && panel) {
+                var alert = document.createElement('div');
+                alert.id = 'walletClientAlert';
+                alert.className = 'error-msg';
+                alert.style.marginTop = '12px';
+                alert.innerHTML =
+                    '<i class="fas fa-exclamation-circle me-1"></i>' +
+                    'Your wallet balance (₹' + WALLET_BALANCE.toFixed(2) + ') is insufficient. ' +
+                    'You need ₹' + GRAND_TOTAL + ' to complete this payment. ' +
+                    '<a href="{{ url_for("user_bp.profile") }}" style="color:#3395FF;margin-left:4px">Add money →</a>';
+                panel.appendChild(alert);
+            }
+            return;
+        }
+        document.getElementById('selectedMethod').value = 'WALLET';
+        document.getElementById('paymentForm').submit();
+    }
+
+    /* ════════════════════════════════════════════════════════════
+       CANCEL BOOKING — release seat locks, redirect to seat selection
+    ════════════════════════════════════════════════════════════ */
+    async function cancelAndGoBack() {
+        var btn = document.getElementById('cancelBookingBtn');
+        if (btn) {
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Releasing seats…';
+        }
+
+        /* Try to release the seat lock via the API */
+        try {
+            await fetch('/api/seats/release', {
+                method:  'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body:    JSON.stringify({ show_id: SHOW_ID })
+            });
+        } catch (e) {
+            /* If API call fails, still redirect — lock will expire naturally */
+            console.warn('Could not release lock:', e);
+        }
+
+        window.location.href = SEAT_SELECTION_URL;
+    }
+
+    /* ════════════════════════════════════════════════════════════
+       INPUT FORMATTERS
+    ════════════════════════════════════════════════════════════ */
+    function fmtCardNumber(inp) {
+        var v     = inp.value.replace(/\D/g, '').slice(0, 16);
+        inp.value = (v.match(/.{1,4}/g) || []).join(' ');
+    }
+
+    function fmtExpiry(inp) {
+        var v     = inp.value.replace(/\D/g, '').slice(0, 4);
+        inp.value = v.length > 2 ? v.slice(0, 2) + '/' + v.slice(2) : v;
+    }
+
+    /* ════════════════════════════════════════════════════════════
+       WIRE ALL LISTENERS ON DOM READY
+    ════════════════════════════════════════════════════════════ */
+    document.addEventListener('DOMContentLoaded', function () {
+
+        /* Inject hidden bank_name field that handleNetBankingPayment writes to */
+        var form = document.getElementById('paymentForm');
+        if (form) {
+            var bnInput   = document.createElement('input');
+            bnInput.type  = 'hidden';
+            bnInput.name  = 'bank_name';
+            bnInput.id    = 'bank_name_hidden';
+            form.appendChild(bnInput);
+        }
+
+        /* Payment method grid — single delegated listener */
+        var grid = document.getElementById('paymentMethods');
+        if (grid) {
+            grid.addEventListener('click', function (e) {
+                var card = e.target.closest('.pmc');
+                if (card && card.dataset.method) selectMethod(card.dataset.method);
+            });
+        }
+
+        /* UPI app row — single delegated listener */
+        var appRow = document.getElementById('upiAppRow');
+        if (appRow) {
+            appRow.addEventListener('click', function (e) {
+                var btn = e.target.closest('.upi-app-btn');
+                if (btn && btn.dataset.app) openUpiApp(btn.dataset.app);
+            });
+        }
+
+        /* Button & input bindings */
+        var vBtn       = document.getElementById('verifyUpiBtn');
+        var upiBtn     = document.getElementById('upiPayBtn');
+        var rzpBtn     = document.getElementById('rzpPayBtn');
+        var cardBtn    = document.getElementById('cardPayBtn');
+        var nbBtn      = document.getElementById('netbankingPayBtn');
+        /* FIX: walletPayBtn wired here, NOT inside handleNetBankingPayment */
+        var walletBtn  = document.getElementById('walletPayBtn');
+        var cancelBtn  = document.getElementById('cancelBookingBtn');
+        var cnEl       = document.getElementById('cardNumber');
+        var exEl       = document.getElementById('cardExpiry');
+        var upiInp     = document.getElementById('upiId');
+
+        if (vBtn)      vBtn.addEventListener('click',  verifyUpi);
+        if (upiBtn)    upiBtn.addEventListener('click', handleUpiPayment);
+        if (rzpBtn)    rzpBtn.addEventListener('click', launchRazorpay);
+        if (cardBtn)   cardBtn.addEventListener('click', handleCardPayment);
+        if (nbBtn)     nbBtn.addEventListener('click',  handleNetBankingPayment);
+        if (walletBtn && !walletBtn.disabled) {
+            walletBtn.addEventListener('click', handleWalletPayment);
+        }
+        if (cancelBtn) cancelBtn.addEventListener('click', cancelAndGoBack);
+        if (cnEl)      cnEl.addEventListener('input', function () { fmtCardNumber(this); });
+        if (exEl)      exEl.addEventListener('input', function () { fmtExpiry(this); });
+
+        /* UPI ID live validation with debounced auto-verify */
+        if (upiInp) {
+            var _upiDebounce = null;
+
+            upiInp.addEventListener('input', function () {
+                var v = this.value.trim();
+                upiVerified = false;
+                clearTimeout(_upiDebounce);
+
+                if (!v) { setUpiMsg(''); return; }
+
+                if (!isValidUpiFormat(v)) {
+                    setUpiMsg('<span style="color:rgba(255,165,0,0.85);font-size:0.76rem">'
+                        + '<i class="fas fa-exclamation-circle me-1"></i>'
+                        + 'Format: name@upi &nbsp;·&nbsp; 9876543210@paytm &nbsp;·&nbsp; user@ybl'
+                        + '</span>');
+                    return;
+                }
+
+                setUpiMsg('<span style="color:rgba(255,255,255,0.35);font-size:0.76rem">'
+                    + '<i class="fas fa-circle-notch fa-spin me-1"></i>Checking…'
+                    + '</span>');
+
+                _upiDebounce = setTimeout(async function () {
+                    var val = upiInp.value.trim();
+                    if (!val || !isValidUpiFormat(val)) return;
+                    try {
+                        var res  = await fetch('/api/verify-upi', {
+                            method:  'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body:    JSON.stringify({ upi_id: val })
+                        });
+                        var data = await res.json();
+                        if (data.valid) {
+                            upiVerified = true;
+                            setUpiMsg('<span style="color:#3fb950;font-size:0.78rem">'
+                                + '<i class="fas fa-check-circle me-1"></i>'
+                                + '<strong>Verified</strong> — ' + val + ' is valid. Ready to pay!'
+                                + '</span>');
+                        } else {
+                            upiVerified = false;
+                            setUpiMsg('<span style="color:#e74c3c;font-size:0.78rem">'
+                                + '<i class="fas fa-times-circle me-1"></i>'
+                                + (data.message || 'UPI ID not found.')
+                                + '</span>');
+                        }
+                    } catch (_) {
+                        upiVerified = true;
+                        setUpiMsg('<span style="color:#f39c12;font-size:0.76rem">'
+                            + '<i class="fas fa-exclamation-triangle me-1"></i>'
+                            + 'Could not verify — format looks OK, proceeding.'
+                            + '</span>');
+                    }
+                }, 600);
+            });
+        }
+
+        /* Boot with UPI panel active */
+        selectMethod('upi');
+    });
+</script>
+{% endblock %}

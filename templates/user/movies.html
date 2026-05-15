@@ -1,0 +1,306 @@
+{% extends 'user/base.html' %}
+{% block title %}Movies{% endblock %}
+
+{% block content %}
+<div class="movies-page-wrap">
+  <div class="container">
+
+    <!-- HEADER -->
+    <div class="d-flex align-items-center justify-content-between mb-4">
+      <div>
+        <h2 class="section-title mb-1">Movies</h2>
+        <p style="color:var(--text-muted);font-size:0.875rem;margin:0">
+          <strong style="color:#fff" id="visibleCount">{{ movies|length }}</strong> of
+          <strong style="color:#fff">{{ total }}</strong> movies
+        </p>
+      </div>
+    </div>
+
+    <!-- CITY FILTER BANNER -->
+    {% if city %}
+    <div class="d-flex align-items-center gap-2 mb-3 px-3 py-2"
+         style="background:rgba(217,108,44,0.08);border:1px solid rgba(217,108,44,0.3);
+                border-radius:10px;font-size:0.85rem">
+      <i class="fas fa-map-marker-alt" style="color:var(--orange)"></i>
+      <span style="color:rgba(255,255,255,0.85)">
+        Showing movies available in <strong style="color:#fff">{{ city }}</strong>
+      </span>
+      <button onclick="clearCityFilter()" class="btn btn-sm ms-auto"
+              style="background:rgba(229,9,20,0.12);color:#ff6b6b;
+                     border:1px solid rgba(229,9,20,0.3);border-radius:6px;
+                     font-size:0.75rem;padding:3px 12px;cursor:pointer">
+        <i class="fas fa-times me-1"></i>Clear City
+      </button>
+    </div>
+    {% endif %}
+
+    <!-- FILTERS -->
+    <div class="d-flex flex-wrap gap-2 mb-4">
+      <form method="get" action="" class="d-flex flex-wrap gap-2 w-100">
+        <input type="text" name="q" value="{{ search }}" placeholder="Search movies…"
+          style="background:var(--dark2);border:1px solid var(--border);color:#fff;border-radius:8px;padding:6px 12px;font-size:0.85rem;flex:1;min-width:120px;max-width:220px">
+
+        {% if genres %}
+        <select name="genre"
+          style="background:var(--dark2);border:1px solid var(--border);color:#fff;border-radius:8px;padding:6px 12px;font-size:0.85rem"
+          onchange="this.form.submit()">
+          <option value="">All Genres</option>
+          {% for g in genres %}
+          <option value="{{ g }}" {% if genre==g %}selected{% endif %}>{{ g }}</option>
+          {% endfor %}
+        </select>
+        {% endif %}
+
+        <select name="filter"
+          style="background:var(--dark2);border:1px solid var(--border);color:#fff;border-radius:8px;padding:6px 12px;font-size:0.85rem"
+          onchange="this.form.submit()">
+          <option value="" {% if not status_filter %}selected{% endif %}>Now Showing</option>
+          <option value="upcoming" {% if status_filter=='upcoming' %}selected{% endif %}>Upcoming</option>
+          <option value="all" {% if status_filter=='all' %}selected{% endif %}>All Movies</option>
+        </select>
+
+        <select name="sort"
+          style="background:var(--dark2);border:1px solid var(--border);color:#fff;border-radius:8px;padding:6px 12px;font-size:0.85rem"
+          onchange="this.form.submit()">
+          <option value="latest" {% if sort=='latest' %}selected{% endif %}>Latest</option>
+          <option value="rating" {% if sort=='rating' %}selected{% endif %}>Top Rated</option>
+          <option value="title" {% if sort=='title' %}selected{% endif %}>A–Z</option>
+        </select>
+
+        {% if languages %}
+        <select name="language"
+          style="background:var(--dark2);border:1px solid var(--border);color:#fff;border-radius:8px;padding:6px 12px;font-size:0.85rem"
+          onchange="this.form.submit()">
+          <option value="">All Languages</option>
+          {% for lang in languages %}
+          <option value="{{ lang }}" {% if language==lang %}selected{% endif %}>{{ lang }}</option>
+          {% endfor %}
+        </select>
+        {% endif %}
+
+        <button type="submit"
+          style="background:var(--primary);border:none;color:#fff;border-radius:8px;padding:6px 16px;font-size:0.85rem;cursor:pointer">
+          Search
+        </button>
+      </form>
+    </div>
+
+    <!-- MOVIE GRID (infinite scroll) -->
+    <div class="row g-4 row-cols-2 row-cols-md-3 row-cols-lg-5" id="moviesGrid">
+      {% for movie in movies %}
+      {% set _pi = (loop.index0 % 200) + 1 %}
+{% set _fallback = url_for('static', filename='uploads/posters/poster_%03d.jpg' | format(_pi)) %}
+      <div class="col">
+        <div class="movie-card">
+          <div class="poster-wrap">
+            <img src="{{ movie.poster_url or _fallback }}"
+              alt="{{ movie.title }}" onerror="this.src='{{ _fallback }}'">
+            <div class="poster-overlay">
+              <div class="w-100">
+                <a href="{{ url_for('user_bp.movie_detail', movie_id=movie.movie_id) }}"
+                  class="btn btn-cinema btn-sm w-100 mb-1">🎟 Book Now</a>
+                <a href="{{ url_for('user_bp.movie_detail', movie_id=movie.movie_id) }}"
+                  class="btn btn-cinema-outline btn-sm w-100">ℹ Details</a>
+              </div>
+            </div>
+          </div>
+          <div class="card-body">
+            <div class="movie-title">{{ movie.title }}</div>
+            <div class="card-meta-row">
+              {% if movie.genres_display %}
+              <span class="genre-tag">{{ movie.genres_display.split(' / ')[0] }}</span>
+              {% endif %}
+              {% if movie.languages_list %}
+              <span class="lang-inline">
+                {{ movie.languages_list[0] }}{% if movie.lang_count > 1 %} +{{ movie.lang_count - 1 }}{% endif %}
+              </span>
+              {% endif %}
+            </div>
+            <div class="d-flex align-items-center gap-2 mt-2">
+              {% if movie.rating %}
+              <span class="movie-rating">⭐ {{ movie.rating }}</span>
+              {% endif %}
+              {% if movie.duration %}
+              <span style="font-size:0.7rem;color:var(--text-muted)">{{ movie.duration }}m</span>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+
+    <!-- INFINITE SCROLL SENTINEL -->
+    <div id="scrollSentinel" style="height:80px;display:flex;align-items:center;
+         justify-content:center;margin-top:24px">
+      <div id="loadingSpinner" style="display:none">
+        <div style="display:flex;align-items:center;gap:10px;color:var(--text-muted);font-size:0.85rem">
+          <div style="width:20px;height:20px;border:2px solid var(--border);
+               border-top-color:var(--orange);border-radius:50%;
+               animation:movieSpin 0.8s linear infinite"></div>
+          Loading more movies…
+        </div>
+      </div>
+      <div id="endMessage" style="display:none;align-items:center;gap:8px;
+           color:var(--text-muted);font-size:0.85rem">
+        <i class="fas fa-check-circle" style="color:var(--orange)"></i>
+        You've seen all <strong style="color:#fff;margin:0 4px">{{ total }}</strong> movies
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<style>
+  @keyframes movieSpin {
+    to {
+      transform: rotate(360deg);
+    }
+  }
+</style>
+
+<script>
+  function clearCityFilter() {
+    fetch('/set-city', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ city: '' })
+    })
+    .then(function(r) { return r.json(); })
+    .then(function() { location.reload(); })
+    .catch(function() { location.reload(); });
+  }
+</script>
+
+<script>
+  (function () {
+    var currentPage = {{ page }};
+  var totalMovies = {{ total }};
+  var perPage = {{ per_page }};
+  var hasMore = {{ 'true' if (page * per_page) < total else 'false' }};
+  var loading = false;
+  var shownCount = {{ movies| length }};
+  /* 24 rotating cinematic posters — used when a movie has no uploaded poster */
+  var fallbackPosters = [
+    {% for i in range(1, 25) %}"{{ url_for('static', filename='uploads/posters/poster_%03d.jpg' | format(i)) }}"{% if not loop.last %},{% endif %}
+    {% endfor %}
+  ];
+  var detailBase = "{{ url_for('user_bp.movie_detail', movie_id='__MOVIE_ID__') }}";
+
+  var filterParams = {
+    q: "{{ search | replace('"', '\\"') }}",
+    genre: "{{ genre | replace('"', '\\"') }}",
+    language: "{{ language | replace('"', '\\"') }}",
+    filter: "{{ status_filter | replace('"', '\\"') }}",
+    sort: "{{ sort | replace('"', '\\"') }}"
+  };
+
+  function esc(s) {
+    return String(s || '')
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  }
+
+  function buildCard(m) {
+    var href = detailBase.replace('__MOVIE_ID__', encodeURIComponent(m.movie_id));
+    var poster = m.poster_url || fallbackPosters[shownCount % 200];
+
+    var genreTag = m.genres_display
+      ? '<span class="genre-tag">' + esc(m.genres_display.split(' / ')[0]) + '</span>' : '';
+
+    var langTag = (m.languages_list && m.languages_list.length)
+      ? '<span class="lang-inline">' + esc(m.languages_list[0]) +
+      (m.lang_count > 1 ? ' +' + (m.lang_count - 1) : '') + '</span>' : '';
+
+    var ratingTag = m.rating
+      ? '<span class="movie-rating">&#11088; ' + m.rating + '</span>' : '';
+
+    var durTag = m.duration
+      ? '<span style="font-size:0.7rem;color:var(--text-muted)">' + m.duration + 'm</span>' : '';
+
+    return [
+      '<div class="col">',
+      '<div class="movie-card">',
+      '<div class="poster-wrap">',
+      '<img src="' + esc(poster) + '" alt="' + esc(m.title) + '"',
+      ' onerror="this.src=\'' + esc(poster) + '\'">',
+      '<div class="poster-overlay"><div class="w-100">',
+      '<a href="' + href + '" class="btn btn-cinema btn-sm w-100 mb-1">&#127903; Book Now</a>',
+      '<a href="' + href + '" class="btn btn-cinema-outline btn-sm w-100">&#8505; Details</a>',
+      '</div></div>',
+      '</div>',
+      '<div class="card-body">',
+      '<div class="movie-title">' + esc(m.title) + '</div>',
+      '<div class="card-meta-row">' + genreTag + langTag + '</div>',
+      '<div class="d-flex align-items-center gap-2 mt-2">' + ratingTag + durTag + '</div>',
+      '</div>',
+      '</div>',
+      '</div>'
+    ].join('');
+  }
+
+  function updateCount() {
+    var el = document.getElementById('visibleCount');
+    if (el) el.textContent = shownCount;
+  }
+
+  function loadMore() {
+    if (loading || !hasMore) return;
+    loading = true;
+    document.getElementById('loadingSpinner').style.display = 'block';
+
+    var qs = new URLSearchParams(filterParams);
+    qs.set('page', currentPage + 1);
+
+    fetch('/api/movies?' + qs.toString())
+      .then(function (r) { return r.json(); })
+      .then(function (data) {
+        loading = false;
+        document.getElementById('loadingSpinner').style.display = 'none';
+
+        if (!data.movies || !data.movies.length) {
+          hasMore = false;
+          document.getElementById('endMessage').style.display = 'flex';
+          return;
+        }
+
+        currentPage++;
+        var grid = document.getElementById('moviesGrid');
+        data.movies.forEach(function (m) {
+          grid.insertAdjacentHTML('beforeend', buildCard(m));
+          shownCount++;
+        });
+        updateCount();
+
+        hasMore = data.has_more;
+        if (!hasMore) {
+          document.getElementById('endMessage').style.display = 'flex';
+        }
+      })
+      .catch(function () {
+        loading = false;
+        document.getElementById('loadingSpinner').style.display = 'none';
+      });
+  }
+
+  // Use IntersectionObserver with 400px margin so load triggers before user hits bottom
+  var sentinel = document.getElementById('scrollSentinel');
+  if ('IntersectionObserver' in window) {
+    var observer = new IntersectionObserver(function (entries) {
+      if (entries[0].isIntersecting) loadMore();
+    }, { rootMargin: '400px' });
+    observer.observe(sentinel);
+  } else {
+    window.addEventListener('scroll', function () {
+      var rect = sentinel.getBoundingClientRect();
+      if (rect.top <= window.innerHeight + 400) loadMore();
+    });
+  }
+
+  // Show end message right away if everything already loaded
+  if (!hasMore) {
+    document.getElementById('endMessage').style.display = 'flex';
+  }
+}) ();
+</script>
+{% endblock %}

@@ -1,0 +1,130 @@
+{% extends 'admin/base.html' %}
+{% block title %}Contact Messages{% endblock %}
+{% block content %}
+<div class="content-header d-flex align-items-center justify-content-between">
+    <div>
+        <h2 style="color:var(--admin-text);font-weight:700">Contact Messages</h2>
+        <p style="color:var(--text-muted);margin:0">{{ messages|length }} total &nbsp;·&nbsp;
+            <span style="color:var(--orange)">{{ unread_count }} unread</span>
+        </p>
+    </div>
+</div>
+
+<!-- Filter tabs -->
+<div class="d-flex gap-2 mb-4 flex-wrap">
+    <button class="btn btn-cinema btn-sm" onclick="filterMsgs('all',this)">All</button>
+    <button class="btn btn-cinema-outline btn-sm" onclick="filterMsgs('unread',this)">🔴 Unread</button>
+    <button class="btn btn-cinema-outline btn-sm" onclick="filterMsgs('read',this)">✅ Read</button>
+    <button class="btn btn-cinema-outline btn-sm" onclick="filterMsgs('resolved',this)">☑ Resolved</button>
+    <button class="btn btn-cinema-outline btn-sm" onclick="filterMsgs('complaint',this)">🚨 Complaints</button>
+    <button class="btn btn-cinema-outline btn-sm" onclick="filterMsgs('refund',this)">💰 Refunds</button>
+</div>
+
+<div class="data-card">
+    {% if messages %}
+    <div class="row g-3 p-3" id="msgContainer">
+        {% for msg in messages %}
+        <div class="col-12 msg-item"
+             data-status="{{ msg.status }}"
+             data-type="{{ msg.message_type }}">
+            <div style="background:var(--admin-card);border:1px solid var(--admin-border);border-radius:12px;padding:16px;
+                        {% if msg.status == 'unread' %}border-left:3px solid var(--orange){% elif msg.status == 'resolved' %}border-left:3px solid #3fb950{% else %}border-left:3px solid var(--admin-border){% endif %}">
+                <div class="d-flex justify-content-between align-items-start flex-wrap gap-2 mb-2">
+                    <div>
+                        <strong style="color:var(--admin-text)">{{ msg.name }}</strong>
+                        <span style="color:var(--text-muted);font-size:0.85rem;margin-left:8px">{{ msg.email }}</span>
+                    </div>
+                    <div class="d-flex gap-2 align-items-center">
+                        <span class="badge-pill
+                            {% if msg.message_type == 'complaint' %}badge-danger
+                            {% elif msg.message_type == 'refund' %}badge-warning
+                            {% else %}badge-info{% endif %}"
+                            style="font-size:0.72rem">{{ msg.message_type }}</span>
+                        <span class="badge-pill
+                            {% if msg.status == 'unread' %}badge-warning
+                            {% elif msg.status == 'resolved' %}badge-success
+                            {% else %}badge-info{% endif %}"
+                            style="font-size:0.72rem">{{ msg.status }}</span>
+                        <span style="color:var(--text-muted);font-size:0.78rem">
+                            {{ msg.created_at.strftime('%d %b %Y, %I:%M %p') if msg.created_at else '' }}
+                        </span>
+                    </div>
+                </div>
+                {% if msg.subject %}
+                <div style="color:var(--admin-text);font-size:0.9rem;font-weight:600;margin-bottom:6px">{{ msg.subject }}</div>
+                {% endif %}
+                <p style="color:var(--admin-muted);font-size:0.875rem;margin:0;line-height:1.6">{{ msg.message }}</p>
+                <div class="d-flex gap-2 mt-3">
+                    {% if msg.status == 'unread' %}
+                    <button class="btn btn-sm" onclick="markRead({{ msg.id }}, this)"
+                            style="background:rgba(56,139,253,0.1);border:1px solid rgba(56,139,253,0.3);color:#388bfd;border-radius:8px;font-size:0.78rem">
+                        <i class="fas fa-check me-1"></i>Mark Read
+                    </button>
+                    {% endif %}
+                    {% if msg.status != 'resolved' %}
+                    <button class="btn btn-sm" onclick="resolveMsg({{ msg.id }}, this)"
+                            style="background:rgba(63,185,80,0.1);border:1px solid rgba(63,185,80,0.3);color:#3fb950;border-radius:8px;font-size:0.78rem">
+                        <i class="fas fa-check-double me-1"></i>Mark Resolved
+                    </button>
+                    {% endif %}
+                    <a href="mailto:{{ msg.email }}?subject=Re: {{ msg.subject or 'Your message' }}"
+                       class="btn btn-sm"
+                       style="background:rgba(217,108,44,0.1);border:1px solid rgba(217,108,44,0.3);color:var(--orange);border-radius:8px;font-size:0.78rem">
+                        <i class="fas fa-reply me-1"></i>Reply via Email
+                    </a>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="empty-state p-5">
+        <i class="fas fa-envelope-open"></i>
+        <h5>No messages yet</h5>
+        <p>Contact messages from users will appear here.</p>
+    </div>
+    {% endif %}
+
+  <!-- Pagination -->
+  {% if total_pages > 1 %}
+  <div class="d-flex justify-content-center align-items-center gap-2 p-3">
+    {% if page > 1 %}
+    <a href="?page={{ page-1 }}&status={{ status_filter }}&type={{ type_filter }}"
+       class="btn btn-sm btn-cinema-outline"><i class="fas fa-chevron-left"></i></a>
+    {% endif %}
+    {% for p in range([1, page-2]|max, [total_pages+1, page+3]|min) %}
+    <a href="?page={{ p }}&status={{ status_filter }}&type={{ type_filter }}"
+       class="btn btn-sm {% if p==page %}btn-cinema{% else %}btn-cinema-outline{% endif %}" style="min-width:36px">{{ p }}</a>
+    {% endfor %}
+    {% if page < total_pages %}
+    <a href="?page={{ page+1 }}&status={{ status_filter }}&type={{ type_filter }}"
+       class="btn btn-sm btn-cinema-outline"><i class="fas fa-chevron-right"></i></a>
+    {% endif %}
+    <span style="color:var(--text-muted);font-size:0.8rem;margin-left:8px">Page {{ page }} of {{ total_pages }} · {{ total }} messages</span>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function filterMsgs(val, btn) {
+    document.querySelectorAll('.content-header ~ * button').forEach(b => { b.classList.remove('btn-cinema'); b.classList.add('btn-cinema-outline'); });
+    btn.classList.add('btn-cinema'); btn.classList.remove('btn-cinema-outline');
+    document.querySelectorAll('.msg-item').forEach(item => {
+        const matchStatus = (val === 'all' || item.dataset.status === val || item.dataset.type === val);
+        item.style.display = matchStatus ? '' : 'none';
+    });
+}
+function resolveMsg(id, btn) {
+    btn.disabled = true;
+    fetch(`/admin/contact-messages/${id}/resolve`, { method: 'POST' })
+        .then(r => r.json()).then(data => { if(data.success) location.reload(); });
+}
+function markRead(id, btn) {
+    btn.disabled = true;
+    fetch(`/admin/contact-messages/${id}/read`, { method: 'POST' })
+        .then(r => r.json()).then(data => { if(data.success) location.reload(); });
+}
+</script>
+{% endblock %}

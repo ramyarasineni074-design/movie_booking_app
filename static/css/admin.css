@@ -1,0 +1,452 @@
+/* ============================================================
+   CineBook — ADMIN STYLES
+   Light panel theme with red (#E50914) accent.
+   Depends on: base.css
+   ============================================================ */
+
+/* ── Body override for admin pages ── */
+body {
+  background: var(--admin-bg);
+  color: var(--admin-text);
+}
+
+/* ============================================================
+   ADMIN MODALS — Light theme
+   (Scoped to admin-page / admin-main to avoid bleeding)
+   ============================================================ */
+.admin-page .modal-content,
+.admin-main .modal-content:not(.modal-dark) {
+  background: var(--admin-card) !important;
+  border: 1px solid var(--admin-border) !important;
+  color: var(--admin-text) !important;
+  border-radius: 16px;
+}
+
+.admin-page .modal-header,
+.admin-main .modal-content:not(.modal-dark) .modal-header {
+  border-bottom: 1px solid var(--admin-border) !important;
+  background: var(--admin-card) !important;
+  padding: 18px 24px;
+}
+
+.admin-page .modal-footer,
+.admin-main .modal-content:not(.modal-dark) .modal-footer {
+  border-top: 1px solid var(--admin-border) !important;
+  background: var(--admin-card) !important;
+  padding: 16px 24px;
+}
+
+.admin-page .modal-body,
+.admin-main .modal-content:not(.modal-dark) .modal-body {
+  background: var(--admin-card) !important;
+  color: var(--admin-text) !important;
+}
+
+.admin-page .modal-title,
+.admin-main .modal-content:not(.modal-dark) .modal-title {
+  color: var(--admin-text) !important;
+  font-weight: 700;
+}
+
+.admin-page .modal .form-label,
+.admin-main .modal-content:not(.modal-dark) .form-label {
+  color: var(--admin-muted) !important;
+  font-size: 0.85rem;
+}
+
+.admin-page .modal .form-control,
+.admin-page .modal .form-select,
+.admin-main .modal-content:not(.modal-dark) .form-control,
+.admin-main .modal-content:not(.modal-dark) .form-select {
+  background: var(--admin-bg) !important;
+  border: 1px solid var(--admin-border) !important;
+  color: var(--admin-text) !important;
+  border-radius: 8px;
+}
+
+.admin-page .modal .form-control:focus,
+.admin-page .modal .form-select:focus,
+.admin-main .modal-content:not(.modal-dark) .form-control:focus,
+.admin-main .modal-content:not(.modal-dark) .form-select:focus {
+  border-color: var(--primary) !important;
+  box-shadow: 0 0 0 3px rgba(229,9,20,0.08) !important;
+}
+
+.admin-page .modal .form-control::placeholder,
+.admin-main .modal-content:not(.modal-dark) .form-control::placeholder {
+  color: #B0B8C4 !important;
+}
+
+.admin-page .modal .form-select option,
+.admin-main .modal-content:not(.modal-dark) .form-select option {
+  background: #fff;
+  color: var(--admin-text);
+}
+
+.admin-page .modal .alert-success {
+  background: rgba(16,185,129,0.1) !important;
+  border-color: rgba(16,185,129,0.25) !important;
+  color: #059669 !important;
+}
+
+/* ── Dark modal overrides inside admin context ── */
+.admin-page .modal-dark .form-control,
+.admin-page .modal-dark .form-select,
+.admin-page .modal-dark .search-input-dark,
+.admin-page .modal-dark input,
+.admin-page .modal-dark textarea,
+.admin-page .modal-dark select,
+.admin-main .modal-dark .form-control,
+.admin-main .modal-dark .form-select,
+.admin-main .modal-dark .search-input-dark,
+.admin-main .modal-dark input,
+.admin-main .modal-dark textarea,
+.admin-main .modal-dark select {
+  background: rgba(255,255,255,0.07) !important;
+  border: 1px solid rgba(255,255,255,0.15) !important;
+  color: #fff !important;
+  height: auto;
+}
+
+.admin-page .modal-dark .form-control:focus,
+.admin-page .modal-dark .form-select:focus,
+.admin-page .modal-dark input:focus,
+.admin-page .modal-dark select:focus,
+.admin-main .modal-dark .form-control:focus,
+.admin-main .modal-dark .form-select:focus,
+.admin-main .modal-dark input:focus,
+.admin-main .modal-dark select:focus {
+  border-color: var(--orange) !important;
+  box-shadow: 0 0 0 3px rgba(255,106,0,0.15) !important;
+}
+
+.admin-page .modal-dark .form-select option,
+.admin-page .modal-dark select option,
+.admin-main .modal-dark .form-select option,
+.admin-main .modal-dark select option {
+  background: #1C1C24;
+  color: #fff;
+}
+
+.admin-page .modal-dark .form-control::placeholder,
+.admin-main .modal-dark .form-control::placeholder {
+  color: rgba(255,255,255,0.3) !important;
+}
+
+.admin-page .modal-dark .form-label,
+.admin-main .modal-dark .form-label {
+  color: rgba(255,255,255,0.65) !important;
+}
+
+.admin-page .modal-dark input[type="file"]::file-selector-button,
+.admin-main .modal-dark input[type="file"]::file-selector-button {
+  background: rgba(255,255,255,0.1);
+  border: 1px solid rgba(255,255,255,0.2);
+  color: #fff;
+  border-radius: 6px;
+  padding: 4px 10px;
+  margin-right: 8px;
+}
+
+/* ============================================================
+   ADMIN SEARCH & FILTER INPUTS — Light
+   ============================================================ */
+.admin-page .search-input-dark,
+.admin-main .search-input-dark {
+  background: #FFFFFF !important;
+  border: 1px solid #D1D5DB !important;
+  color: #111827 !important;
+  border-radius: 8px !important;
+}
+
+.admin-page .search-input-dark:focus,
+.admin-main .search-input-dark:focus {
+  border-color: var(--primary) !important;
+  box-shadow: 0 0 0 3px rgba(229,9,20,0.08) !important;
+  color: #111827 !important;
+}
+
+.admin-page .search-input-dark::placeholder,
+.admin-main .search-input-dark::placeholder { color: #9CA3AF !important; }
+
+.admin-page .search-input-dark option,
+.admin-main .search-input-dark option { background: #fff; color: #111827; }
+
+/* All filter inputs/selects inside admin pages */
+.admin-page .form-control,
+.admin-page .form-select,
+.admin-page input[type="text"],
+.admin-page input[type="search"],
+.admin-page select {
+  background: #FFFFFF !important;
+  border: 1px solid #D1D5DB !important;
+  color: #111827 !important;
+  border-radius: 8px !important;
+  height: 40px;
+  font-size: 0.875rem;
+  min-width: 130px;
+}
+
+.admin-page .form-control:focus,
+.admin-page .form-select:focus,
+.admin-page input[type="text"]:focus,
+.admin-page input[type="search"]:focus,
+.admin-page select:focus {
+  border-color: #E50914 !important;
+  box-shadow: 0 0 0 3px rgba(229,9,20,0.08) !important;
+  outline: none !important;
+}
+
+.admin-page .form-control::placeholder,
+.admin-page input::placeholder { color: #9CA3AF !important; }
+
+.admin-page .form-select option,
+.admin-page select option { background: #fff; color: #111827; }
+
+.admin-page .input-group-text {
+  background: #F9FAFB !important;
+  border: 1px solid #D1D5DB !important;
+  color: #6B7280 !important;
+  border-right: none !important;
+}
+
+.admin-page .input-group .form-control { border-left: none !important; }
+
+/* Filter row layout */
+.admin-page .filter-row,
+.admin-page form.d-flex,
+.admin-page .filters-row {
+  display: flex !important;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+}
+
+/* ============================================================
+   ADMIN TEXT VISIBILITY — Ensure dark text on light bg
+   ============================================================ */
+.admin-main p:not(.modal-dark p),
+.admin-main span:not(.badge):not([class*="icon"]):not(.modal-dark span),
+.admin-main label:not(.modal-dark label),
+.admin-main small:not(.modal-dark small),
+.admin-main .form-text,
+.admin-main h1:not(.modal-dark h1),
+.admin-main h2:not(.modal-dark h2),
+.admin-main h3:not(.modal-dark h3),
+.admin-main h4:not(.modal-dark h4),
+.admin-main h5:not(.modal-dark h5),
+.admin-main h6:not(.modal-dark h6) { color: #111827; }
+
+.admin-main .text-muted,
+.admin-main .text-secondary { color: #6B7280 !important; }
+
+.stat-card .stat-value,
+.admin-page .stat-value {
+  color: #111827 !important;
+  font-size: 2rem;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.stat-card .stat-label,
+.admin-page .stat-label {
+  color: #6B7280 !important;
+  font-size: 0.8rem;
+}
+
+.admin-main .top-movie-title,
+.admin-main [class*="movie-name"],
+.admin-main [class*="top-movie"] span,
+.admin-main [class*="top-movie"] p,
+.admin-main [class*="top-movie"] div { color: #111827 !important; }
+
+.admin-main .data-card span,
+.admin-main .data-card p,
+.admin-main .data-card div:not([class*="badge"]) { color: #111827; }
+
+.admin-page > *,
+.admin-page .card,
+.admin-page .data-card,
+.admin-page .stat-card,
+.admin-page .chart-card { color: #111827; }
+
+/* ============================================================
+   ADMIN BUTTONS
+   ============================================================ */
+.admin-page .btn,
+.admin-page button { color: #111827; }
+
+.admin-page .btn.active,
+.admin-page .btn-primary { color: #fff !important; }
+
+.admin-page .btn-outline-secondary,
+.admin-page .btn-outline-warning,
+.admin-page .btn-outline-danger,
+.admin-page .btn-outline-success,
+.admin-page .btn-outline-info,
+.admin-page .btn-outline-primary {
+  color: #374151 !important;
+  border-color: #D1D5DB !important;
+  background: #fff !important;
+}
+
+.admin-page .btn-outline-secondary:hover,
+.admin-page .btn-outline-warning:hover,
+.admin-page .btn-outline-danger:hover,
+.admin-page .btn-outline-success:hover,
+.admin-page .btn-outline-info:hover,
+.admin-page .btn-outline-primary:hover {
+  background: #F3F4F6 !important;
+  color: #111827 !important;
+}
+
+/* ============================================================
+   ADMIN SCROLLBAR
+   ============================================================ */
+.admin-main ::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.12); }
+.admin-main ::-webkit-scrollbar-thumb:hover { background: rgba(0,0,0,0.22); }
+
+/* ============================================================
+   ADMIN TABLE — Column alignment (matches owner movies table)
+   ============================================================ */
+#moviesTable thead th,
+#moviesTable tbody td {
+  vertical-align: middle !important;
+  white-space: nowrap;
+  padding: 10px 12px;
+}
+
+#moviesTable tbody td:nth-child(2) {
+  white-space: normal;
+  min-width: 160px;
+  max-width: 220px;
+}
+
+#moviesTable thead th:nth-child(1),
+#moviesTable tbody td:nth-child(1) { width: 60px; text-align: center; }
+
+#moviesTable thead th:nth-child(7),
+#moviesTable tbody td:nth-child(7) { text-align: center; }
+
+#moviesTable thead th:nth-child(8),
+#moviesTable tbody td:nth-child(8) { text-align: center; white-space: nowrap; }
+/* ============================================================
+   ADMIN PANEL — modal-dark override to LIGHT theme
+   (Admin uses light bg so modal-dark must be overridden)
+   ============================================================ */
+.admin-page .modal-dark,
+.admin-main .modal-dark {
+  background: var(--admin-card) !important;
+  border: 1px solid var(--admin-border) !important;
+  color: var(--admin-text) !important;
+  border-radius: 16px;
+}
+.admin-page .modal-dark .modal-header,
+.admin-main .modal-dark .modal-header {
+  background: var(--admin-card) !important;
+  border-bottom: 1px solid var(--admin-border) !important;
+  color: var(--admin-text) !important;
+}
+.admin-page .modal-dark .modal-body,
+.admin-main .modal-dark .modal-body {
+  background: var(--admin-card) !important;
+  color: var(--admin-text) !important;
+}
+.admin-page .modal-dark .modal-footer,
+.admin-main .modal-dark .modal-footer {
+  background: var(--admin-card) !important;
+  border-top: 1px solid var(--admin-border) !important;
+  color: var(--admin-text) !important;
+}
+.admin-page .modal-dark .modal-title,
+.admin-main .modal-dark .modal-title {
+  color: var(--admin-text) !important;
+}
+.admin-page .modal-dark .form-label,
+.admin-page .modal-dark label,
+.admin-main .modal-dark .form-label,
+.admin-main .modal-dark label {
+  color: var(--admin-muted) !important;
+}
+.admin-page .modal-dark p,
+.admin-page .modal-dark span,
+.admin-page .modal-dark div,
+.admin-page .modal-dark small,
+.admin-page .modal-dark h1,
+.admin-page .modal-dark h2,
+.admin-page .modal-dark h3,
+.admin-page .modal-dark h4,
+.admin-page .modal-dark h5,
+.admin-page .modal-dark h6,
+.admin-main .modal-dark p,
+.admin-main .modal-dark span,
+.admin-main .modal-dark div,
+.admin-main .modal-dark small,
+.admin-main .modal-dark h1,
+.admin-main .modal-dark h2,
+.admin-main .modal-dark h3,
+.admin-main .modal-dark h4,
+.admin-main .modal-dark h5,
+.admin-main .modal-dark h6 {
+  color: var(--admin-text) !important;
+}
+.admin-page .modal-dark .form-control,
+.admin-page .modal-dark .form-select,
+.admin-page .modal-dark input,
+.admin-page .modal-dark textarea,
+.admin-page .modal-dark select,
+.admin-main .modal-dark .form-control,
+.admin-main .modal-dark .form-select,
+.admin-main .modal-dark input,
+.admin-main .modal-dark textarea,
+.admin-main .modal-dark select {
+  background: #FFFFFF !important;
+  border: 1px solid var(--admin-border) !important;
+  color: var(--admin-text) !important;
+}
+.admin-page .modal-dark .form-control::placeholder,
+.admin-page .modal-dark textarea::placeholder,
+.admin-main .modal-dark .form-control::placeholder,
+.admin-main .modal-dark textarea::placeholder {
+  color: #9CA3AF !important;
+}
+.admin-page .modal-dark .form-select option,
+.admin-page .modal-dark select option,
+.admin-main .modal-dark .form-select option,
+.admin-main .modal-dark select option {
+  background: #ffffff !important;
+  color: var(--admin-text) !important;
+}
+.admin-page .modal-dark .form-control:focus,
+.admin-page .modal-dark .form-select:focus,
+.admin-page .modal-dark input:focus,
+.admin-page .modal-dark textarea:focus,
+.admin-page .modal-dark select:focus,
+.admin-main .modal-dark .form-control:focus,
+.admin-main .modal-dark .form-select:focus,
+.admin-main .modal-dark input:focus,
+.admin-main .modal-dark textarea:focus,
+.admin-main .modal-dark select:focus {
+  border-color: var(--primary) !important;
+  box-shadow: 0 0 0 3px rgba(229,9,20,0.12) !important;
+}
+.admin-page .modal-dark input[type="file"]::file-selector-button,
+.admin-main .modal-dark input[type="file"]::file-selector-button {
+  background: #F3F4F6;
+  border: 1px solid var(--admin-border);
+  color: var(--admin-text);
+  border-radius: 6px;
+  padding: 4px 10px;
+  margin-right: 8px;
+}
+.admin-page .modal-dark .btn-close,
+.admin-main .modal-dark .btn-close {
+  filter: invert(1) !important;
+}
+/* search-input-dark inside admin modals should also be light */
+.admin-page .modal-dark .search-input-dark,
+.admin-main .modal-dark .search-input-dark {
+  background: #FFFFFF !important;
+  border: 1px solid var(--admin-border) !important;
+  color: var(--admin-text) !important;
+}

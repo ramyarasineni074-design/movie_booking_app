@@ -1,0 +1,697 @@
+{% extends 'user/base.html' %}
+{% block title %}Select Seats — {{ movie.title if movie else 'Show' }}{% endblock %}
+
+{% block extra_css %}
+<style>
+  .seat-grid-col,
+  .seat-grid-col>.data-card {
+    display: block !important;
+    flex-direction: initial !important;
+  }
+
+  .seat-section-row {
+    display: flex !important;
+    flex-direction: row !important;
+    flex-wrap: wrap !important;
+    justify-content: center;
+    gap: 6px;
+    margin-bottom: 10px;
+  }
+
+  /* ── Seat base ── */
+  .seat {
+    flex-shrink: 0 !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    pointer-events: auto;
+  }
+
+  .seat span {
+    pointer-events: none;
+  }
+
+  .seat.available {
+    cursor: pointer;
+  }
+
+  .seat-grid {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 6px;
+    align-items: center;
+    width: 100%;
+    min-height: 100px;
+  }
+
+  /*
+   * FIX 1 — Locked-by-others: amber/held colour.
+   * pointer-events:none + cursor:not-allowed ensures these seats
+   * are completely unclickable — no JS guard needed.
+   */
+  .seat.locked-other {
+    background: rgba(255, 165, 0, 0.20) !important;
+    border: 2px solid rgba(255, 165, 0, 0.75) !important;
+    cursor: not-allowed !important;
+    pointer-events: none !important;   /* ← hard block, no JS required */
+    opacity: 0.85;
+  }
+
+  .seat.locked-other span {
+    color: #ffa500;
+    font-weight: 700;
+  }
+
+  /* Lock banner on seat selection page */
+  #lockBanner {
+    display: none;
+    background: linear-gradient(90deg, rgba(229, 9, 20, 0.15), rgba(229, 9, 20, 0.05));
+    border: 1px solid rgba(229, 9, 20, 0.4);
+    border-radius: 8px;
+    padding: 8px 14px;
+    margin-bottom: 12px;
+    font-size: 0.8rem;
+    color: #ff6b6b;
+    text-align: center;
+  }
+
+  /* Warning when lock is about to expire */
+  #lockBanner.expiring-soon {
+    background: linear-gradient(90deg, rgba(255, 100, 0, 0.25), rgba(255, 100, 0, 0.08));
+    border-color: rgba(255, 100, 0, 0.7);
+    color: #ff8c00;
+    font-weight: 600;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div style="background:#0d1117;min-height:calc(100vh - 70px);padding:40px 0">
+  <div class="container">
+
+    <!-- Breadcrumb -->
+    <nav style="margin-bottom:24px">
+      <ol class="breadcrumb" style="background:none;padding:0;font-size:0.85rem">
+        <li class="breadcrumb-item"><a href="{{ url_for('user_bp.movies') }}" style="color:var(--orange)">Movies</a>
+        </li>
+        <li class="breadcrumb-item"><a href="{{ url_for('user_bp.movie_detail', movie_id=show.movie_id) }}"
+            style="color:var(--text-muted)">{{ movie.title if movie else 'Movie' }}</a></li>
+        <li class="breadcrumb-item active" style="color:#fff">Select Seats</li>
+      </ol>
+    </nav>
+
+    <!-- Show Info Bar -->
+    <div class="data-card mb-4 p-3">
+      <div class="row align-items-center g-3">
+        <div class="col-auto d-none d-md-block">
+          <img src="{{ movie.poster_url or url_for('static', filename='uploads/default.png') }}"
+            onerror="this.src='{{ url_for('static', filename='uploads/default.png') }}'"
+            style="width:50px;height:70px;object-fit:cover;border-radius:8px">
+        </div>
+        <div class="col-md-3">
+          <div style="font-size:0.75rem;color:var(--text-muted)">MOVIE</div>
+          <div style="color:#fff;font-weight:700">{{ movie.title if movie else '–' }}</div>
+          <div style="font-size:0.75rem;color:var(--text-muted)">{{ movie.language or '' }} · {{ movie.genre or '' }}
+          </div>
+        </div>
+        <div class="col-md-3">
+          <div style="font-size:0.75rem;color:var(--text-muted)">THEATER</div>
+          <div style="color:#fff;font-weight:600">{{ theater.name if theater else '–' }}</div>
+          <div style="font-size:0.8rem;color:var(--text-muted)">
+            {{ theater.city if theater else '' }}{% if theater and theater.state %}, {{ theater.state }}{% endif %}
+          </div>
+        </div>
+        <div class="col-md-2">
+          <div style="font-size:0.75rem;color:var(--text-muted)">DATE & TIME</div>
+          <div style="color:#fff;font-weight:600">{{ show.show_date.strftime('%d %b %Y') if show.show_date else '–' }}
+          </div>
+          <div style="color:var(--orange);font-weight:700">{{ show.start_time.strftime('%I:%M %p') if show.start_time
+            else '–' }}</div>
+        </div>
+        <div class="col-md-2">
+          <div style="font-size:0.75rem;color:var(--text-muted)">PRICE / SEAT</div>
+          <div style="color:var(--orange);font-weight:800;font-size:1.2rem">₹{{ show.price|int }}</div>
+        </div>
+        <div class="col-md-1 text-end">
+          <span class="badge-pill badge-success">{{ available_count }} avail</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="row g-4">
+      <!-- SEAT MAP -->
+      <div class="col-lg-8 seat-grid-col" style="display:block!important">
+        <div class="data-card p-4" style="display:block!important">
+          <div class="screen-curve mb-4">
+            <div class="screen-display"></div>
+            <div class="screen-label">SCREEN THIS WAY</div>
+          </div>
+
+          <div class="seat-legend mb-4">
+            <div class="legend-item">
+              <div class="legend-dot" style="background:rgba(243,156,18,0.2);border:1px solid rgba(243,156,18,0.5)">
+              </div>
+              <span>VIP</span>
+            </div>
+            <div class="legend-item">
+              <div class="legend-dot" style="background:rgba(63,185,80,0.2);border:1px solid rgba(63,185,80,0.4)"></div>
+              <span>Premium</span>
+            </div>
+            <div class="legend-item">
+              <div class="legend-dot" style="background:rgba(56,139,253,0.15);border:1px solid rgba(56,139,253,0.3)">
+              </div>
+              <span>Regular</span>
+            </div>
+            <div class="legend-item">
+              <div class="legend-dot" style="background:rgba(217,108,44,0.6);border:1px solid var(--orange)"></div>
+              <span>Selected</span>
+            </div>
+            <div class="legend-item">
+              <div class="legend-dot" style="background:rgba(229,9,20,0.15);border:1px solid rgba(229,9,20,0.3)"></div>
+              <span>Booked</span>
+            </div>
+            <div class="legend-item">
+              <div class="legend-dot" style="background:rgba(255,165,0,0.20);border:2px solid rgba(255,165,0,0.75)">
+              </div>
+              <span>Held (locked)</span>
+            </div>
+          </div>
+
+          <div class="seat-grid" id="seatGrid" data-seat-container="true"
+            style="display:flex;flex-direction:column;gap:6px;align-items:center;width:100%">
+
+            {# ── Macro: render one section split into rows of 12 ── #}
+            {% macro render_section(section_seats, label, label_color, css_class, price_per_seat) %}
+            {% if section_seats %}
+            <div class="seat-section-label" style="color:{{ label_color }}">{{ label }} — ₹{{ price_per_seat|int }}</div>
+            {% set seats_per_row = 12 %}
+            {% for chunk_start in range(0, section_seats|length, seats_per_row) %}
+            <div class="seat-section-row"
+              style="display:flex!important;flex-direction:row!important;flex-wrap:wrap!important">
+              {% for seat in section_seats[chunk_start : chunk_start + seats_per_row] %}
+              {# Use _is_booked attribute (set by Python) as the reliable booked signal.
+                 It covers both: seats in Booking.seat_numbers AND seats whose DB status
+                 is 'Booked' / 'booked' — so neither real-seat nor synth-seat path can
+                 accidentally show a booked seat as selectable. #}
+              {% set is_booked = seat._is_booked if seat._is_booked is defined else (seat.seat_number in booked_seat_numbers) %}
+              <div
+                class="seat {{ css_class }} {% if is_booked %}booked{% else %}available{% endif %}"
+                data-seat="{{ seat.seat_number }}"
+                data-seat-id="{{ seat.seat_id }}"
+                data-price="{{ price_per_seat }}"
+                data-seat-type="{{ css_class | replace('seat-','') }}"
+                title="{{ seat.seat_number }}{% if seat.charger %} 🔌{% endif %}">
+                <span>{{ seat.seat_number }}</span>
+              </div>
+              {% endfor %}
+            </div>
+            {% endfor %}
+            {% endif %}
+            {% endmacro %}
+
+            {{ render_section(regular_seats, 'Regular', '#388bfd', 'seat-regular', seat_prices.regular) }}
+            {{ render_section(premium_seats, 'Premium', '#3fb950', 'seat-premium', seat_prices.premium) }}
+            {{ render_section(vip_seats, 'VIP', 'var(--gold)', 'seat-vip', seat_prices.vip) }}
+            {{ render_section(other_seats, 'Seats', 'rgba(255,255,255,0.5)', '', seat_prices.regular) }}
+
+            {% if not vip_seats and not premium_seats and not regular_seats and not other_seats %}
+            <div class="empty-state"><i class="fas fa-chair"></i>
+              <h5>No seat data</h5>
+              <p>Seat map unavailable for this show.</p>
+            </div>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+
+      <!-- BOOKING SUMMARY -->
+      <div class="col-lg-4">
+        <div class="data-card p-4" style="position:sticky;top:90px">
+          <h5 style="color:#fff;margin-bottom:20px"><i class="fas fa-receipt me-2 text-orange"></i>Booking Summary</h5>
+
+          <!-- Lock countdown banner -->
+          <div id="lockBanner">
+            <i class="fas fa-clock me-1"></i>
+            <span id="lockMsg">Select seats and click proceed to reserve them.</span>
+          </div>
+
+          <div class="mb-3 p-3 rounded-xl" style="background:rgba(255,255,255,0.03)">
+            <div class="d-flex justify-content-between mb-2" style="font-size:0.875rem">
+              <span style="color:var(--text-muted)">Seats Selected</span>
+              <span style="color:#fff;font-weight:700" id="selectedCount">0</span>
+            </div>
+            <div style="font-size:0.8rem;color:var(--orange);word-break:break-all;min-height:20px"
+              id="selectedSeatsDisplay">None selected</div>
+          </div>
+
+          <!-- Per-type price legend -->
+          <div class="mb-3 p-2 rounded-xl" style="background:rgba(255,255,255,0.02);font-size:0.78rem">
+            <div class="d-flex justify-content-between" style="color:var(--text-muted)">
+              <span>Regular</span><span style="color:#388bfd">₹{{ seat_prices.regular|int }}</span>
+            </div>
+            <div class="d-flex justify-content-between mt-1" style="color:var(--text-muted)">
+              <span>Premium</span><span style="color:#3fb950">₹{{ seat_prices.premium|int }}</span>
+            </div>
+            <div class="d-flex justify-content-between mt-1" style="color:var(--text-muted)">
+              <span>VIP</span><span style="color:var(--gold)">₹{{ seat_prices.vip|int }}</span>
+            </div>
+          </div>
+
+          <div class="mb-3">
+            <div class="d-flex justify-content-between py-2"
+              style="border-bottom:1px solid var(--border);font-size:0.875rem">
+              <span style="color:var(--text-muted)">Subtotal</span>
+              <span style="color:#fff" id="subtotalDisplay">₹0</span>
+            </div>
+            <div class="d-flex justify-content-between py-2"
+              style="border-bottom:1px solid var(--border);font-size:0.875rem">
+              <span style="color:var(--text-muted)">Convenience fee (2%)</span>
+              <span style="color:#fff" id="convFeeDisplay">₹0</span>
+            </div>
+            <div class="d-flex justify-content-between py-2"
+              style="border-bottom:1px solid var(--border);font-size:0.875rem">
+              <span style="color:var(--text-muted)">GST (18%)</span>
+              <span style="color:#fff" id="gstDisplay">₹0</span>
+            </div>
+            <div class="d-flex justify-content-between py-3 mt-1">
+              <span style="color:#fff;font-weight:700">Total Amount</span>
+              <span style="color:var(--orange);font-weight:800;font-size:1.2rem" id="totalDisplay">₹0</span>
+            </div>
+          </div>
+
+          <form method="POST" action="{{ url_for('payment_bp.payment') }}" id="bookingForm">
+            <input type="hidden" name="show_id" value="{{ show.show_id }}">
+            <input type="hidden" name="selected_seats" id="hiddenSeats" value="">
+            <input type="hidden" name="seat_ids" id="hiddenSeatIds" value="">
+            <!-- Per-type counts for server-side price computation -->
+            <input type="hidden" name="vip_count"     id="hiddenVipCount"     value="0">
+            <input type="hidden" name="premium_count" id="hiddenPremiumCount" value="0">
+            <input type="hidden" name="regular_count" id="hiddenRegularCount" value="0">
+
+            <button type="submit" class="btn btn-cinema w-100 py-3" id="proceedBtn" disabled>
+              <i class="fas fa-lock me-2"></i>Proceed to Payment
+            </button>
+          </form>
+
+          <div class="mt-3 text-center" style="font-size:0.75rem;color:var(--text-muted)">
+            <i class="fas fa-shield-alt me-1" style="color:var(--success)"></i>
+            Secure · Instant confirmation · Max 8 seats
+          </div>
+
+          <!-- Conflict notice (hidden by default) -->
+          <div id="conflictNotice" style="display:none;margin-top:12px;padding:10px 14px;
+               background:rgba(229,9,20,0.12);border:1px solid rgba(229,9,20,0.4);
+               border-radius:8px;font-size:0.8rem;color:#ff6b6b;">
+            <i class="fas fa-exclamation-triangle me-1"></i>
+            <span id="conflictMsg"></span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+{# ── Socket.IO client (served automatically by Flask-SocketIO) ── #}
+<script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+
+<script>
+  window.__seatInlineInit = true;
+
+  (function () {
+    'use strict';
+
+    const SHOW_ID   = '{{ show.show_id }}';
+    const MAX_SEATS = 8;
+    const POLL_MS   = 8000;   // fallback poll interval when WebSocket is unavailable
+
+    /*
+     * Current user's ID — injected server-side so the client can
+     * distinguish "my lock" vs "someone else's lock" in WS broadcasts.
+     */
+    const MY_USER_ID = '{{ session.get("dataset_user_id") or session.get("user_id") or "" }}';
+
+    /*
+     * Seat selection page redirect URL — used when the lock expires
+     * while the user is still on THIS page (before navigating to payment).
+     */
+    const SEAT_SELECTION_URL = '{{ url_for("user_bp.select_seats", show_id=show.show_id) }}';
+
+    // Per-seat-type prices (from server — Regular=1x, Premium=1.5x, VIP=2x base)
+    const SEAT_PRICES = {
+      regular: parseFloat('{{ seat_prices.regular | float }}') || 0,
+      premium: parseFloat('{{ seat_prices.premium | float }}') || 0,
+      vip:     parseFloat('{{ seat_prices.vip     | float }}') || 0,
+    };
+
+    let picked          = [];   // { num, id, price, seatType }
+    let lockedByOthers  = {};   // { seat_num: { expires_at, is_mine:false } }
+    let lockExpiry      = null;
+    let timerInterval   = null;
+    let isSubmitting    = false;
+
+    // ─────────────────────────────────────────────────────────
+    // WebSocket setup
+    // Falls back to the existing HTTP polling when WS unavailable.
+    // ─────────────────────────────────────────────────────────
+    let wsActive    = false;
+    let pollHandle  = null;
+
+    const socket = io({ transports: ['websocket', 'polling'] });
+
+    socket.on('connect', function () {
+      wsActive = true;
+      // Stop fallback polling now that WS is live
+      if (pollHandle) { clearInterval(pollHandle); pollHandle = null; }
+
+      // Join the room for this show
+      socket.emit('join_show', { show_id: SHOW_ID });
+    });
+
+    socket.on('disconnect', function () {
+      wsActive = false;
+      // Resume fallback polling when connection drops
+      if (!pollHandle) {
+        pollHandle = setInterval(pollLocked, POLL_MS);
+      }
+    });
+
+    /*
+     * seat_update — pushed by server after any lock / unlock.
+     * Payload: { locked: { seat_num: { user_id, is_mine, expires_at } } }
+     */
+    socket.on('seat_update', function (data) {
+      const raw = data.locked || {};
+
+      // Build othersMap — seats NOT owned by the current user
+      const othersMap = {};
+      for (const [seat, info] of Object.entries(raw)) {
+        const mine = (info.user_id === MY_USER_ID) || info.is_mine;
+        if (!mine) {
+          othersMap[seat] = { expires_at: info.expires_at, is_mine: false };
+        }
+      }
+
+      applyLockOverlay(othersMap);
+    });
+
+    // ─────────────────────────────────────────────────────────
+    // Lock countdown timer
+    // ─────────────────────────────────────────────────────────
+    function startLockTimer(expiresAtStr) {
+      lockExpiry = new Date(expiresAtStr.replace(' ', 'T') + (expiresAtStr.includes('Z') ? '' : 'Z'));
+
+      const banner = document.getElementById('lockBanner');
+      const msg    = document.getElementById('lockMsg');
+
+      banner.style.display = 'block';
+      banner.classList.remove('expiring-soon');
+
+      if (timerInterval) clearInterval(timerInterval);
+
+      timerInterval = setInterval(function () {
+        const now  = new Date();
+        const diff = Math.floor((lockExpiry - now) / 1000);
+
+        if (diff <= 0) {
+          clearInterval(timerInterval);
+          timerInterval = null;
+          lockExpiry    = null;
+
+          banner.innerHTML =
+            '<i class="fas fa-exclamation-triangle me-1"></i>' +
+            '<strong>Seat hold expired — redirecting to seat selection…</strong>';
+          banner.classList.add('expiring-soon');
+
+          picked = [];
+          refreshSummary();
+
+          setTimeout(function () {
+            window.location.href = SEAT_SELECTION_URL;
+          }, 2000);
+
+          return;
+        }
+
+        const min = Math.floor(diff / 60);
+        const sec = diff % 60;
+        msg.textContent =
+          'Seats held for ' + min + ':' + String(sec).padStart(2, '0') + ' — complete payment soon!';
+
+        if (diff <= 60) {
+          banner.classList.add('expiring-soon');
+        }
+      }, 1000);
+    }
+
+    // ─────────────────────────────────────────────────────────
+    // Helpers
+    // ─────────────────────────────────────────────────────────
+    function showConflict(msg) {
+      const el = document.getElementById('conflictNotice');
+      document.getElementById('conflictMsg').textContent = msg;
+      el.style.display = 'block';
+      setTimeout(function () { el.style.display = 'none'; }, 6000);
+    }
+
+    function getSeatEl(num) {
+      return document.querySelector('.seat[data-seat="' + CSS.escape(num) + '"]');
+    }
+
+    // ─────────────────────────────────────────────────────────
+    // applyLockOverlay — unchanged logic, same as before.
+    // Marks seats held by OTHER users amber; restores seats that
+    // are no longer held.
+    // ─────────────────────────────────────────────────────────
+    function applyLockOverlay(othersMap) {
+      lockedByOthers = othersMap;
+
+      document.querySelectorAll('.seat').forEach(function (el) {
+        const num = el.dataset.seat;
+
+        if (othersMap[num]) {
+          if (el.classList.contains('booked')) return;
+
+          const idx = picked.findIndex(function (p) { return p.num === num; });
+          if (idx > -1) {
+            picked.splice(idx, 1);
+            refreshSummary();
+            showConflict('Seat ' + num + ' was just taken by another user and has been deselected.');
+          }
+
+          el.classList.remove('selected', 'available');
+          el.classList.add('locked-other');
+          el.title = num + ' — held by another user';
+
+        } else {
+          if (el.classList.contains('locked-other')) {
+            el.classList.remove('locked-other');
+            if (!el.classList.contains('booked') && !el.classList.contains('selected')) {
+              el.classList.add('available');
+            }
+            el.title = el.dataset.seat;
+          }
+        }
+      });
+    }
+
+    // ─────────────────────────────────────────────────────────
+    // pollLocked — HTTP fallback (used only when WS is down)
+    // ─────────────────────────────────────────────────────────
+    async function pollLocked() {
+      try {
+        const res = await fetch('/api/seats/locked/' + SHOW_ID, {
+          credentials: 'same-origin',
+          headers: { 'Accept': 'application/json' }
+        });
+        if (!res.ok) return;
+
+        const data = await res.json();
+        if (!data.success) return;
+
+        const othersMap = {};
+        for (const [seat, info] of Object.entries(data.locked || {})) {
+          if (!info.is_mine) {
+            othersMap[seat] = info;
+          }
+        }
+
+        applyLockOverlay(othersMap);
+
+      } catch (_) { /* network hiccup — ignore */ }
+    }
+
+    // Initial HTTP fetch for immediate state (before WS handshake completes)
+    pollLocked();
+    // Start polling as a safety net; it's cancelled on WS connect
+    pollHandle = setInterval(pollLocked, POLL_MS);
+
+    // ─────────────────────────────────────────────────────────
+    // Seat click — event delegation on #seatGrid (unchanged)
+    // ─────────────────────────────────────────────────────────
+    document.getElementById('seatGrid').addEventListener('click', function (e) {
+      const seatEl = e.target.closest('.seat');
+      if (!seatEl) return;
+
+      const num      = seatEl.dataset.seat;
+      const id       = seatEl.dataset.seatId  || '';
+      const seatType = seatEl.dataset.seatType || 'regular';  // vip / premium / regular
+      const price    = parseFloat(seatEl.dataset.price) || SEAT_PRICES[seatType] || SEAT_PRICES.regular;
+
+      if (seatEl.classList.contains('locked-other')) return;
+      if (seatEl.classList.contains('booked'))       return;
+
+      const idx = picked.findIndex(function (p) { return p.num === num; });
+
+      if (idx > -1) {
+        picked.splice(idx, 1);
+        seatEl.classList.remove('selected');
+        seatEl.classList.add('available');
+      } else {
+        if (picked.length >= MAX_SEATS) {
+          showConflict('You can select a maximum of ' + MAX_SEATS + ' seats.');
+          return;
+        }
+        picked.push({ num: num, id: id, price: price, seatType: seatType });
+        seatEl.classList.remove('available');
+        seatEl.classList.add('selected');
+      }
+
+      refreshSummary();
+    });
+
+    // ─────────────────────────────────────────────────────────
+    // Refresh booking summary panel (unchanged)
+    // ─────────────────────────────────────────────────────────
+    function refreshSummary() {
+      const count = picked.length;
+
+      // Sum each seat's individual price (VIP/Premium/Regular may differ)
+      const subtotal = Math.round(picked.reduce(function (acc, p) { return acc + (p.price || 0); }, 0));
+      const conv     = Math.round(subtotal * 0.02);
+      const gst      = Math.round((subtotal + conv) * 0.18);
+      const total    = subtotal + conv + gst;
+
+      const nums = picked.map(function (p) { return p.num; });
+      const ids  = picked.map(function (p) { return p.id; });
+
+      // Count per seat type for server-side price verification
+      const vipCount     = picked.filter(function (p) { return p.seatType === 'vip';     }).length;
+      const premiumCount = picked.filter(function (p) { return p.seatType === 'premium'; }).length;
+      const regularCount = picked.filter(function (p) { return p.seatType === 'regular'; }).length;
+
+      document.getElementById('selectedCount').textContent        = count;
+      document.getElementById('selectedSeatsDisplay').textContent = count ? nums.join(', ') : 'None selected';
+      document.getElementById('subtotalDisplay').textContent      = '₹' + subtotal;
+      document.getElementById('convFeeDisplay').textContent       = '₹' + conv;
+      document.getElementById('gstDisplay').textContent           = '₹' + gst;
+      document.getElementById('totalDisplay').textContent         = '₹' + total;
+
+      document.getElementById('hiddenSeats').value         = nums.join(',');
+      document.getElementById('hiddenSeatIds').value       = ids.join(',');
+      document.getElementById('hiddenVipCount').value      = vipCount;
+      document.getElementById('hiddenPremiumCount').value  = premiumCount;
+      document.getElementById('hiddenRegularCount').value  = regularCount;
+
+      document.getElementById('proceedBtn').disabled = (count === 0);
+    }
+
+    // ─────────────────────────────────────────────────────────
+    // Form submit — lock seats via REST API, then navigate to payment
+    // (REST lock still used; WS only pushes the result to other clients)
+    // ─────────────────────────────────────────────────────────
+    async function handleBookingSubmit(e) {
+      e.preventDefault();
+
+      const nums = picked.map(function (p) { return p.num; });
+      if (!nums.length) return;
+
+      const btn = document.getElementById('proceedBtn');
+      btn.disabled = true;
+      document.querySelectorAll('.seat').forEach(function (el) {
+        el.style.pointerEvents = 'none';
+      });
+      btn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Locking seats…';
+
+      try {
+        const res = await fetch('/api/seats/lock', {
+          method: 'POST',
+          credentials: 'same-origin',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ show_id: SHOW_ID, seat_numbers: nums }),
+        });
+
+        const data = await res.json();
+
+        if (data.success) {
+          startLockTimer(data.expires_at);
+          isSubmitting = true;
+          document.getElementById('bookingForm').removeEventListener('submit', handleBookingSubmit);
+          HTMLFormElement.prototype.submit.call(document.getElementById('bookingForm'));
+          return;
+        }
+
+        const conflicts = data.conflict_seats || [];
+        conflicts.forEach(function (num) {
+          const el = getSeatEl(num);
+          if (el) {
+            el.classList.remove('selected', 'available');
+            el.classList.add('locked-other');
+            const idx = picked.findIndex(function (p) { return p.num === num; });
+            if (idx > -1) picked.splice(idx, 1);
+            el.title = num + ' — held by another user';
+          }
+        });
+        refreshSummary();
+        showConflict(data.message || 'Some seats were just taken. Please choose different seats.');
+
+      } catch (err) {
+        showConflict('Network error. Please try again.');
+      } finally {
+        if (!isSubmitting) {
+          document.querySelectorAll('.seat').forEach(function (el) {
+            el.style.pointerEvents = '';
+          });
+          btn.disabled = (picked.length === 0);
+          btn.innerHTML = '<i class="fas fa-lock me-2"></i>Proceed to Payment';
+        }
+      }
+    }
+
+    document.getElementById('bookingForm').addEventListener('submit', handleBookingSubmit);
+
+    // ─────────────────────────────────────────────────────────
+    // Release locks if user navigates away without paying (unchanged)
+    // Also tell the WS server to leave the show room.
+    // ─────────────────────────────────────────────────────────
+    function releaseLocks() {
+      const nums = picked.map(function (p) { return p.num; });
+      if (!nums.length) return;
+      const payload = JSON.stringify({ show_id: SHOW_ID, seat_numbers: nums });
+      if (navigator.sendBeacon) {
+        navigator.sendBeacon('/api/seats/unlock', new Blob([payload], { type: 'application/json' }));
+      } else {
+        fetch('/api/seats/unlock', {
+          method: 'POST',
+          credentials: 'same-origin',
+          headers: { 'Content-Type': 'application/json' },
+          body: payload,
+          keepalive: true,
+        }).catch(function () { });
+      }
+    }
+
+    function releaseLocksSafe() {
+      if (isSubmitting) return;
+      socket.emit('leave_show', { show_id: SHOW_ID });
+      releaseLocks();
+    }
+
+    window.addEventListener('pagehide',     releaseLocksSafe);
+    window.addEventListener('beforeunload', releaseLocksSafe);
+
+  })();
+</script>
+{% endblock %}

@@ -1,0 +1,121 @@
+{% extends 'admin/base.html' %}
+{% block title %}Users{% endblock %}
+{% block page_title %}Users{% endblock %}
+
+{% block content %}
+<div class="data-card">
+    <div class="data-card-header flex-wrap gap-3">
+        <h6 class="data-card-title"><i class="fas fa-users me-2 text-orange"></i>Registered Users
+            <span style="color:var(--text-muted);font-size:0.8rem;font-weight:400;margin-left:8px">{{ total }} total</span>
+        </h6>
+        <div class="input-group" style="width:240px">
+            <span class="input-group-text search-input-dark" style="border-right:none"><i class="fas fa-search" style="color:#666"></i></span>
+            <input type="text" id="userSearch" class="form-control search-input-dark" placeholder="Search users..." style="border-left:none">
+        </div>
+    </div>
+    <div class="table-responsive">
+        <table class="table table-borderless" id="usersTable">
+            <thead>
+                <tr>
+                    <th>User</th>
+                    <th>Email</th>
+                    <th>Role</th>
+                    <th>First Login</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for user in users %}
+                <tr>
+                    <td>
+                        <div class="d-flex align-items-center gap-2">
+                            <div style="width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,#e50914,#ff6b35);display:flex;align-items:center;justify-content:center;font-weight:700;color:#fff;font-size:0.8rem">
+                                {{ (user.name or 'U')[0].upper() }}
+                            </div>
+                            <span style="color:#fff;font-weight:600;font-size:0.875rem">{{ user.name or '–' }}</span>
+                        </div>
+                    </td>
+                    <td style="font-size:0.875rem;color:var(--text-muted)">{{ user.email }}</td>
+                    <td>
+                        <span class="badge-pill badge-info">{{ user.role.role_name if user.role else 'user' }}</span>
+                    </td>
+                    <td style="font-size:0.8rem;color:var(--text-muted)">
+                        {% if user.is_first_login %}
+                            <span style="color:#f39c12"><i class="fas fa-exclamation-circle me-1"></i>Pending</span>
+                        {% else %}
+                            <span style="color:#3fb950"><i class="fas fa-check-circle me-1"></i>Done</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <span class="badge-pill {% if user.is_active %}badge-success{% else %}badge-danger{% endif %}">
+                            {{ 'Active' if user.is_active else 'Inactive' }}
+                        </span>
+                    </td>
+                    <td>
+                        <button class="btn btn-sm btn-cinema-outline"
+                                onclick="toggleUser({{ user.id }}, this)"
+                                title="{{ 'Deactivate' if user.is_active else 'Activate' }}">
+                            <i class="fas fa-{{ 'ban' if user.is_active else 'check' }}"></i>
+                            {{ 'Deactivate' if user.is_active else 'Activate' }}
+                        </button>
+                    </td>
+                </tr>
+                {% else %}
+                <tr><td colspan="6" class="text-center py-5"><div class="empty-state"><i class="fas fa-users"></i><p>No users found</p></div></td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Pagination -->
+    {% if total_pages > 1 %}
+    <div class="d-flex justify-content-center align-items-center gap-2 py-3">
+        {% if page > 1 %}
+        <a href="?page={{ page - 1 }}&search={{ search }}" class="btn btn-sm btn-cinema-outline">
+            <i class="fas fa-chevron-left"></i>
+        </a>
+        {% endif %}
+        <span style="color:var(--text-muted);font-size:0.85rem">Page {{ page }} of {{ total_pages }}</span>
+        {% if page < total_pages %}
+        <a href="?page={{ page + 1 }}&search={{ search }}" class="btn btn-sm btn-cinema-outline">
+            <i class="fas fa-chevron-right"></i>
+        </a>
+        {% endif %}
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Live search filter
+document.getElementById('userSearch').addEventListener('input', function() {
+    const q = this.value.toLowerCase();
+    document.querySelectorAll('#usersTable tbody tr').forEach(row => {
+        row.style.display = row.textContent.toLowerCase().includes(q) ? '' : 'none';
+    });
+});
+
+function toggleUser(userId, btn) {
+    fetch(`/admin/users/toggle/${userId}`, { method: 'POST' })
+        .then(r => r.json())
+        .then(data => {
+            if (data.success) {
+                const row = btn.closest('tr');
+                const badge = row.querySelector('.badge-pill:last-of-type');
+                if (data.is_active) {
+                    badge.textContent = 'Active';
+                    badge.className = 'badge-pill badge-success';
+                    btn.innerHTML = '<i class="fas fa-ban"></i> Deactivate';
+                } else {
+                    badge.textContent = 'Inactive';
+                    badge.className = 'badge-pill badge-danger';
+                    btn.innerHTML = '<i class="fas fa-check"></i> Activate';
+                }
+            }
+        })
+        .catch(() => alert('Failed to update user status'));
+}
+</script>
+{% endblock %}

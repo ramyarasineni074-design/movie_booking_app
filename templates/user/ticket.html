@@ -1,0 +1,216 @@
+{% extends 'user/base.html' %}
+{% block title %}Your Ticket — {{ movie.title if movie else 'CineBook' }}{% endblock %}
+
+{% block content %}
+<div style="background:#0d1117;min-height:calc(100vh - 70px);padding:50px 0">
+<div class="container">
+<div class="row justify-content-center">
+<div class="col-md-7 col-lg-5">
+
+    <div class="text-center mb-4">
+        <div style="width:70px;height:70px;background:rgba(63,185,80,0.1);border:2px solid rgba(63,185,80,0.3);border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 16px;font-size:1.8rem">✅</div>
+        <h3 style="color:#fff">Booking Confirmed!</h3>
+        <p style="color:var(--text-muted)">Your e-ticket is ready</p>
+    </div>
+
+    <div class="ticket-card" id="ticketCard">
+        <div class="p-4">
+            <div class="d-flex justify-content-between align-items-start mb-3">
+                <div style="font-family:'Platypi',serif;font-weight:800;font-size:1.3rem;color:#fff">
+                    <i class="fas fa-film me-2" style="color:var(--orange)"></i>CineBook
+                </div>
+                <span class="badge-pill badge-success">Confirmed</span>
+            </div>
+
+            <h4 style="color:#fff;font-weight:800;margin-bottom:4px">{{ movie.title if movie else '–' }}</h4>
+            <div style="color:var(--text-muted);font-size:0.875rem">
+                {{ movie.genre if movie else '' }}{% if movie and movie.language %} &nbsp;·&nbsp; {{ movie.language }}{% endif %}
+            </div>
+
+            <div class="row g-3 mt-3">
+                {# ── Theater — full width, full address ── #}
+                <div class="col-12">
+                    <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:10px;padding:12px 14px">
+                        <div style="font-size:0.7rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px">
+                            <i class="fas fa-map-marker-alt me-1" style="color:var(--orange)"></i>Venue
+                        </div>
+                        <div style="color:#fff;font-weight:700;font-size:0.95rem;margin-bottom:3px">
+                            {{ theater.name if theater else '–' }}
+                            {% if theater and theater.brand and theater.brand.brand_name %}
+                            <span style="font-weight:400;font-size:0.78rem;color:rgba(255,255,255,0.4);margin-left:6px">
+                                · {{ theater.brand.brand_name }}
+                            </span>
+                            {% endif %}
+                        </div>
+                        {# Street / locality #}
+                        {% if theater and theater.location %}
+                        <div style="font-size:0.8rem;color:rgba(255,255,255,0.55);line-height:1.5">
+                            {{ theater.location }}
+                        </div>
+                        {% endif %}
+                        {# Address line (if model has it) #}
+                        {% if theater and theater.address %}
+                        <div style="font-size:0.8rem;color:rgba(255,255,255,0.55);line-height:1.5">
+                            {{ theater.address }}
+                        </div>
+                        {% endif %}
+                        {# City, State, Pincode #}
+                        <div style="font-size:0.8rem;color:rgba(255,255,255,0.45);margin-top:2px">
+                            {% if theater %}
+                                {{ theater.city or '' }}{% if theater.city and theater.state %}, {% endif %}{{ theater.state or '' }}{% if theater.pincode %} – {{ theater.pincode }}{% endif %}
+                            {% endif %}
+                        </div>
+                        {# Google Maps link if lat/lng available #}
+                        {% if theater and theater.latitude and theater.longitude %}
+                        <a href="https://www.google.com/maps?q={{ theater.latitude }},{{ theater.longitude }}"
+                           target="_blank" rel="noopener"
+                           style="display:inline-flex;align-items:center;gap:5px;margin-top:8px;font-size:0.74rem;color:#3395FF;text-decoration:none">
+                            <i class="fas fa-directions"></i> Get Directions
+                        </a>
+                        {% elif theater and theater.city %}
+                        <a href="https://www.google.com/maps/search/{{ (theater.name ~ ' ' ~ theater.city) | urlencode }}"
+                           target="_blank" rel="noopener"
+                           style="display:inline-flex;align-items:center;gap:5px;margin-top:8px;font-size:0.74rem;color:#3395FF;text-decoration:none">
+                            <i class="fas fa-directions"></i> Get Directions
+                        </a>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="col-6">
+                    <div style="font-size:0.7rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:1px">Date</div>
+                    <div style="color:#fff;font-weight:600;font-size:0.875rem">
+                        {{ show.show_date.strftime('%d %B %Y') if show and show.show_date else '–' }}
+                    </div>
+                </div>
+                <div class="col-6">
+                    <div style="font-size:0.7rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:1px">Show Time</div>
+                    <div style="color:var(--orange);font-weight:700;font-size:1rem">
+                        {{ show.start_time.strftime('%I:%M %p') if show and show.start_time else '–' }}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="ticket-divider position-relative" style="margin:0 -14px">
+            <div style="position:absolute;left:0;top:50%;transform:translateY(-50%);width:28px;height:28px;background:#1a1a2e;border-radius:50%;margin-left:-14px"></div>
+            <div style="position:absolute;right:0;top:50%;transform:translateY(-50%);width:28px;height:28px;background:#1a1a2e;border-radius:50%;margin-right:-14px"></div>
+        </div>
+
+        <div class="p-4">
+            <div class="row g-3 mb-4">
+                <div class="col-6">
+                    <div style="font-size:0.7rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:1px">Seats</div>
+                    <div style="color:var(--orange);font-weight:700;word-break:break-all">{{ booking.seat_numbers or '–' }}</div>
+                    <div style="font-size:0.75rem;color:var(--text-muted)">{{ booking.total_tickets }} ticket(s)</div>
+                </div>
+                <div class="col-6">
+                    <div style="font-size:0.7rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:1px">Amount Paid</div>
+                    {# Show grand_total from Payment if available, else base amount from Booking #}
+                    <div style="color:#fff;font-weight:800;font-size:1.1rem">
+                        ₹{{ payment.amount|int if payment and payment.amount else (booking.total_amount|int if booking.total_amount else 0) }}
+                    </div>
+                    {% if payment and payment.amount and booking.total_amount and payment.amount != booking.total_amount %}
+                    <div style="font-size:0.7rem;color:var(--text-muted)">(incl. fees &amp; GST)</div>
+                    {% endif %}
+                </div>
+
+                {# ── NEW: Payment method block ── #}
+                <div class="col-6">
+                    <div style="font-size:0.7rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:1px">Payment Method</div>
+                    <div style="color:#fff;font-weight:600;font-size:0.875rem;display:flex;align-items:center;gap:6px;margin-top:3px">
+                        {% if payment %}
+                            {% set pm = payment.payment_method | upper %}
+                            {% if pm == 'UPI' %}
+                                <i class="fas fa-mobile-alt" style="color:var(--orange)"></i> UPI
+                            {% elif pm == 'RAZORPAY' %}
+                                <i class="fas fa-bolt" style="color:#3395FF"></i> Razorpay
+                            {% elif pm == 'CARD' %}
+                                <i class="fas fa-credit-card" style="color:var(--orange)"></i> Card
+                            {% elif pm == 'NETBANKING' %}
+                                <i class="fas fa-university" style="color:var(--orange)"></i> Net Banking
+                            {% else %}
+                                <i class="fas fa-wallet" style="color:var(--orange)"></i> {{ payment.payment_method }}
+                            {% endif %}
+                        {% else %}
+                            <span style="color:var(--text-muted)">–</span>
+                        {% endif %}
+                    </div>
+                </div>
+
+                {# ── NEW: Payment date ── #}
+                <div class="col-6">
+                    <div style="font-size:0.7rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:1px">Paid On</div>
+                    <div style="color:#fff;font-weight:600;font-size:0.875rem;margin-top:3px">
+                        {% if payment and payment.payment_date %}
+                            {{ payment.payment_date.strftime('%d %b %Y, %I:%M %p') }}
+                        {% elif booking.booking_date %}
+                            {{ booking.booking_date.strftime('%d %b %Y, %I:%M %p') }}
+                        {% else %}
+                            –
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            {# ── NEW: UPI ID display (extracted from transaction_ref) ── #}
+            {% if payment and payment.payment_method and payment.payment_method|upper == 'UPI' and payment.transaction_ref and 'UPI:' in payment.transaction_ref %}
+            <div style="background:rgba(255,106,0,0.06);border:1px solid rgba(255,106,0,0.2);border-radius:8px;padding:9px 13px;margin-bottom:14px;font-size:0.8rem">
+                <span style="color:var(--text-muted)">UPI ID:</span>
+                <span style="color:#fff;font-weight:600;margin-left:6px;font-family:monospace">
+                    {{ payment.transaction_ref.split('UPI:')[1] }}
+                </span>
+            </div>
+            {% endif %}
+
+            <!-- QR Code -->
+            <div class="text-center p-3 rounded-xl mb-3" style="background:#fff;border:1px solid var(--border);border-radius:14px">
+                {% if qr_b64 %}
+                    <img src="data:image/png;base64,{{ qr_b64 }}"
+                         alt="Ticket QR Code"
+                         title="Scan to verify ticket: {{ booking.booking_id }}"
+                         style="width:180px;height:180px;display:block;margin:0 auto;image-rendering:pixelated">
+                {% else %}
+                    <div style="font-size:2.5rem;letter-spacing:4px;color:rgba(0,0,0,0.15);font-family:monospace">
+                        ▐▌▐▌▐▌<br>▌▐▌▐▌▐<br>▐▌▐▌▐▌
+                    </div>
+                {% endif %}
+                <div style="font-size:0.7rem;color:#888;margin-top:8px;font-weight:600">
+                    <i class="fas fa-qrcode me-1"></i>Scan at theater entrance
+                </div>
+            </div>
+
+            <div style="font-size:0.72rem;color:var(--text-muted);font-family:monospace;text-align:center">
+                Booking ID: {{ booking.booking_id }}
+            </div>
+            {% if booking.transaction_ref %}
+            <div style="font-size:0.7rem;color:var(--text-muted);font-family:monospace;text-align:center;margin-top:2px">
+                TXN: {{ booking.transaction_ref.split('|UPI:')[0] }}
+            </div>
+            {% endif %}
+            {% if payment and payment.status %}
+            <div style="font-size:0.7rem;text-align:center;margin-top:6px">
+                <span style="background:rgba(63,185,80,0.1);border:1px solid rgba(63,185,80,0.3);color:#3fb950;border-radius:20px;padding:2px 10px;font-size:0.7rem">
+                    <i class="fas fa-check-circle me-1"></i>Payment {{ payment.status }}
+                </span>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="d-flex gap-3 mt-4 justify-content-center flex-wrap">
+        <button class="btn btn-cinema" onclick="window.print()"><i class="fas fa-print me-2"></i>Print</button>
+        <a href="{{ url_for('user_bp.my_bookings') }}" class="btn btn-cinema-outline"><i class="fas fa-list me-2"></i>All Bookings</a>
+        <a href="{{ url_for('user_bp.movies') }}" class="btn btn-cinema-outline"><i class="fas fa-film me-2"></i>More Movies</a>
+    </div>
+</div>
+</div>
+</div>
+</div>
+
+<style>
+@media print {
+    .site-navbar,.site-footer,.d-flex.gap-3.mt-4 { display:none!important; }
+    body { background:white!important; }
+}
+</style>
+{% endblock %}

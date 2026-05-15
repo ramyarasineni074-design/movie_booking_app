@@ -1,0 +1,291 @@
+{% extends 'owner/base.html' %}
+{% block title %}Dashboard{% endblock %}
+{% block page_title %}Dashboard{% endblock %}
+
+{% block extra_css %}
+<style>
+  .kpi-card {
+    background: var(--admin-card);
+    border: 1px solid var(--admin-border);
+    border-radius: 14px;
+    padding: 20px 22px;
+    position: relative;
+    overflow: hidden;
+    transition: transform 0.2s, box-shadow 0.2s;
+  }
+  .kpi-card:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,0,0,0.25); }
+  .kpi-card::before {
+    content: ''; position: absolute; left: 0; top: 0; bottom: 0;
+    width: 4px; border-radius: 14px 0 0 14px;
+  }
+  .kpi-card.kpi-red::before    { background: #e50914; }
+  .kpi-card.kpi-blue::before   { background: #388bfd; }
+  .kpi-card.kpi-amber::before  { background: #f39c12; }
+  .kpi-card.kpi-green::before  { background: #3fb950; }
+  .kpi-card.kpi-purple::before { background: #8B5CF6; }
+  .kpi-card.kpi-cyan::before   { background: #06B6D4; }
+
+  .kpi-icon {
+    width: 38px; height: 38px; border-radius: 9px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 0.9rem; margin-bottom: 10px;
+  }
+  .kpi-card.kpi-red    .kpi-icon { background: rgba(229,9,20,0.15);   color: #e50914; }
+  .kpi-card.kpi-blue   .kpi-icon { background: rgba(56,139,253,0.15); color: #388bfd; }
+  .kpi-card.kpi-amber  .kpi-icon { background: rgba(243,156,18,0.15); color: #f39c12; }
+  .kpi-card.kpi-green  .kpi-icon { background: rgba(63,185,80,0.15);  color: #3fb950; }
+  .kpi-card.kpi-purple .kpi-icon { background: rgba(139,92,246,0.15); color: #8B5CF6; }
+  .kpi-card.kpi-cyan   .kpi-icon { background: rgba(6,182,212,0.15);  color: #06B6D4; }
+
+  .kpi-label { font-size: 0.7rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.06em; font-weight: 600; margin-bottom: 3px; }
+  .kpi-value { font-size: 1.55rem; font-weight: 800; color: var(--admin-text); line-height: 1.1; }
+  .kpi-sub   { font-size: 0.7rem; color: var(--text-muted); margin-top: 3px; }
+
+  .chart-card {
+    background: var(--admin-card);
+    border: 1px solid var(--admin-border);
+    border-radius: 14px;
+    padding: 20px 22px;
+  }
+  .chart-card-title {
+    font-size: 0.85rem; font-weight: 700;
+    color: var(--admin-text); margin-bottom: 18px;
+    display: flex; align-items: center; gap: 8px;
+    padding-bottom: 12px; border-bottom: 1px solid var(--admin-border);
+  }
+  .chart-card-title i {
+    width: 28px; height: 28px; border-radius: 7px;
+    display: inline-flex; align-items: center; justify-content: center; font-size: 0.75rem;
+  }
+  .icon-green  { background: rgba(63,185,80,0.15);   color: #3fb950 !important; }
+  .icon-red    { background: rgba(229,9,20,0.15);    color: #e50914 !important; }
+  .icon-amber  { background: rgba(243,156,18,0.15);  color: #f39c12 !important; }
+  .icon-blue   { background: rgba(56,139,253,0.15);  color: #388bfd !important; }
+  .icon-purple { background: rgba(139,92,246,0.15);  color: #8B5CF6 !important; }
+  .icon-cyan   { background: rgba(6,182,212,0.15);   color: #06B6D4 !important; }
+
+  .chart-grid   { display: grid; gap: 20px; }
+  .chart-grid-2 { grid-template-columns: 1fr 1fr; }
+  .chart-grid-3 { grid-template-columns: 2fr 1fr; }
+  @media (max-width: 900px) {
+    .chart-grid-2, .chart-grid-3 { grid-template-columns: 1fr; }
+  }
+
+  .section-divider {
+    display: flex; align-items: center; gap: 12px;
+    margin: 32px 0 20px;
+    font-size: 0.8rem; font-weight: 700;
+    text-transform: uppercase; letter-spacing: 0.08em;
+    color: var(--text-muted);
+  }
+  .section-divider::after { content: ''; flex: 1; height: 1px; background: var(--admin-border); }
+
+  canvas { max-width: 100%; }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<!-- ===== BRAND HEADER ===== -->
+<div class="data-card p-4 mb-4" style="background:linear-gradient(135deg,rgba(243,156,18,0.08),rgba(243,156,18,0.02));border:1px solid rgba(243,156,18,0.25)">
+  <div class="d-flex align-items-center gap-3">
+    <div style="width:52px;height:52px;background:linear-gradient(135deg,#f39c12,#e67e22);border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:1.5rem;flex-shrink:0">🎭</div>
+    <div>
+      <div style="font-size:1.4rem;font-weight:800;color:var(--admin-text);line-height:1.1">{{ brand.brand_name }}</div>
+      <div style="font-size:0.8rem;color:var(--text-muted);margin-top:3px"><i class="fas fa-building me-1" style="color:#f39c12"></i>Theater Brand Dashboard</div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== STAT CARDS ===== -->
+<div class="row g-3 mb-4">
+  {% for stat in [
+    {'label': 'My Theaters',    'value': total_theaters, 'icon': 'fa-building',    'cls': 'kpi-amber', 'sub': 'Under my brand',     'url': url_for('owner_bp.theaters')},
+    {'label': 'Active Shows',   'value': total_shows,    'icon': 'fa-clock',       'cls': 'kpi-green', 'sub': 'Currently scheduled', 'url': url_for('owner_bp.shows')},
+    {'label': 'Total Bookings', 'value': total_bookings, 'icon': 'fa-ticket-alt',  'cls': 'kpi-blue',  'sub': 'All time',            'url': url_for('owner_bp.bookings')},
+    {'label': 'Revenue',        'value': '₹' ~ (total_revenue|default(0)|int), 'icon': 'fa-rupee-sign', 'cls': 'kpi-green', 'sub': 'Paid bookings', 'url': '#'}
+  ] %}
+  <div class="col-6 col-xl-3">
+    <a href="{{ stat.url }}" style="text-decoration:none">
+      <div class="kpi-card {{ stat.cls }}">
+        <div class="kpi-icon"><i class="fas {{ stat.icon }}"></i></div>
+        <div class="kpi-label">{{ stat.label }}</div>
+        <div class="kpi-value">{{ stat.value }}</div>
+        <div class="kpi-sub">{{ stat.sub }}</div>
+      </div>
+    </a>
+  </div>
+  {% endfor %}
+</div>
+
+<!-- ===== ANALYTICS SECTION ===== -->
+<div class="section-divider"><i class="fas fa-chart-line me-2" style="color:#f39c12"></i>Analytics & Insights — {{ brand.brand_name }}</div>
+
+<!-- Revenue Trend -->
+<div class="chart-card mb-4">
+  <div class="chart-card-title"><i class="fas fa-chart-area icon-green"></i>Monthly Revenue & Bookings (Last 12 Months)</div>
+  <canvas id="revTrend" height="80"></canvas>
+</div>
+
+<!-- Top Movies | Genre Breakdown -->
+<div class="chart-grid chart-grid-3 mb-4">
+  <div class="chart-card">
+    <div class="chart-card-title"><i class="fas fa-trophy icon-amber"></i>Top Movies by Revenue</div>
+    <canvas id="topMovies" height="200"></canvas>
+  </div>
+  <div class="chart-card">
+    <div class="chart-card-title"><i class="fas fa-tags icon-purple"></i>Genre Breakdown</div>
+    <canvas id="genreChart" height="200"></canvas>
+  </div>
+</div>
+
+<!-- Theater Revenue | Weekday Bookings -->
+<div class="chart-grid chart-grid-2 mb-4">
+  <div class="chart-card">
+    <div class="chart-card-title"><i class="fas fa-building icon-blue"></i>Revenue per Theater</div>
+    <canvas id="theaterRevChart" height="220"></canvas>
+  </div>
+  <div class="chart-card">
+    <div class="chart-card-title"><i class="fas fa-calendar-week icon-purple"></i>Bookings by Day of Week</div>
+    <canvas id="weekdayChart" height="220"></canvas>
+  </div>
+</div>
+
+<!-- Payment Status -->
+<div class="chart-grid chart-grid-2 mb-4">
+  <div class="chart-card">
+    <div class="chart-card-title"><i class="fas fa-check-circle icon-green"></i>Payment Status Distribution</div>
+    <canvas id="payStatus" height="220"></canvas>
+  </div>
+  <div class="chart-card" style="display:flex;flex-direction:column;justify-content:center;">
+    <div class="chart-card-title"><i class="fas fa-info-circle icon-cyan"></i>Revenue Summary</div>
+    <div id="revSummaryTable" style="color:var(--text-muted);font-size:0.875rem;">Loading…</div>
+  </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script>
+Chart.defaults.font.family = "'Poppins', sans-serif";
+Chart.defaults.font.size   = 12;
+Chart.defaults.color       = '#9CA3AF';
+Chart.defaults.borderColor = 'rgba(255,255,255,0.08)';
+
+const PIE_COLORS = ['#3B82F6','#22C55E','#F59E0B','#EF4444','#8B5CF6','#06B6D4'];
+const STATUS_COLORS = {
+  'Completed':'#22C55E','completed':'#22C55E','Success':'#22C55E',
+  'Failed':'#EF4444','failed':'#EF4444','Cancelled':'#EF4444','cancelled':'#EF4444',
+  'Pending':'#F59E0B','pending':'#F59E0B','Refunded':'#3B82F6','refunded':'#3B82F6',
+};
+
+function orangeGradient(ctx, ca) {
+  if (!ca) return '#FF6A00';
+  const g = ctx.createLinearGradient(0, ca.bottom, 0, ca.top);
+  g.addColorStop(0,'#FF6A00'); g.addColorStop(1,'#FF9A3C'); return g;
+}
+function blueGradient(ctx, ca) {
+  if (!ca) return '#3B82F6';
+  const g = ctx.createLinearGradient(0, ca.bottom, 0, ca.top);
+  g.addColorStop(0,'#2563EB'); g.addColorStop(1,'#60A5FA'); return g;
+}
+
+const axisOpts = {
+  grid: { color: 'rgba(255,255,255,0.06)', drawBorder: false },
+  ticks: { color: '#9CA3AF', font: { size: 11 } },
+};
+const legendOpts = { labels: { color: '#9CA3AF', font: { size: 11 }, padding: 16, usePointStyle: true, pointStyleWidth: 8 } };
+const tooltipOpts = { backgroundColor: '#1a1a2e', borderColor: 'rgba(255,255,255,0.1)', borderWidth: 1, titleColor: '#e5e5e5', bodyColor: '#9CA3AF', padding: 10 };
+const fmt  = n => '₹' + Number(n).toLocaleString('en-IN', { maximumFractionDigits: 0 });
+const fmtK = v => '₹' + Number(v/1000).toFixed(0) + 'K';
+
+async function fetchData(url) {
+  try { const r = await fetch(url); return await r.json(); }
+  catch(e) { console.error('Fetch error:', url, e); return []; }
+}
+
+async function loadAnalytics() {
+  const [summary, revenueTrend, topMovies, genreData, theaterData, weekdayData, paymentStatus] = await Promise.all([
+    fetchData('/owner/analytics/api/summary'),
+    fetchData('/owner/analytics/api/revenue-trend'),
+    fetchData('/owner/analytics/api/top-movies'),
+    fetchData('/owner/analytics/api/genre-breakdown'),
+    fetchData('/owner/analytics/api/theater-revenue'),
+    fetchData('/owner/analytics/api/bookings-by-weekday'),
+    fetchData('/owner/analytics/api/payment-status')
+  ]);
+
+  // Revenue Summary table (replaces the removed KPI cards)
+  document.getElementById('revSummaryTable').innerHTML = `
+    <div style="border-bottom:1px solid var(--admin-border);padding:10px 0;display:flex;justify-content:space-between"><span style="color:var(--text-muted)">Total Revenue</span><strong style="color:var(--admin-text)">${fmt(summary.total_revenue||0)}</strong></div>
+    <div style="border-bottom:1px solid var(--admin-border);padding:10px 0;display:flex;justify-content:space-between"><span style="color:var(--text-muted)">Paid Bookings</span><strong style="color:var(--admin-text)">${Number(summary.total_bookings||0).toLocaleString()}</strong></div>
+    <div style="border-bottom:1px solid var(--admin-border);padding:10px 0;display:flex;justify-content:space-between"><span style="color:var(--text-muted)">Avg Value</span><strong style="color:var(--admin-text)">${fmt(summary.avg_booking_value||0)}</strong></div>
+    <div style="padding:10px 0;display:flex;justify-content:space-between"><span style="color:var(--text-muted)">Revenue Lost</span><strong style="color:#e50914">${fmt((summary.cancelled_revenue||0)+(summary.failed_revenue||0))}</strong></div>
+  `;
+
+  // Revenue Trend
+  new Chart(document.getElementById('revTrend'), {
+    type: 'line',
+    data: { labels: revenueTrend.map(d=>d.label), datasets: [
+      { label:'Revenue (₹)', data:revenueTrend.map(d=>d.revenue), borderColor:'#22C55E', backgroundColor:'rgba(34,197,94,0.08)', borderWidth:2.5, tension:0.4, fill:true, pointBackgroundColor:'#22C55E', pointRadius:3, pointHoverRadius:5 },
+      { label:'Bookings', data:revenueTrend.map(d=>d.bookings), borderColor:'#f39c12', backgroundColor:'rgba(243,156,18,0.05)', borderWidth:2.5, tension:0.4, fill:false, pointBackgroundColor:'#f39c12', pointRadius:3, pointHoverRadius:5, yAxisID:'y2' }
+    ]},
+    options: { responsive:true, interaction:{mode:'index',intersect:false},
+               plugins:{legend:legendOpts, tooltip:tooltipOpts},
+               scales:{ x:axisOpts, y:{...axisOpts,position:'left',ticks:{...axisOpts.ticks,callback:v=>'₹'+Number(v).toLocaleString('en-IN')}}, y2:{...axisOpts,position:'right',grid:{display:false}} } }
+  });
+
+  // Top Movies
+  new Chart(document.getElementById('topMovies'), {
+    type:'bar',
+    data:{ labels:topMovies.map(d=>d.title),
+           datasets:[{label:'Revenue',data:topMovies.map(d=>d.revenue),
+             backgroundColor:ctx=>{const{ctx:c,chartArea:a}=ctx.chart;return a?orangeGradient(c,a):'#FF6A00';},borderRadius:4,borderSkipped:false}]},
+    options:{indexAxis:'y',responsive:true,
+             plugins:{legend:{display:false},tooltip:{...tooltipOpts,callbacks:{label:c=>fmt(c.parsed.x)}}},
+             scales:{x:{...axisOpts,ticks:{...axisOpts.ticks,callback:v=>fmtK(v)}},y:axisOpts}}
+  });
+
+  // Genre
+  new Chart(document.getElementById('genreChart'), {
+    type:'doughnut',
+    data:{labels:genreData.map(d=>d.genre),
+          datasets:[{data:genreData.map(d=>d.revenue),backgroundColor:PIE_COLORS,borderColor:'rgba(255,255,255,0.1)',borderWidth:3,hoverOffset:6}]},
+    options:{responsive:true,cutout:'55%',plugins:{legend:{...legendOpts,position:'bottom'},tooltip:tooltipOpts}}
+  });
+
+  // Theater Revenue
+  new Chart(document.getElementById('theaterRevChart'), {
+    type:'bar',
+    data:{labels:theaterData.map(d=>d.theater),
+          datasets:[{label:'Revenue',data:theaterData.map(d=>d.revenue),
+            backgroundColor:ctx=>{const{ctx:c,chartArea:a}=ctx.chart;return a?blueGradient(c,a):'#3B82F6';},borderRadius:4,borderSkipped:false}]},
+    options:{indexAxis:'y',responsive:true,
+             plugins:{legend:{display:false},tooltip:{...tooltipOpts,callbacks:{label:c=>fmt(c.parsed.x)}}},
+             scales:{x:{...axisOpts,ticks:{...axisOpts.ticks,callback:v=>fmtK(v)}},y:axisOpts}}
+  });
+
+  // Weekday
+  new Chart(document.getElementById('weekdayChart'), {
+    type:'bar',
+    data:{labels:weekdayData.map(d=>d.day),
+          datasets:[{label:'Bookings',data:weekdayData.map(d=>d.count),
+            backgroundColor:'rgba(139,92,246,0.15)',borderColor:'#8B5CF6',borderWidth:2,borderRadius:6,borderSkipped:false}]},
+    options:{responsive:true,plugins:{legend:{display:false},tooltip:tooltipOpts},scales:{x:axisOpts,y:axisOpts}}
+  });
+
+  // Payment Status
+  new Chart(document.getElementById('payStatus'), {
+    type:'pie',
+    data:{labels:paymentStatus.map(d=>d.status),
+          datasets:[{data:paymentStatus.map(d=>d.count),
+            backgroundColor:paymentStatus.map(d=>STATUS_COLORS[d.status]||'#9CA3AF'),
+            borderColor:'rgba(255,255,255,0.1)',borderWidth:3,hoverOffset:6}]},
+    options:{responsive:true,plugins:{legend:{...legendOpts,position:'bottom'},tooltip:tooltipOpts}}
+  });
+}
+
+loadAnalytics();
+</script>
+{% endblock %}

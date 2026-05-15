@@ -1,0 +1,584 @@
+{% extends 'user/base.html' %}
+{% block title %}About Us — CineBook{% endblock %}
+
+{% block extra_css %}
+<style>
+  /* ── Page shell ── */
+  .about-page { background: #0d1117; min-height: calc(100vh - 70px); }
+
+  /* ── Hero ── */
+  .about-hero {
+    position: relative;
+    padding: 100px 0 80px;
+    overflow: hidden;
+    text-align: center;
+  }
+  .about-hero::before {
+    content: '';
+    position: absolute; inset: 0;
+    background:
+      radial-gradient(ellipse 70% 60% at 50% 0%, rgba(255,106,0,0.18) 0%, transparent 70%),
+      radial-gradient(ellipse 40% 40% at 20% 80%, rgba(245,158,11,0.08) 0%, transparent 60%);
+    pointer-events: none;
+  }
+  /* subtle film-grain overlay */
+  .about-hero::after {
+    content: '';
+    position: absolute; inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+    pointer-events: none;
+    opacity: 0.6;
+  }
+  .hero-eyebrow {
+    display: inline-block;
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--orange);
+    border: 1px solid rgba(255,106,0,0.35);
+    border-radius: 20px;
+    padding: 5px 18px;
+    margin-bottom: 24px;
+    position: relative;
+  }
+  .about-hero h1 {
+    font-size: clamp(2.4rem, 6vw, 4.2rem);
+    font-weight: 800;
+    line-height: 1.1;
+    color: #fff;
+    margin-bottom: 22px;
+    position: relative;
+  }
+  .about-hero h1 span { color: var(--orange); }
+  .about-hero p {
+    font-size: 1.1rem;
+    color: rgba(255,255,255,0.55);
+    max-width: 600px;
+    margin: 0 auto;
+    line-height: 1.75;
+    position: relative;
+  }
+
+  /* ── Animated stats strip ── */
+  .stats-strip {
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 0;
+    margin: 60px 0 0;
+    border-top: 1px solid rgba(255,255,255,0.06);
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+  }
+  .stat-item {
+    flex: 1 1 160px;
+    padding: 32px 24px;
+    text-align: center;
+    border-right: 1px solid rgba(255,255,255,0.06);
+    position: relative;
+    overflow: hidden;
+  }
+  .stat-item:last-child { border-right: none; }
+  .stat-item::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(circle at 50% 100%, rgba(255,106,0,0.07), transparent 65%);
+    opacity: 0;
+    transition: opacity 0.35s;
+  }
+  .stat-item:hover::after { opacity: 1; }
+  .stat-num {
+    font-size: 2.6rem;
+    font-weight: 800;
+    color: var(--orange);
+    line-height: 1;
+    display: block;
+  }
+  .stat-label {
+    font-size: 0.78rem;
+    color: rgba(255,255,255,0.4);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-top: 6px;
+    display: block;
+  }
+
+  /* ── Section titles ── */
+  .section-tag {
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--orange);
+    margin-bottom: 10px;
+  }
+  .section-title {
+    font-size: clamp(1.6rem, 3.5vw, 2.2rem);
+    font-weight: 800;
+    color: #fff;
+    line-height: 1.2;
+    margin-bottom: 14px;
+  }
+  .section-desc {
+    color: rgba(255,255,255,0.5);
+    line-height: 1.75;
+    font-size: 0.95rem;
+  }
+
+  /* ── Mission card ── */
+  .mission-block {
+    padding: 80px 0;
+    position: relative;
+  }
+  .mission-visual {
+    background: linear-gradient(135deg, rgba(255,106,0,0.12), rgba(245,158,11,0.08));
+    border: 1px solid rgba(255,106,0,0.2);
+    border-radius: 20px;
+    padding: 48px;
+    position: relative;
+    overflow: hidden;
+    height: 100%;
+    min-height: 300px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+  }
+  .mission-visual::before {
+    content: '\f008';
+    font-family: 'Font Awesome 6 Free'; font-weight: 900;
+    font-size: 10rem;
+    position: absolute;
+    right: -20px; bottom: -20px;
+    color: rgba(255,106,0,0.06);
+    line-height: 1;
+  }
+  .mission-icon-ring {
+    width: 90px; height: 90px;
+    border-radius: 50%;
+    background: rgba(255,106,0,0.15);
+    border: 2px solid rgba(255,106,0,0.35);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 2.2rem;
+    color: var(--orange);
+    margin-bottom: 24px;
+    animation: pulse-ring 3s ease-in-out infinite;
+  }
+  @keyframes pulse-ring {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(255,106,0,0.3); }
+    50%       { box-shadow: 0 0 0 14px rgba(255,106,0,0); }
+  }
+  .mission-visual h3 {
+    color: #fff; font-weight: 700; font-size: 1.3rem; margin-bottom: 12px; text-align: center;
+  }
+  .mission-visual p {
+    color: rgba(255,255,255,0.5); font-size: 0.9rem; text-align: center; line-height: 1.7;
+  }
+
+  /* ── Value cards ── */
+  .values-section { padding: 0 0 80px; }
+  .value-card {
+    background: rgba(255,255,255,0.025);
+    border: 1px solid rgba(255,255,255,0.07);
+    border-radius: 16px;
+    padding: 32px 28px;
+    height: 100%;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+  }
+  .value-card::before {
+    content: '';
+    position: absolute; top: 0; left: 0; right: 0; height: 3px;
+    background: linear-gradient(90deg, var(--orange), var(--gold));
+    transform: scaleX(0);
+    transform-origin: left;
+    transition: transform 0.35s ease;
+  }
+  .value-card:hover { transform: translateY(-4px); border-color: rgba(255,106,0,0.25); }
+  .value-card:hover::before { transform: scaleX(1); }
+  .value-icon {
+    width: 52px; height: 52px;
+    border-radius: 14px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.3rem;
+    margin-bottom: 18px;
+  }
+  .value-card h5 {
+    color: #fff; font-weight: 700; font-size: 1rem; margin-bottom: 10px;
+  }
+  .value-card p {
+    color: rgba(255,255,255,0.45); font-size: 0.875rem; line-height: 1.7; margin: 0;
+  }
+
+  /* ── How it works ── */
+  .hiw-section { padding: 0 0 80px; }
+  .hiw-step {
+    display: flex;
+    gap: 20px;
+    align-items: flex-start;
+    padding: 28px;
+    border-radius: 16px;
+    background: rgba(255,255,255,0.02);
+    border: 1px solid rgba(255,255,255,0.06);
+    transition: all 0.3s;
+    margin-bottom: 16px;
+  }
+  .hiw-step:hover { background: rgba(255,255,255,0.04); border-color: rgba(255,106,0,0.2); }
+  .step-num {
+    flex-shrink: 0;
+    width: 46px; height: 46px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--orange), var(--gold));
+    color: #fff;
+    font-weight: 800;
+    font-size: 1rem;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .hiw-step h6 { color: #fff; font-weight: 700; margin-bottom: 6px; font-size: 0.95rem; }
+  .hiw-step p  { color: rgba(255,255,255,0.45); font-size: 0.85rem; line-height: 1.65; margin: 0; }
+
+  /* ── Team cards ── */
+  .team-section { padding: 0 0 80px; }
+  .team-card {
+    background: rgba(255,255,255,0.025);
+    border: 1px solid rgba(255,255,255,0.07);
+    border-radius: 16px;
+    padding: 32px 24px;
+    text-align: center;
+    height: 100%;
+    transition: all 0.3s;
+  }
+  .team-card:hover { transform: translateY(-4px); border-color: rgba(255,106,0,0.25); }
+  .team-avatar {
+    width: 76px; height: 76px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, rgba(255,106,0,0.3), rgba(245,158,11,0.2));
+    border: 2px solid rgba(255,106,0,0.3);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.8rem;
+    margin: 0 auto 16px;
+    color: var(--orange);
+  }
+  .team-card h6 { color: #fff; font-weight: 700; margin-bottom: 4px; }
+  .team-card .role { color: var(--orange); font-size: 0.78rem; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 12px; }
+  .team-card p { color: rgba(255,255,255,0.4); font-size: 0.83rem; line-height: 1.6; margin: 0; }
+
+
+  /* ── CTA banner ── */
+  .cta-banner {
+    margin: 0 0 80px;
+    padding: 60px 48px;
+    border-radius: 20px;
+    background: linear-gradient(135deg, rgba(255,106,0,0.15) 0%, rgba(245,158,11,0.08) 100%);
+    border: 1px solid rgba(255,106,0,0.25);
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+  }
+  .cta-banner::before {
+    content: '';
+    position: absolute; inset: 0;
+    background: radial-gradient(ellipse 80% 80% at 50% 50%, rgba(255,106,0,0.08), transparent);
+    pointer-events: none;
+  }
+  .cta-banner h2 { color: #fff; font-weight: 800; font-size: 2rem; margin-bottom: 12px; }
+  .cta-banner p  { color: rgba(255,255,255,0.55); margin-bottom: 28px; font-size: 1rem; }
+
+  /* ── Responsive ── */
+  @media (max-width: 767px) {
+    .about-hero { padding: 60px 0 50px; }
+    .stat-item  { flex: 1 1 130px; padding: 24px 12px; }
+    .stat-num   { font-size: 2rem; }
+    .mission-block, .values-section, .hiw-section, .team-section { padding-top: 0; padding-bottom: 56px; }
+    .cta-banner { padding: 40px 24px; }
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="about-page">
+
+  <!-- ═══ HERO ════════════════════════════════════ -->
+  <section class="about-hero">
+    <div class="container">
+      <div class="hero-eyebrow"><i class="fas fa-film me-2"></i>Our Story</div>
+      <h1>The Home of<br><span>Cinema Lovers</span></h1>
+      <p>CineBook was born out of one simple belief — booking a movie ticket should feel as exciting as watching the movie itself.</p>
+
+      <!-- Stats strip -->
+      <div class="stats-strip mt-5">
+        <div class="stat-item">
+          <span class="stat-num" data-target="{{ about_stats.total_movies }}">0</span>
+          <span class="stat-label">Movies Listed</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-num" data-target="{{ about_stats.total_theaters }}">0</span>
+          <span class="stat-label">Partner Theaters</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-num" data-target="{{ about_stats.total_cities }}">0</span>
+          <span class="stat-label">Cities Covered</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-num" data-target="{{ about_stats.total_bookings }}">0</span>
+          <span class="stat-label">Tickets Booked</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══ MISSION ══════════════════════════════════ -->
+  <section class="mission-block">
+    <div class="container">
+      <div class="row g-5 align-items-center">
+        <div class="col-lg-6">
+          <div class="section-tag">Our Mission</div>
+          <div class="section-title">Making Every Seat<br>Feel Like the Best One</div>
+          <p class="section-desc mb-4">
+            We built CineBook to remove the friction between you and the movies you love. No long queues, no confusion — just pick your show, choose your seat, and go enjoy the magic on screen.
+          </p>
+          <p class="section-desc mb-4">
+            From neighborhood single screens to premium multiplexes, we partner with theaters across India to give you the widest selection and the smoothest booking experience, any time of day.
+          </p>
+          <div class="d-flex flex-wrap gap-3 mt-4">
+            <a href="{{ url_for('user_bp.movies') }}" class="btn btn-cinema">
+              <i class="fas fa-play me-2"></i>Browse Movies
+            </a>
+            <a href="{{ url_for('contact_bp.contact') }}" class="btn btn-cinema-outline">
+              <i class="fas fa-headset me-2"></i>Talk to Us
+            </a>
+          </div>
+        </div>
+        <div class="col-lg-6">
+          <div class="row g-4">
+            <div class="col-6">
+              <div class="mission-visual" style="min-height:180px; padding:32px 24px;">
+                <div class="mission-icon-ring"><i class="fas fa-ticket-alt"></i></div>
+                <h3 style="font-size:1rem">Instant Booking</h3>
+                <p style="font-size:0.82rem">Lock your seats in seconds with real-time availability.</p>
+              </div>
+            </div>
+            <div class="col-6">
+              <div class="mission-visual" style="min-height:180px; padding:32px 24px; background:linear-gradient(135deg,rgba(245,158,11,0.12),rgba(255,106,0,0.06));">
+                <div class="mission-icon-ring" style="background:rgba(245,158,11,0.15);border-color:rgba(245,158,11,0.4);color:var(--gold)"><i class="fas fa-shield-alt"></i></div>
+                <h3 style="font-size:1rem">Secure Payments</h3>
+                <p style="font-size:0.82rem">UPI, Card, Net Banking — all encrypted end-to-end.</p>
+              </div>
+            </div>
+            <div class="col-12">
+              <div class="mission-visual" style="min-height:140px; padding:28px 32px; flex-direction:row; gap:20px; text-align:left; align-items:center;">
+                <div class="mission-icon-ring" style="flex-shrink:0; width:60px; height:60px; font-size:1.4rem; background:rgba(56,139,253,0.15);border-color:rgba(56,139,253,0.4);color:#388bfd"><i class="fas fa-star"></i></div>
+                <div>
+                  <h3 style="font-size:1rem; text-align:left; margin-bottom:6px">Live Seat Selection</h3>
+                  <p style="font-size:0.82rem; text-align:left;">See which seats are available in real-time — VIP, Premium, and Regular, all on one map.</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══ VALUES ══════════════════════════════════ -->
+  <section class="values-section">
+    <div class="container">
+      <div class="text-center mb-5">
+        <div class="section-tag">What We Stand For</div>
+        <div class="section-title">Our Core Values</div>
+      </div>
+      <div class="row g-4">
+        <div class="col-md-6 col-lg-3">
+          <div class="value-card">
+            <div class="value-icon" style="background:rgba(255,106,0,0.12); color:var(--orange)">
+              <i class="fas fa-bolt"></i>
+            </div>
+            <h5>Speed</h5>
+            <p>From show search to confirmed booking in under 60 seconds. We respect your time as much as you respect ours.</p>
+          </div>
+        </div>
+        <div class="col-md-6 col-lg-3">
+          <div class="value-card">
+            <div class="value-icon" style="background:rgba(245,158,11,0.12); color:var(--gold)">
+              <i class="fas fa-eye"></i>
+            </div>
+            <h5>Transparency</h5>
+            <p>No hidden charges. Every fee — convenience, GST — is shown clearly before you pay. What you see is what you pay.</p>
+          </div>
+        </div>
+        <div class="col-md-6 col-lg-3">
+          <div class="value-card">
+            <div class="value-icon" style="background:rgba(56,139,253,0.12); color:#388bfd">
+              <i class="fas fa-users"></i>
+            </div>
+            <h5>Community</h5>
+            <p>Real reviews from real moviegoers. Discover what your city thinks before you pick your show.</p>
+          </div>
+        </div>
+        <div class="col-md-6 col-lg-3">
+          <div class="value-card">
+            <div class="value-icon" style="background:rgba(63,185,80,0.12); color:#3fb950">
+              <i class="fas fa-lock"></i>
+            </div>
+            <h5>Security</h5>
+            <p>Your data and payments are always encrypted. Seat locks prevent double-booking. We've got your back.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══ HOW IT WORKS ═════════════════════════════ -->
+  <section class="hiw-section">
+    <div class="container">
+      <div class="row g-5 align-items-start">
+        <div class="col-lg-5">
+          <div class="section-tag">Simple Process</div>
+          <div class="section-title">How CineBook Works</div>
+          <p class="section-desc">
+            Four steps stand between you and the perfect movie night. We've made each one as painless as possible.
+          </p>
+          <div class="mt-4 p-4 rounded-3" style="background:rgba(255,106,0,0.06);border:1px solid rgba(255,106,0,0.15)">
+            <div style="font-size:0.8rem;color:rgba(255,255,255,0.5);line-height:1.7">
+              <i class="fas fa-info-circle me-2" style="color:var(--orange)"></i>
+              Seats are held for a limited time after you click "Proceed to Payment" so no one else can grab them while you pay.
+            </div>
+          </div>
+        </div>
+        <div class="col-lg-7">
+          <div class="hiw-step">
+            <div class="step-num">1</div>
+            <div>
+              <h6>Find Your Movie</h6>
+              <p>Browse current and upcoming films. Filter by language, genre, city, or theater. Check ratings and reviews.</p>
+            </div>
+          </div>
+          <div class="hiw-step">
+            <div class="step-num">2</div>
+            <div>
+              <h6>Choose a Show</h6>
+              <p>Pick your preferred date, time, and screen. See available seats count at a glance before you commit.</p>
+            </div>
+          </div>
+          <div class="hiw-step">
+            <div class="step-num">3</div>
+            <div>
+              <h6>Select Your Seats</h6>
+              <p>Visual seat map with VIP, Premium, and Regular tiers. Booked and held seats are clearly marked. Pick up to 8 seats.</p>
+            </div>
+          </div>
+          <div class="hiw-step" style="margin-bottom:0">
+            <div class="step-num">4</div>
+            <div>
+              <h6>Pay &amp; Go Enjoy</h6>
+              <p>Pay via UPI, Card, or Net Banking. Instant confirmation with a QR-coded e-ticket sent straight to your account.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══ TEAM ═════════════════════════════════════ -->
+  <section class="team-section">
+    <div class="container">
+      <div class="text-center mb-5">
+        <div class="section-tag">The People</div>
+        <div class="section-title">Built by Movie Lovers,<br>for Movie Lovers</div>
+      </div>
+      <div class="row g-4 justify-content-center">
+        <div class="col-sm-6 col-lg-3">
+          <div class="team-card">
+            <div class="team-avatar"><i class="fas fa-user-tie"></i></div>
+            <h6>Arjun Reddy</h6>
+            <div class="role">Founder & CEO</div>
+            <p>Cinephile turned entrepreneur. 10 years in e-commerce before deciding the ticket-booking experience needed a complete rethink.</p>
+          </div>
+        </div>
+        <div class="col-sm-6 col-lg-3">
+          <div class="team-card">
+            <div class="team-avatar" style="background:linear-gradient(135deg,rgba(245,158,11,0.25),rgba(255,106,0,0.15));border-color:rgba(245,158,11,0.4);color:var(--gold)"><i class="fas fa-code"></i></div>
+            <h6>Priya Sharma</h6>
+            <div class="role">Head of Engineering</div>
+            <p>Full-stack wizard who built the real-time seat locking system from scratch. Believes every millisecond of latency is personal.</p>
+          </div>
+        </div>
+        <div class="col-sm-6 col-lg-3">
+          <div class="team-card">
+            <div class="team-avatar" style="background:linear-gradient(135deg,rgba(56,139,253,0.25),rgba(63,185,80,0.15));border-color:rgba(56,139,253,0.4);color:#388bfd"><i class="fas fa-paint-brush"></i></div>
+            <h6>Kavya Nair</h6>
+            <div class="role">Lead Designer</div>
+            <p>Former UX lead at a streaming platform. Obsessed with reducing clicks and making interfaces feel as natural as breathing.</p>
+          </div>
+        </div>
+        <div class="col-sm-6 col-lg-3">
+          <div class="team-card">
+            <div class="team-avatar" style="background:linear-gradient(135deg,rgba(63,185,80,0.25),rgba(245,158,11,0.15));border-color:rgba(63,185,80,0.4);color:#3fb950"><i class="fas fa-handshake"></i></div>
+            <h6>Rahul Mehta</h6>
+            <div class="role">Theater Partnerships</div>
+            <p>The reason we have 50+ theaters on board. Spent years in the exhibition industry and knows every theater owner worth knowing.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+
+  <!-- ═══ CTA ══════════════════════════════════════ -->
+  <div class="container">
+    <div class="cta-banner">
+      <h2>Ready for Your Next Show?</h2>
+      <p>Thousands of seats are waiting. Pick yours before someone else does.</p>
+      <div class="d-flex gap-3 justify-content-center flex-wrap">
+        <a href="{{ url_for('user_bp.movies') }}" class="btn btn-cinema px-5 py-3">
+          <i class="fas fa-film me-2"></i>Browse Movies
+        </a>
+        {% if not session.get('user_id') %}
+        <a href="{{ url_for('auth_bp.register') }}" class="btn btn-cinema-outline px-5 py-3">
+          <i class="fas fa-user-plus me-2"></i>Create Account
+        </a>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+/* ── Counter animation ── */
+(function () {
+  function animateCount(el) {
+    var target  = parseInt(el.dataset.target, 10);
+    var suffix  = target >= 1000 ? 'K+' : '+';
+    var display = target >= 1000 ? Math.round(target / 1000) : target;
+    var start   = 0;
+    var step    = Math.ceil(display / 40);
+    var timer   = setInterval(function () {
+      start += step;
+      if (start >= display) {
+        start = display;
+        clearInterval(timer);
+      }
+      el.textContent = start + suffix;
+    }, 35);
+  }
+
+  var observer = new IntersectionObserver(function (entries) {
+    entries.forEach(function (entry) {
+      if (entry.isIntersecting) {
+        animateCount(entry.target);
+        observer.unobserve(entry.target);
+      }
+    });
+  }, { threshold: 0.5 });
+
+  document.querySelectorAll('.stat-num[data-target]').forEach(function (el) {
+    observer.observe(el);
+  });
+})();
+</script>
+{% endblock %}

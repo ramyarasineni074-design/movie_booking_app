@@ -1,0 +1,143 @@
+{% extends 'owner/base.html' %}
+{% block title %}Bookings{% endblock %}
+{% block page_title %}Bookings{% endblock %}
+
+{% block content %}
+
+<!-- Summary Cards -->
+<div class="row g-3 mb-4">
+    <div class="col-md-3 col-6">
+        <div class="stat-card">
+            <div class="stat-icon" style="background:rgba(63,185,80,0.1);color:#3fb950"><i class="fas fa-check-circle"></i></div>
+            <div class="stat-value mt-2">{{ paid_count }}</div>
+            <div class="stat-label">Paid Bookings</div>
+        </div>
+    </div>
+    <div class="col-md-3 col-6">
+        <div class="stat-card">
+            <div class="stat-icon" style="background:rgba(229,9,20,0.1);color:#e50914"><i class="fas fa-times-circle"></i></div>
+            <div class="stat-value mt-2">{{ cancelled_count }}</div>
+            <div class="stat-label">Cancelled</div>
+        </div>
+    </div>
+    <div class="col-md-3 col-6">
+        <div class="stat-card">
+            <div class="stat-icon" style="background:rgba(243,156,18,0.1);color:#f39c12"><i class="fas fa-ticket-alt"></i></div>
+            <div class="stat-value mt-2">{{ total }}</div>
+            <div class="stat-label">Total Bookings</div>
+        </div>
+    </div>
+    <div class="col-md-3 col-6">
+        <div class="stat-card">
+            <div class="stat-icon" style="background:rgba(63,185,80,0.1);color:#3fb950"><i class="fas fa-rupee-sign"></i></div>
+            <div class="stat-value mt-2">₹{{ total_revenue|int }}</div>
+            <div class="stat-label">Revenue</div>
+        </div>
+    </div>
+</div>
+
+<!-- Filter -->
+<div class="data-card p-3 mb-4">
+    <div class="row g-3 align-items-end">
+        <div class="col-md-3">
+            <div class="input-group">
+                <span class="input-group-text search-input-dark" style="border-right:none"><i class="fas fa-search" style="color:#666"></i></span>
+                <input type="text" id="bookingSearch" class="form-control search-input-dark" placeholder="Search..." style="border-left:none">
+            </div>
+        </div>
+        <div class="col-md-2">
+            <select class="form-select search-input-dark" id="statusFilter" onchange="filterTable()">
+                <option value="">All Status</option>
+                <option value="Paid">Paid</option>
+                <option value="Cancelled">Cancelled</option>
+                <option value="Refunded">Refunded</option>
+            </select>
+        </div>
+        <div class="col-md-2">
+            <select class="form-select search-input-dark" onchange="filterByTheater(this.value)">
+                <option value="">All Theaters</option>
+                {% for theater in theaters %}
+                <option value="{{ theater.theater_id }}">{{ theater.name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-md-2">
+            <input type="date" id="dateFilter" class="form-control search-input-dark" onchange="filterTable()">
+        </div>
+    </div>
+</div>
+
+<!-- Bookings Table -->
+<div class="data-card">
+    <div class="data-card-header">
+        <h6 class="data-card-title"><i class="fas fa-ticket-alt me-2" style="color:#f39c12"></i>All Bookings</h6>
+    </div>
+    <div class="table-responsive">
+        <table class="table table-borderless" id="bookingsTable">
+            <thead>
+                <tr><th>Booking ID</th><th>Customer</th><th>Movie</th><th>Theater</th><th>Show Date</th><th>Seats</th><th>Amount</th><th>Status</th></tr>
+            </thead>
+            <tbody>
+                {% for b, s, m, t, u in results %}
+                <tr data-theater="{{ t.theater_id if t else '' }}"
+                    data-status="{{ b.payment_status }}">
+                    <td style="font-family:monospace;font-size:0.75rem;color:var(--text-muted)">{{ b.booking_id[:10] }}...</td>
+                    <td style="color:var(--admin-text);font-size:0.875rem">{{ u.name if u else '–' }}</td>
+                    <td style="font-size:0.875rem;max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">
+                        {{ m.title if m else '–' }}
+                    </td>
+                    <td style="font-size:0.82rem;color:var(--text-muted)">{{ t.name if t else '–' }}</td>
+                    <td style="font-size:0.82rem">{{ s.show_date if s else '–' }}</td>
+                    <td><span class="badge-pill badge-info">{{ b.seat_numbers or '–' }}</span></td>
+                    <td style="color:var(--orange);font-weight:700">₹{{ (b.total_amount or 0)|int }}</td>
+                    <td>
+                        <span class="badge-pill {% if b.payment_status in ('Paid','Completed') %}badge-success{% elif b.payment_status == 'Cancelled' %}badge-danger{% else %}badge-warning{% endif %}">
+                            {{ b.payment_status or '–' }}
+                        </span>
+                    </td>
+                </tr>
+                {% else %}
+                <tr><td colspan="8" class="text-center py-5">
+                    <div class="empty-state"><i class="fas fa-ticket-alt"></i><p>No bookings yet</p></div>
+                </td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    // Live search across all visible rows
+    const searchInput = document.getElementById('bookingSearch');
+    const table = document.getElementById('bookingsTable');
+    if (searchInput && table) {
+        searchInput.addEventListener('input', applyBookingFilters);
+    }
+
+    // Status and theater filter dropdowns
+    document.getElementById('statusFilter')?.addEventListener('change', applyBookingFilters);
+    document.querySelector('select[onchange^="filterByTheater"]')?.addEventListener('change', applyBookingFilters);
+});
+
+function applyBookingFilters() {
+    const q       = (document.getElementById('bookingSearch')?.value || '').toLowerCase();
+    const status  = document.getElementById('statusFilter')?.value || '';
+    const theater = document.querySelector('select[onchange^="filterByTheater"]')?.value || '';
+
+    document.querySelectorAll('#bookingsTable tbody tr').forEach(row => {
+        const matchText    = !q       || row.textContent.toLowerCase().includes(q);
+        const matchStatus  = !status  || (row.dataset.status || '') === status;
+        const matchTheater = !theater || (row.dataset.theater || '') === theater;
+        row.style.display  = (matchText && matchStatus && matchTheater) ? '' : 'none';
+    });
+}
+
+// Keep old function names for any inline onchange attributes
+function filterTable()            { applyBookingFilters(); }
+function filterByTheater(val)     { applyBookingFilters(); }
+</script>
+{% endblock %}

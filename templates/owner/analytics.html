@@ -1,0 +1,667 @@
+{% extends 'owner/base.html' %}
+{% block title %}Analytics{% endblock %}
+{% block page_title %}Analytics & Insights — {{ brand.brand_name }}{% endblock %}
+
+{% block extra_css %}
+<style>
+  .admin-page { background: #F8FAFC; }
+
+  .kpi-row {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 16px;
+    margin-bottom: 24px;
+  }
+  .kpi-card {
+    background: #FFFFFF; border: 1px solid #E5E7EB;
+    border-radius: 14px; padding: 20px 22px;
+    position: relative; overflow: hidden;
+    transition: transform 0.2s, box-shadow 0.2s;
+  }
+  .kpi-card:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,0,0,0.08); }
+  .kpi-card::before {
+    content: ''; position: absolute; left: 0; top: 0; bottom: 0;
+    width: 4px; border-radius: 14px 0 0 14px;
+  }
+  .kpi-card.kpi-revenue::before  { background: #3B82F6; }
+  .kpi-card.kpi-bookings::before { background: #22C55E; }
+  .kpi-card.kpi-avg::before      { background: #F59E0B; }
+  .kpi-card.kpi-lost::before     { background: #EF4444; }
+  .kpi-card.kpi-revenue  { box-shadow: 0 0 0 1px #E5E7EB, inset 0 1px 0 rgba(59,130,246,0.15); }
+  .kpi-card.kpi-bookings { box-shadow: 0 0 0 1px #E5E7EB, inset 0 1px 0 rgba(34,197,94,0.15); }
+  .kpi-card.kpi-avg      { box-shadow: 0 0 0 1px #E5E7EB, inset 0 1px 0 rgba(245,158,11,0.15); }
+  .kpi-card.kpi-lost     { box-shadow: 0 0 0 1px #E5E7EB, inset 0 1px 0 rgba(239,68,68,0.12); }
+  .kpi-icon { width: 40px; height: 40px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 1rem; margin-bottom: 12px; }
+  .kpi-card.kpi-revenue  .kpi-icon { background: rgba(59,130,246,0.1);  color: #3B82F6; }
+  .kpi-card.kpi-bookings .kpi-icon { background: rgba(34,197,94,0.1);   color: #22C55E; }
+  .kpi-card.kpi-avg      .kpi-icon { background: rgba(245,158,11,0.1);  color: #F59E0B; }
+  .kpi-card.kpi-lost     .kpi-icon { background: rgba(239,68,68,0.1);   color: #EF4444; }
+  .kpi-label { font-size: 0.72rem; color: #6B7280; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 4px; font-weight: 600; }
+  .kpi-value { font-size: 1.7rem; font-weight: 800; color: #111827; line-height: 1.1; }
+  .kpi-card.kpi-lost .kpi-value { color: #EF4444; }
+  .kpi-sub { font-size: 0.72rem; color: #9CA3AF; margin-top: 4px; }
+
+  .section-heading {
+    font-size: 0.78rem; font-weight: 700; text-transform: uppercase;
+    letter-spacing: 0.08em; color: #6B7280;
+    margin: 28px 0 12px; display: flex; align-items: center; gap: 8px;
+  }
+  .section-heading::after { content: ''; flex: 1; height: 1px; background: #E5E7EB; }
+
+  .chart-grid   { display: grid; gap: 20px; }
+  .chart-grid-2 { grid-template-columns: 1fr 1fr; }
+  .chart-grid-3 { grid-template-columns: 2fr 1fr; }
+  @media (max-width: 900px) { .chart-grid-2, .chart-grid-3 { grid-template-columns: 1fr; } }
+
+  .chart-card {
+    background: #FFFFFF; border: 1px solid #E5E7EB;
+    border-radius: 14px; padding: 20px 22px; transition: box-shadow 0.2s;
+  }
+  .chart-card:hover { box-shadow: 0 4px 16px rgba(0,0,0,0.06); }
+  .chart-card-title {
+    font-size: 0.85rem; font-weight: 700; color: #111827; margin-bottom: 18px;
+    display: flex; align-items: center; gap: 8px;
+    padding-bottom: 12px; border-bottom: 1px solid #F3F4F6;
+  }
+  .chart-card-title i {
+    width: 28px; height: 28px; border-radius: 7px;
+    display: inline-flex; align-items: center; justify-content: center; font-size: 0.75rem;
+  }
+  .icon-green  { background: rgba(34,197,94,0.1);   color: #22C55E !important; }
+  .icon-red    { background: rgba(239,68,68,0.1);   color: #EF4444 !important; }
+  .icon-amber  { background: rgba(245,158,11,0.1);  color: #F59E0B !important; }
+  .icon-blue   { background: rgba(59,130,246,0.1);  color: #3B82F6 !important; }
+  .icon-purple { background: rgba(139,92,246,0.1);  color: #8B5CF6 !important; }
+  .icon-cyan   { background: rgba(6,182,212,0.1);   color: #06B6D4 !important; }
+  .icon-orange { background: rgba(249,115,22,0.1);  color: #F97316 !important; }
+  .icon-pink   { background: rgba(236,72,153,0.1);  color: #EC4899 !important; }
+
+  .rev-summary-item {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 10px 0; border-bottom: 1px solid #F3F4F6; font-size: 0.875rem;
+  }
+  .rev-summary-item:last-child { border-bottom: none; }
+  .rev-summary-label { color: #6B7280; display: flex; align-items: center; gap: 8px; }
+  .rev-summary-label .dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
+  .rev-summary-value { font-weight: 700; color: #111827; }
+  canvas { max-width: 100%; }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<!-- KPI Cards -->
+
+ 
+<!-- SECTION: BOOKING TRENDS -->
+<div class="section-heading"><i class="fas fa-calendar-alt" style="color:#3B82F6;"></i> Booking Trends</div>
+
+<!-- Q1: Daily Bookings Trend -->
+<div class="chart-card mb-4">
+  <div class="chart-card-title">
+    <i class="fas fa-chart-line icon-blue"></i>
+    Daily Bookings Trend — {{ brand.brand_name }} (Last 60 Days)
+  </div>
+  <canvas id="dailyTrendChart" height="80"></canvas>
+</div>
+
+<!-- Monthly Revenue | Weekday bookings -->
+<div class="chart-grid chart-grid-2 mb-4">
+  <div class="chart-card">
+    <div class="chart-card-title">
+      <i class="fas fa-chart-area icon-green"></i>
+      Monthly Revenue & Bookings (Last 12 Months)
+    </div>
+    <canvas id="revTrend" height="220"></canvas>
+  </div>
+  <div class="chart-card">
+    <div class="chart-card-title">
+      <i class="fas fa-calendar-week icon-purple"></i>
+      Bookings by Day of Week
+    </div>
+    <canvas id="weekdayChart" height="220"></canvas>
+  </div>
+</div>
+
+<!-- Q4: Time Slot -->
+<div class="chart-card mb-4">
+  <div class="chart-card-title">
+    <i class="fas fa-clock icon-cyan"></i>
+    Booking Volume by Time Slot (Morning / Afternoon / Evening / Night)
+  </div>
+  <canvas id="timeSlotChart" height="80"></canvas>
+</div>
+
+<!-- SECTION: MOVIE PERFORMANCE -->
+<div class="section-heading"><i class="fas fa-film" style="color:#EF4444;"></i> Movie Performance</div>
+
+<!-- Q5 top movies by bookings | Q7 multi-line trends -->
+<div class="chart-grid chart-grid-3 mb-4">
+  <div class="chart-card">
+    <div class="chart-card-title">
+      <i class="fas fa-trophy icon-amber"></i>
+      Top 10 Movies by Bookings
+    </div>
+    <canvas id="topMoviesBookingsChart" height="200"></canvas>
+  </div>
+  <div class="chart-card">
+    <div class="chart-card-title">
+      <i class="fas fa-tags icon-purple"></i>
+      Genre Breakdown (Revenue)
+    </div>
+    <canvas id="genreChart" height="200"></canvas>
+  </div>
+</div>
+
+<!-- Q7 – Multi-line booking trends for top 5 movies -->
+<div class="chart-card mb-4">
+  <div class="chart-card-title">
+    <i class="fas fa-chart-line icon-green"></i>
+    Booking Trends for Top 5 Movies Over Time (Multi-Line)
+  </div>
+  <canvas id="movieTrendsChart" height="90"></canvas>
+</div>
+
+<!-- SECTION: THEATRE ANALYSIS -->
+<div class="section-heading"><i class="fas fa-building" style="color:#3B82F6;"></i> Theatre Analysis</div>
+
+<!-- Q9 + Q11: Top theatres bookings | screen occupancy -->
+<div class="chart-grid chart-grid-2 mb-4">
+  <div class="chart-card">
+    <div class="chart-card-title">
+      <i class="fas fa-building icon-blue"></i>
+      Top Theatres by Bookings
+    </div>
+    <canvas id="topTheatresBookingsChart" height="220"></canvas>
+  </div>
+  <div class="chart-card">
+    <div class="chart-card-title">
+      <i class="fas fa-building icon-orange"></i>
+      Revenue per Theater
+    </div>
+    <canvas id="theaterRevChart" height="220"></canvas>
+  </div>
+</div>
+
+<!-- Q11 + Q12: Screen occupancy | Seat type -->
+<div class="chart-grid chart-grid-2 mb-4">
+  <div class="chart-card">
+    <div class="chart-card-title">
+      <i class="fas fa-percent icon-cyan"></i>
+      Screen Seat Occupancy (%)
+    </div>
+    <canvas id="screenOccupancyChart" height="220"></canvas>
+  </div>
+  <div class="chart-card">
+    <div class="chart-card-title">
+      <i class="fas fa-chair icon-pink"></i>
+      Seat Type Breakdown (Booked Seats)
+    </div>
+    <canvas id="seatTypeChart" height="220"></canvas>
+  </div>
+</div>
+
+<!-- SECTION: REVENUE & PRICING -->
+<div class="section-heading"><i class="fas fa-indian-rupee-sign" style="color:#22C55E;"></i> Revenue & Pricing</div>
+
+<!-- Q14: Avg price by theater -->
+<div class="chart-card mb-4">
+  <div class="chart-card-title">
+    <i class="fas fa-tag icon-amber"></i>
+    Average Ticket Price by Theater
+  </div>
+  <canvas id="avgPriceTheaterChart" height="80"></canvas>
+</div>
+
+<!-- Payment Status | Revenue Summary -->
+<div class="chart-grid chart-grid-2 mb-4">
+  <div class="chart-card">
+    <div class="chart-card-title">
+      <i class="fas fa-check-circle icon-green"></i>
+      Payment Status Distribution
+    </div>
+    <canvas id="payStatus" height="220"></canvas>
+  </div>
+  <div class="chart-card" style="display:flex;flex-direction:column;justify-content:center;">
+    <div class="chart-card-title">
+      <i class="fas fa-info-circle icon-cyan"></i>
+      Revenue Summary
+    </div>
+    <div id="revSummaryTable">
+      <div style="color:#9CA3AF;font-size:0.875rem;">Loading…</div>
+    </div>
+  </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+
+<script>
+Chart.defaults.font.family  = "'Poppins', sans-serif";
+Chart.defaults.font.size    = 12;
+Chart.defaults.color        = '#6B7280';
+Chart.defaults.borderColor  = '#F3F4F6';
+
+const PIE_COLORS = ['#3B82F6','#22C55E','#F59E0B','#EF4444','#8B5CF6','#06B6D4','#F97316','#EC4899','#14B8A6','#6366F1'];
+
+const STATUS_COLORS = {
+  'completed': '#22C55E', 'Completed': '#22C55E',
+  'failed': '#EF4444', 'Failed': '#EF4444',
+  'cancelled': '#EF4444', 'Cancelled': '#EF4444',
+  'pending': '#F59E0B', 'Pending': '#F59E0B',
+  'refunded': '#3B82F6', 'Refunded': '#3B82F6',
+};
+
+function orangeGradient(ctx, chartArea) {
+  if (!chartArea) return '#FF6A00';
+  const g = ctx.createLinearGradient(0, chartArea.bottom, 0, chartArea.top);
+  g.addColorStop(0, '#FF6A00'); g.addColorStop(1, '#FF9A3C'); return g;
+}
+function blueGradient(ctx, chartArea) {
+  if (!chartArea) return '#3B82F6';
+  const g = ctx.createLinearGradient(0, chartArea.bottom, 0, chartArea.top);
+  g.addColorStop(0, '#2563EB'); g.addColorStop(1, '#60A5FA'); return g;
+}
+function greenGradient(ctx, chartArea) {
+  if (!chartArea) return '#22C55E';
+  const g = ctx.createLinearGradient(0, chartArea.bottom, 0, chartArea.top);
+  g.addColorStop(0, '#16A34A'); g.addColorStop(1, '#4ADE80'); return g;
+}
+
+const axisOpts = {
+  grid: { color: '#F3F4F6', drawBorder: false },
+  ticks: { color: '#9CA3AF', font: { size: 11 } },
+};
+const legendOpts = {
+  labels: { color: '#374151', font: { size: 11 }, padding: 16, usePointStyle: true, pointStyleWidth: 8 }
+};
+const tooltipBase = {
+  backgroundColor: '#fff', borderColor: '#E5E7EB', borderWidth: 1,
+  titleColor: '#111827', bodyColor: '#6B7280', padding: 10,
+};
+
+const fmt  = n => '₹' + Number(n).toLocaleString('en-IN', { maximumFractionDigits: 0 });
+const fmtK = v => '₹' + Number(v/1000).toFixed(0) + 'K';
+
+async function fetchData(url) {
+  try { const r = await fetch(url); return await r.json(); }
+  catch(e) { console.error('Error:', url, e); return []; }
+}
+
+async function loadAnalytics() {
+  const [
+    summary, revTrend, dailyTrend, topMovBk, topMovRev,
+    genreData, movieTrends, topTheatresBk, theaterRev,
+    screenOccupancy, seatType, avgPriceTheater,
+    weekdayData, paymentStatus, timeSlot
+  ] = await Promise.all([
+    fetchData('/owner/analytics/api/summary'),
+    fetchData('/owner/analytics/api/revenue-trend'),
+    fetchData('/owner/analytics/api/daily-bookings-trend'),
+    fetchData('/owner/analytics/api/top-movies-bookings'),
+    fetchData('/owner/analytics/api/top-movies'),
+    fetchData('/owner/analytics/api/genre-breakdown'),
+    fetchData('/owner/analytics/api/movie-trends-over-time'),
+    fetchData('/owner/analytics/api/top-theaters-bookings'),
+    fetchData('/owner/analytics/api/theater-revenue'),
+    fetchData('/owner/analytics/api/screen-occupancy'),
+    fetchData('/owner/analytics/api/seat-type-breakdown'),
+    fetchData('/owner/analytics/api/avg-price-by-theater'),
+    fetchData('/owner/analytics/api/bookings-by-weekday'),
+    fetchData('/owner/analytics/api/payment-status'),
+    fetchData('/owner/analytics/api/bookings-by-timeslot'),
+  ]);
+
+ 
+  renderRevTrend(revTrend);
+  renderDailyTrend(dailyTrend);
+  renderTopMoviesBookings(topMovBk);
+  renderGenreChart(genreData);
+  renderMovieTrends(movieTrends);
+  renderTopTheatresBookings(topTheatresBk);
+  renderTheaterRevenue(theaterRev);
+  renderScreenOccupancy(screenOccupancy);
+  renderSeatType(seatType);
+  renderAvgPriceTheater(avgPriceTheater);
+  renderWeekdayChart(weekdayData);
+  renderPaymentStatus(paymentStatus);
+  renderTimeSlot(timeSlot);
+}
+
+function renderKPI(d) {
+  document.getElementById('kTotalRev').textContent = fmt(d.total_revenue || 0);
+  document.getElementById('kTotalBk').textContent  = Number(d.total_bookings || 0).toLocaleString();
+  document.getElementById('kAvg').textContent      = fmt(d.avg_booking_value || 0);
+  document.getElementById('kLost').textContent     = fmt((d.cancelled_revenue||0)+(d.failed_revenue||0));
+
+  document.getElementById('revSummaryTable').innerHTML = `
+    <div class="rev-summary-item">
+      <span class="rev-summary-label"><span class="dot" style="background:#3B82F6"></span>Total Revenue</span>
+      <span class="rev-summary-value">${fmt(d.total_revenue||0)}</span>
+    </div>
+    <div class="rev-summary-item">
+      <span class="rev-summary-label"><span class="dot" style="background:#22C55E"></span>Paid Bookings</span>
+      <span class="rev-summary-value">${Number(d.total_bookings||0).toLocaleString()}</span>
+    </div>
+    <div class="rev-summary-item">
+      <span class="rev-summary-label"><span class="dot" style="background:#F59E0B"></span>Avg per Booking</span>
+      <span class="rev-summary-value">${fmt(d.avg_booking_value||0)}</span>
+    </div>
+    <div class="rev-summary-item">
+      <span class="rev-summary-label"><span class="dot" style="background:#EF4444"></span>Cancelled Revenue</span>
+      <span class="rev-summary-value" style="color:#EF4444">${fmt(d.cancelled_revenue||0)}</span>
+    </div>
+    <div class="rev-summary-item">
+      <span class="rev-summary-label"><span class="dot" style="background:#F97316"></span>Failed Revenue</span>
+      <span class="rev-summary-value" style="color:#F97316">${fmt(d.failed_revenue||0)}</span>
+    </div>`;
+}
+
+function renderRevTrend(data) {
+  new Chart(document.getElementById('revTrend'), {
+    type: 'line',
+    data: {
+      labels: data.map(d => d.label),
+      datasets: [
+        { label: 'Revenue (₹)', data: data.map(d => d.revenue),
+          borderColor: '#22C55E', backgroundColor: 'rgba(34,197,94,0.08)',
+          borderWidth: 2.5, tension: 0.4, fill: true,
+          pointBackgroundColor: '#22C55E', pointRadius: 3, pointHoverRadius: 5 },
+        { label: 'Bookings', data: data.map(d => d.bookings),
+          borderColor: '#3B82F6', backgroundColor: 'rgba(59,130,246,0.05)',
+          borderWidth: 2.5, tension: 0.4, fill: false,
+          pointBackgroundColor: '#3B82F6', pointRadius: 3, pointHoverRadius: 5,
+          yAxisID: 'y2' }
+      ]
+    },
+    options: {
+      responsive: true, interaction: { mode: 'index', intersect: false },
+      plugins: { legend: legendOpts, tooltip: tooltipBase },
+      scales: {
+        x: { ...axisOpts },
+        y:  { ...axisOpts, position: 'left', ticks: { ...axisOpts.ticks, callback: v => fmtK(v) } },
+        y2: { ...axisOpts, position: 'right', grid: { display: false } }
+      }
+    }
+  });
+}
+
+function renderDailyTrend(data) {
+  new Chart(document.getElementById('dailyTrendChart'), {
+    type: 'line',
+    data: {
+      labels: data.map(d => d.day),
+      datasets: [
+        { label: 'Bookings', data: data.map(d => d.count),
+          borderColor: '#3B82F6', backgroundColor: 'rgba(59,130,246,0.08)',
+          borderWidth: 2.5, tension: 0.4, fill: true,
+          pointBackgroundColor: '#3B82F6', pointRadius: 2, pointHoverRadius: 5 },
+        { label: 'Revenue (₹)', data: data.map(d => d.revenue),
+          borderColor: '#22C55E', backgroundColor: 'rgba(34,197,94,0.05)',
+          borderWidth: 2, tension: 0.4, fill: false,
+          pointBackgroundColor: '#22C55E', pointRadius: 2, pointHoverRadius: 5,
+          yAxisID: 'y2' }
+      ]
+    },
+    options: {
+      responsive: true, interaction: { mode: 'index', intersect: false },
+      plugins: { legend: legendOpts, tooltip: { ...tooltipBase,
+        callbacks: { label: ctx => ctx.datasetIndex === 0 ? ctx.parsed.y + ' bookings' : fmt(ctx.parsed.y) } } },
+      scales: {
+        x: { ...axisOpts, ticks: { ...axisOpts.ticks, maxTicksLimit: 15 } },
+        y:  { ...axisOpts, position: 'left' },
+        y2: { ...axisOpts, position: 'right', grid: { display: false },
+              ticks: { ...axisOpts.ticks, callback: v => fmtK(v) } }
+      }
+    }
+  });
+}
+
+function renderTopMoviesBookings(data) {
+  new Chart(document.getElementById('topMoviesBookingsChart'), {
+    type: 'bar',
+    data: {
+      labels: data.map(d => d.title),
+      datasets: [{ label: 'Bookings', data: data.map(d => d.bookings),
+        backgroundColor: ctx => { const {ctx:c,chartArea:a} = ctx.chart; return a ? orangeGradient(c,a) : '#FF6A00'; },
+        borderRadius: 4, borderSkipped: false }]
+    },
+    options: {
+      indexAxis: 'y', responsive: true,
+      plugins: { legend: { display: false }, tooltip: tooltipBase },
+      scales: { x: { ...axisOpts }, y: { ...axisOpts, ticks: { color: '#374151', font: { size: 10 } } } }
+    }
+  });
+}
+
+function renderGenreChart(data) {
+  new Chart(document.getElementById('genreChart'), {
+    type: 'doughnut',
+    data: {
+      labels: data.map(d => d.genre),
+      datasets: [{ data: data.map(d => d.revenue),
+        backgroundColor: PIE_COLORS, borderColor: '#FFF', borderWidth: 3, hoverOffset: 6 }]
+    },
+    options: {
+      responsive: true, cutout: '62%',
+      plugins: { legend: { ...legendOpts, position: 'bottom' },
+        tooltip: { ...tooltipBase, callbacks: { label: ctx => fmt(ctx.parsed) } } }
+    }
+  });
+}
+
+// Q7 – Multi-line movie trends
+function renderMovieTrends(movies) {
+  if (!movies || movies.length === 0) return;
+  // Collect all labels
+  const allLabels = [...new Set(movies.flatMap(m => m.data.map(d => d.label)))].sort();
+  const lineColors = ['#3B82F6','#22C55E','#F59E0B','#EF4444','#8B5CF6'];
+  const datasets = movies.map((m, i) => {
+    const dataMap = {};
+    m.data.forEach(d => { dataMap[d.label] = d.count; });
+    return {
+      label: m.title,
+      data: allLabels.map(l => dataMap[l] || 0),
+      borderColor: lineColors[i % lineColors.length],
+      backgroundColor: lineColors[i % lineColors.length] + '20',
+      borderWidth: 2, tension: 0.4, fill: false,
+      pointRadius: 3, pointHoverRadius: 6,
+    };
+  });
+  new Chart(document.getElementById('movieTrendsChart'), {
+    type: 'line',
+    data: { labels: allLabels, datasets },
+    options: {
+      responsive: true, interaction: { mode: 'index', intersect: false },
+      plugins: { legend: legendOpts, tooltip: tooltipBase },
+      scales: {
+        x: { ...axisOpts },
+        y: { ...axisOpts, title: { display: true, text: 'Bookings', color: '#6B7280' } }
+      }
+    }
+  });
+}
+
+function renderTopTheatresBookings(data) {
+  new Chart(document.getElementById('topTheatresBookingsChart'), {
+    type: 'bar',
+    data: {
+      labels: data.map(d => d.theater),
+      datasets: [{ label: 'Bookings', data: data.map(d => d.bookings),
+        backgroundColor: ctx => { const {ctx:c,chartArea:a} = ctx.chart; return a ? blueGradient(c,a) : '#3B82F6'; },
+        borderRadius: 4, borderSkipped: false }]
+    },
+    options: {
+      indexAxis: 'y', responsive: true,
+      plugins: { legend: { display: false }, tooltip: tooltipBase },
+      scales: { x: { ...axisOpts }, y: { ...axisOpts, ticks: { color: '#374151', font: { size: 10 } } } }
+    }
+  });
+}
+
+function renderTheaterRevenue(data) {
+  new Chart(document.getElementById('theaterRevChart'), {
+    type: 'bar',
+    data: {
+      labels: data.map(d => d.theater),
+      datasets: [
+        { label: 'Revenue', data: data.map(d => d.revenue),
+          backgroundColor: ctx => { const {ctx:c,chartArea:a} = ctx.chart; return a ? blueGradient(c,a) : '#3B82F6'; },
+          borderRadius: 5, borderSkipped: false },
+        { label: 'Bookings', data: data.map(d => d.bookings),
+          backgroundColor: 'rgba(245,158,11,0.8)', borderRadius: 5, borderSkipped: false, yAxisID: 'y2' }
+      ]
+    },
+    options: {
+      responsive: true, plugins: { legend: legendOpts,
+        tooltip: { ...tooltipBase, callbacks: { label: ctx => ctx.datasetIndex === 0 ? fmt(ctx.parsed.y) : ctx.parsed.y + ' bookings' } } },
+      scales: {
+        x: { ...axisOpts, ticks: { color: '#374151', font: { size: 10 } } },
+        y:  { ...axisOpts, ticks: { ...axisOpts.ticks, callback: v => fmtK(v) } },
+        y2: { ...axisOpts, position: 'right', grid: { display: false } }
+      }
+    }
+  });
+}
+
+// Q11 – Screen occupancy bar
+function renderScreenOccupancy(data) {
+  new Chart(document.getElementById('screenOccupancyChart'), {
+    type: 'bar',
+    data: {
+      labels: data.map(d => d.screen),
+      datasets: [{
+        label: 'Occupancy %',
+        data: data.map(d => d.occupancy_pct),
+        backgroundColor: data.map(d => {
+          const p = d.occupancy_pct;
+          if (p >= 75) return 'rgba(34,197,94,0.8)';
+          if (p >= 50) return 'rgba(245,158,11,0.8)';
+          return 'rgba(239,68,68,0.8)';
+        }),
+        borderRadius: 5, borderSkipped: false,
+      }]
+    },
+    options: {
+      indexAxis: 'y', responsive: true,
+      plugins: { legend: { display: false }, tooltip: { ...tooltipBase,
+        callbacks: { label: ctx => ctx.parsed.x.toFixed(1) + '% occupied' } } },
+      scales: {
+        x: { ...axisOpts, min: 0, max: 100, ticks: { ...axisOpts.ticks, callback: v => v + '%' } },
+        y: { ...axisOpts, ticks: { color: '#374151', font: { size: 10 } } }
+      }
+    }
+  });
+}
+
+// Q12 – Seat type clustered bar
+function renderSeatType(data) {
+  new Chart(document.getElementById('seatTypeChart'), {
+    type: 'bar',
+    data: {
+      labels: data.map(d => d.seat_type),
+      datasets: [{
+        label: 'Seats Booked',
+        data: data.map(d => d.seats_booked),
+        backgroundColor: PIE_COLORS.slice(0, data.length),
+        borderRadius: 6, borderSkipped: false,
+      }]
+    },
+    options: {
+      responsive: true,
+      plugins: { legend: { display: false }, tooltip: tooltipBase },
+      scales: { x: { ...axisOpts }, y: { ...axisOpts } }
+    }
+  });
+}
+
+// Q14 – Avg price by theater
+function renderAvgPriceTheater(data) {
+  new Chart(document.getElementById('avgPriceTheaterChart'), {
+    type: 'bar',
+    data: {
+      labels: data.map(d => `${d.theater} (${d.city})`),
+      datasets: [{ label: 'Avg Ticket Price', data: data.map(d => d.avg_price),
+        backgroundColor: ctx => { const {ctx:c,chartArea:a} = ctx.chart; return a ? orangeGradient(c,a) : '#FF6A00'; },
+        borderRadius: 5, borderSkipped: false }]
+    },
+    options: {
+      responsive: true,
+      plugins: { legend: { display: false }, tooltip: { ...tooltipBase,
+        callbacks: { label: ctx => fmt(ctx.parsed.y) } } },
+      scales: {
+        x: { ...axisOpts, ticks: { ...axisOpts.ticks, font: { size: 10 } } },
+        y: { ...axisOpts, ticks: { ...axisOpts.ticks, callback: v => fmt(v) } }
+      }
+    }
+  });
+}
+
+function renderWeekdayChart(data) {
+  new Chart(document.getElementById('weekdayChart'), {
+    type: 'bar',
+    data: {
+      labels: data.map(d => d.day),
+      datasets: [{ label: 'Bookings', data: data.map(d => d.count),
+        backgroundColor: 'rgba(139,92,246,0.15)', borderColor: '#8B5CF6',
+        borderWidth: 2, borderRadius: 6, borderSkipped: false }]
+    },
+    options: {
+      responsive: true,
+      plugins: { legend: { display: false }, tooltip: tooltipBase },
+      scales: { x: { ...axisOpts }, y: { ...axisOpts } }
+    }
+  });
+}
+
+function renderPaymentStatus(data) {
+  new Chart(document.getElementById('payStatus'), {
+    type: 'pie',
+    data: {
+      labels: data.map(d => d.status),
+      datasets: [{ data: data.map(d => d.count),
+        backgroundColor: data.map(d => STATUS_COLORS[d.status] || '#9CA3AF'),
+        borderColor: '#FFF', borderWidth: 3, hoverOffset: 6 }]
+    },
+    options: {
+      responsive: true,
+      plugins: { legend: { ...legendOpts, position: 'bottom' }, tooltip: tooltipBase }
+    }
+  });
+}
+
+// Q4 – Time slot bar for owner
+function renderTimeSlot(data) {
+  const slotColors = { Morning: '#F59E0B', Afternoon: '#3B82F6', Evening: '#8B5CF6', Night: '#1F2937' };
+  new Chart(document.getElementById('timeSlotChart'), {
+    type: 'bar',
+    data: {
+      labels: data.map(d => d.slot),
+      datasets: [
+        { label: 'Bookings', data: data.map(d => d.count),
+          backgroundColor: data.map(d => slotColors[d.slot] || '#9CA3AF'),
+          borderRadius: 8, borderSkipped: false },
+        { label: 'Revenue (₹)', data: data.map(d => d.revenue),
+          backgroundColor: data.map(d => (slotColors[d.slot] || '#9CA3AF') + '55'),
+          borderRadius: 8, borderSkipped: false, yAxisID: 'y2' }
+      ]
+    },
+    options: {
+      responsive: true, interaction: { mode: 'index', intersect: false },
+      plugins: { legend: legendOpts, tooltip: { ...tooltipBase,
+        callbacks: { label: ctx => ctx.datasetIndex === 0 ? ctx.parsed.y + ' bookings' : fmt(ctx.parsed.y) } } },
+      scales: {
+        x: { ...axisOpts },
+        y:  { ...axisOpts, position: 'left' },
+        y2: { ...axisOpts, position: 'right', grid: { display: false },
+              ticks: { ...axisOpts.ticks, callback: v => fmtK(v) } }
+      }
+    }
+  });
+}
+
+loadAnalytics();
+</script>
+{% endblock %}

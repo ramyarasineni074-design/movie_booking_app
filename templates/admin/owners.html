@@ -1,0 +1,275 @@
+{% extends 'admin/base.html' %}
+{% block title %}Theater Owners{% endblock %}
+{% block page_title %}Theater Owners{% endblock %}
+
+{% block content %}
+{% with messages = get_flashed_messages(with_categories=true) %}
+{% if messages %}{% for cat,msg in messages %}
+<div class="alert alert-{{ cat }} alert-dismissible fade show mb-3">{{ msg }}
+  <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+</div>
+{% endfor %}{% endif %}{% endwith %}
+
+{# ── Filter + Add ── #}
+<div class="data-card p-3 mb-4">
+  <form method="GET" action="{{ url_for('admin_bp.owners') }}" class="row g-3 align-items-end">
+    <div class="col-md-4">
+      <div class="input-group">
+        <span class="input-group-text search-input-dark" style="border-right:none"><i class="fas fa-search"
+            style="color:#666"></i></span>
+        <input type="text" name="search" class="form-control search-input-dark" placeholder="Search name or email..."
+          value="{{ search }}" style="border-left:none">
+      </div>
+    </div>
+    <div class="col-auto"><button type="submit" class="btn btn-admin-primary"><i
+          class="fas fa-filter me-1"></i>Filter</button></div>
+    {% if search %}<div class="col-auto"><a href="{{ url_for('admin_bp.owners') }}" class="btn btn-secondary">Clear</a>
+    </div>{% endif %}
+    <div class="col-auto ms-auto">
+      <button type="button" class="btn btn-admin-primary" data-bs-toggle="modal" data-bs-target="#addOwnerModal">
+        <i class="fas fa-user-plus me-1"></i>Add Owner
+      </button>
+    </div>
+  </form>
+</div>
+
+{# ── Table ── #}
+<div class="data-card">
+  <div class="data-card-header">
+    <h6 class="data-card-title"><i class="fas fa-user-tie me-2 text-orange"></i>Theater Owners
+      <span style="color:var(--text-muted);font-size:0.8rem;font-weight:400;margin-left:8px">{{ total }} total</span>
+    </h6>
+  </div>
+  <div class="table-responsive">
+    <table class="table table-borderless">
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Name</th>
+          <th>Email</th>
+          <th>Brand / Theaters</th>
+          <th>Status</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for owner in owners %}
+        <tr>
+          <td style="color:var(--text-muted);font-size:0.8rem">{{ (page-1)*per_page + loop.index }}</td>
+          <td>
+            <div style="color:var(--admin-text);font-weight:600">{{ owner.name }}</div>
+            {% if owner.is_first_login %}
+            <span style="font-size:0.72rem;color:var(--gold)"><i class="fas fa-exclamation-circle me-1"></i>First login
+              pending</span>
+            {% endif %}
+          </td>
+          <td style="font-size:0.875rem;color:var(--text-muted)">{{ owner.email }}</td>
+          <td>
+            {% for brand in owner.brands %}
+            <div style="font-size:0.85rem;color:var(--orange);font-weight:600">{{ brand.brand_name }}</div>
+            <div style="font-size:0.75rem;color:var(--text-muted)">{{ brand.theaters|length }} theater(s)</div>
+            {% else %}<span style="color:var(--text-muted);font-size:0.85rem">No brand assigned</span>{% endfor %}
+          </td>
+          <td>
+            <span class="badge-pill {% if owner.is_active %}badge-success{% else %}badge-danger{% endif %}">
+              {{ 'Active' if owner.is_active else 'Inactive' }}
+            </span>
+          </td>
+          <td>
+            <div class="d-flex gap-1 flex-wrap">
+              <button class="btn btn-sm" title="Edit"
+                style="background:rgba(56,139,253,0.1);color:#388bfd;border:none;border-radius:7px"
+                data-owner='{{ owner.to_dict()|tojson }}' data-id="{{ owner.id }}"
+                onclick="editOwner(this.dataset.id, JSON.parse(this.dataset.owner))">
+                <i class="fas fa-edit"></i>
+              </button>
+              <button class="btn btn-sm" title="{{ 'Deactivate' if owner.is_active else 'Activate' }}"
+                style="background:rgba(243,156,18,0.1);color:#f39c12;border:none;border-radius:7px"
+                data-id="{{ owner.id }}" onclick="toggleOwner(this.dataset.id, this)">
+                <i class="fas {{ 'fa-ban' if owner.is_active else 'fa-check' }}"></i>
+              </button>
+              <button class="btn btn-sm" title="Resend Credentials"
+                style="background:rgba(63,185,80,0.1);color:#3fb950;border:none;border-radius:7px"
+                data-id="{{ owner.id }}" data-name="{{ owner.name|e }}"
+                onclick="resendCreds(this.dataset.id, this.dataset.name)">
+                <i class="fas fa-paper-plane"></i>
+              </button>
+              <button class="btn btn-sm" title="Delete"
+                style="background:rgba(229,9,20,0.1);color:#e50914;border:none;border-radius:7px"
+                data-id="{{ owner.id }}" data-name="{{ owner.name|e }}"
+                onclick="delOwner(this.dataset.id, this.dataset.name)">
+                <i class="fas fa-trash"></i>
+              </button>
+            </div>
+          </td>
+        </tr>
+        {% else %}
+        <tr>
+          <td colspan="6" class="text-center py-5">
+            <div class="empty-state"><i class="fas fa-user-tie"></i>
+              <h5>No owners yet</h5>
+              <p>Add a theater owner or approve a partnership request.</p>
+              <a href="{{ url_for('admin_bp.partnerships') }}" class="btn btn-cinema btn-sm mt-2">
+                <i class="fas fa-handshake me-1"></i>View Partnerships
+              </a>
+            </div>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  {% if total_pages > 1 %}
+  <div class="d-flex justify-content-between align-items-center px-3 pb-3">
+    <span style="color:var(--text-muted);font-size:0.85rem">Page {{ page }} of {{ total_pages }} · {{ total }}
+      owners</span>
+    <div class="d-flex gap-2">
+      {% if page>1 %}<a href="?page={{ page-1 }}&search={{ search }}" class="btn btn-sm btn-cinema-outline"><i
+          class="fas fa-chevron-left"></i></a>{% endif %}
+      {% for p in range([1,page-2]|max,[total_pages+1,page+3]|min) %}
+      <a href="?page={{ p }}&search={{ search }}"
+        class="btn btn-sm {% if p==page %}btn-cinema{% else %}btn-cinema-outline{% endif %}">{{ p }}</a>
+      {% endfor %}
+      {% if page<total_pages %}<a href="?page={{ page+1 }}&search={{ search }}" class="btn btn-sm btn-cinema-outline"><i
+          class="fas fa-chevron-right"></i></a>{% endif %}
+    </div>
+  </div>
+  {% endif %}
+</div>
+
+{# ── ADD OWNER MODAL ── #}
+<div class="modal fade" id="addOwnerModal" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content modal-dark">
+      <div class="modal-header">
+        <h5 class="modal-title"><i class="fas fa-user-plus me-2 text-orange"></i>Add Theater Owner</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <form method="POST" action="{{ url_for('admin_bp.create_owner') }}">
+        <div class="modal-body">
+          <div class="row g-3">
+            <div class="col-12">
+              <label class="form-label">Full Name *</label>
+              <input type="text" name="name" class="form-control" placeholder="Owner's full name" required>
+            </div>
+            <div class="col-12">
+              <label class="form-label">Email Address *</label>
+              <input type="email" name="email" class="form-control" placeholder="owner@email.com" required>
+            </div>
+            <div class="col-12">
+              <label class="form-label">New Brand Name</label>
+              <input type="text" name="brand_name" class="form-control" placeholder="e.g. PVR Cinemas (optional)">
+              <div class="form-text" style="color:var(--text-muted)">A new brand will be created and linked to this
+                owner.</div>
+            </div>
+            <div class="col-12">
+              <label class="form-label">Or assign to existing brand</label>
+              <select name="brand_id" class="form-select">
+                <option value="">None</option>
+                {% for b in brands %}
+                <option value="{{ b.brand_id }}" {% if b.brand_id in assigned_brand_ids %} disabled style="color:#555"
+                  {% endif %}>
+                  {{ b.brand_name }}{% if b.brand_id in assigned_brand_ids %} (assigned){% endif %}
+                </option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="col-12">
+              <div class="p-3 rounded-xl" style="background:rgba(63,185,80,0.06);border:1px solid rgba(63,185,80,0.2)">
+                <div style="font-size:0.82rem;color:#3fb950;font-weight:600"><i
+                    class="fas fa-envelope me-1"></i>Auto-email credentials</div>
+                <div style="font-size:0.78rem;color:var(--admin-muted);margin-top:4px">
+                  A random password will be generated and emailed to the owner. They must change it on first login.
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-admin-primary"><i class="fas fa-user-plus me-1"></i>Create & Send
+            Email</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+{# ── EDIT OWNER MODAL ── #}
+<div class="modal fade" id="editOwnerModal" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content modal-dark">
+      <div class="modal-header">
+        <h5 class="modal-title"><i class="fas fa-edit me-2" style="color:#388bfd"></i>Edit Owner</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <form method="POST" id="editOwnerForm">
+        <div class="modal-body">
+          <div class="row g-3">
+            <div class="col-12"><label class="form-label">Name *</label>
+              <input type="text" name="name" id="eo_name" class="form-control" required>
+            </div>
+            <div class="col-12"><label class="form-label">Email *</label>
+              <input type="email" name="email" id="eo_email" class="form-control" required>
+            </div>
+            <div class="col-12"><label class="form-label">Assign Brand</label>
+              <select name="brand_id" id="eo_brand" class="form-select">
+                <option value="">None</option>
+                {% for b in brands %}
+                <option value="{{ b.brand_id }}" {% if b.brand_id in assigned_brand_ids %} disabled style="color:#555"
+                  {% endif %}>
+                  {{ b.brand_name }}{% if b.brand_id in assigned_brand_ids %} (assigned){% endif %}
+                </option>
+                {% endfor %}
+              </select>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-admin-primary"><i class="fas fa-save me-1"></i>Save</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+<form method="POST" id="delOwnerForm"></form>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  function editOwner(id, data) {
+    document.getElementById('editOwnerForm').action = `/admin/owners/edit/${id}`;
+    document.getElementById('eo_name').value = data.name || '';
+    document.getElementById('eo_email').value = data.email || '';
+
+    // Re-enable the owner's current brand so they can keep it
+    const brandSelect = document.getElementById('eo_brand');
+    Array.from(brandSelect.options).forEach(opt => {
+      if (opt.value === data.current_brand_id) {
+        opt.disabled = false;
+      }
+    });
+    brandSelect.value = data.current_brand_id || '';
+
+    new bootstrap.Modal(document.getElementById('editOwnerModal')).show();
+  }
+  function toggleOwner(id, btn) {
+    fetch(`/admin/owners/toggle/${id}`, { method: 'POST' })
+      .then(r => r.json()).then(d => { showToast('Status updated', 'success'); setTimeout(() => location.reload(), 800); });
+  }
+  function resendCreds(id, name) {
+    if (!confirm(`Resend new login credentials to ${name}?`)) return;
+    fetch(`/admin/owners/resend-credentials/${id}`, { method: 'POST' })
+      .then(r => r.json()).then(d => showToast(d.message, d.success ? 'success' : 'danger'));
+  }
+  function delOwner(id, name) {
+    if (!confirm(`Delete owner "${name}"? This cannot be undone.`)) return;
+    const f = document.getElementById('delOwnerForm');
+    f.action = `/admin/owners/delete/${id}`;
+    f.submit();
+  }
+</script>
+{% endblock %}

@@ -1,0 +1,566 @@
+{% extends 'admin/base.html' %}
+{% block title %}Theaters{% endblock %}
+{% block page_title %}Theaters Management{% endblock %}
+
+{% block content %}
+{% with messages = get_flashed_messages(with_categories=true) %}
+{% if messages %}{% for cat,msg in messages %}
+<div class="alert alert-{{ cat }} alert-dismissible fade show mb-3">{{ msg }}
+  <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+</div>
+{% endfor %}{% endif %}{% endwith %}
+
+{# ── Summary Stats ── #}
+<div class="row g-3 mb-4">
+  {% for val,lbl,col in [
+  (total,'Total Theaters','#fff'),
+  (all_states|length,'States','var(--orange)'),
+  (all_cities|length,'Cities','#388bfd'),
+  (brands|length,'Brands','#3fb950')
+  ] %}
+  <div class="col-6 col-md-3">
+    <div class="stat-card py-3 text-center">
+      <div class="stat-value" style="font-size:1.5rem;color:{{ col }}">{{ val }}</div>
+      <div class="stat-label">{{ lbl }}</div>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+
+{# ── Filter Bar ── #}
+<div class="data-card p-3 mb-4">
+  <form method="GET" action="{{ url_for('admin_bp.theaters') }}" class="row g-3 align-items-end">
+    <div class="col-md-3">
+      <select name="brand_id" class="form-select search-input-dark">
+        <option value="">All Brands</option>
+        {% for b in brands %}
+        <option value="{{ b.brand_id }}" {% if brand_id==b.brand_id %}selected{% endif %}>{{ b.brand_name }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="col-md-3">
+      {# Filter bar state #}
+      <select name="state" id="filterState" class="form-select search-input-dark">
+        <option value="">All States</option>
+      </select>
+    </div>
+    <div class="col-md-3">
+      {# Filter bar city #}
+      <select name="city" id="filterCity" class="form-select search-input-dark" disabled>
+        <option value="">All Cities</option>
+      </select>
+    </div>
+    <div class="col-md-2"><button type="submit" class="btn btn-admin-primary w-100"><i
+          class="fas fa-filter"></i></button></div>
+    <div class="col-md-1">
+      {% if state or city or brand_id %}
+      <a href="{{ url_for('admin_bp.theaters') }}" class="btn btn-secondary w-100" title="Clear">
+        <i class="fas fa-times"></i>
+      </a>
+      {% endif %}
+    </div>
+  </form>
+  <div class="row g-3 align-items-end mt-1">
+    <div class="col-md-2">
+      <input type="text" id="locationSearch" class="form-control search-input-dark"
+        placeholder="Search location/area..." oninput="liveLocSearch(this.value)">
+    </div>
+    <div class="col-md-auto ms-auto">
+      <button class="btn btn-admin-primary" data-bs-toggle="modal" data-bs-target="#addTheaterModal">
+        <i class="fas fa-plus me-1"></i>Add Theater
+      </button>
+    </div>
+  </div>
+</div>
+
+{# ── Table ── #}
+<div class="data-card">
+  <div class="data-card-header">
+    <h6 class="data-card-title"><i class="fas fa-building me-2 text-orange"></i>Theaters
+      <span style="color:var(--text-muted);font-size:0.8rem;font-weight:400;margin-left:8px">{{ total }} total</span>
+    </h6>
+  </div>
+  <div class="table-responsive">
+    <table class="table table-borderless" id="theatersTable">
+      <thead>
+        <tr>
+          <th>Theater Name</th>
+          <th>Brand / Owner</th>
+          <th>Location</th>
+          <th>City</th>
+          <th>State</th>
+          <th>Screens</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for theater in theaters %}
+        <tr data-location="{{ (theater.location or '')|lower }}">
+          <td>
+            <div style="color:var(--admin-text);font-weight:600;font-size:0.875rem">{{ theater.name }}</div>
+          </td>
+          <td>
+            {% if theater.brand %}
+            <div style="color:var(--orange);font-size:0.85rem;font-weight:600">{{ theater.brand.brand_name }}</div>
+            {% if theater.brand.owner %}
+            <div style="font-size:0.75rem;color:var(--text-muted)">
+              <i class="fas fa-user me-1"></i>{{ theater.brand.owner.name }}
+            </div>{% endif %}
+            {% else %}<span style="color:var(--text-muted);font-size:0.85rem">Independent</span>{% endif %}
+          </td>
+          <td style="font-size:0.85rem;color:var(--text-muted);max-width:160px">{{ theater.location or '–' }}</td>
+          <td style="font-size:0.85rem">{{ theater.city or '–' }}</td>
+          <td style="font-size:0.85rem">{{ theater.state or '–' }}</td>
+          <td>
+            <span class="badge-pill badge-info" style="font-size:0.72rem">
+              {{ theater.screens|length }}
+            </span>
+          </td>
+          <td>
+            <div class="d-flex gap-1">
+              <button class="btn btn-sm" title="Edit"
+                style="background:rgba(56,139,253,0.1);color:#388bfd;border:none;border-radius:7px"
+                onclick="editTheater('{{ theater.theater_id }}', {{ theater.to_dict()|tojson }})">
+                <i class="fas fa-edit"></i>
+              </button>
+              <button class="btn btn-sm" title="Delete"
+                style="background:rgba(229,9,20,0.1);color:#e50914;border:none;border-radius:7px"
+                onclick="delTheater('{{ theater.theater_id }}','{{ theater.name|e }}')">
+                <i class="fas fa-trash"></i>
+              </button>
+            </div>
+          </td>
+        </tr>
+        {% else %}
+        <tr>
+          <td colspan="7" class="text-center py-5">
+            <div class="empty-state"><i class="fas fa-building"></i>
+              <h5>No theaters found</h5>
+            </div>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  {% if total_pages > 1 %}
+  <div class="d-flex justify-content-between align-items-center px-3 pb-3">
+    <span style="color:var(--text-muted);font-size:0.85rem">Page {{ page }} of {{ total_pages }} · {{ total }}
+      theaters</span>
+    <div class="d-flex gap-2">
+      {% if page > 1 %}
+      <a href="?page={{ page-1 }}&state={{ state }}&city={{ city }}&brand_id={{ brand_id }}"
+        class="btn btn-sm btn-cinema-outline"><i class="fas fa-chevron-left"></i></a>
+      {% endif %}
+      {% for p in range([1,page-2]|max,[total_pages+1,page+3]|min) %}
+      <a href="?page={{ p }}&state={{ state }}&city={{ city }}&brand_id={{ brand_id }}"
+        class="btn btn-sm {% if p==page %}btn-cinema{% else %}btn-cinema-outline{% endif %}">{{ p }}</a>
+      {% endfor %}
+      {% if page < total_pages %} <a
+        href="?page={{ page+1 }}&state={{ state }}&city={{ city }}&brand_id={{ brand_id }}"
+        class="btn btn-sm btn-cinema-outline"><i class="fas fa-chevron-right"></i></a>
+        {% endif %}
+    </div>
+  </div>
+  {% endif %}
+</div>
+
+{# ── ADD THEATER MODAL ── #}
+<div class="modal fade" id="addTheaterModal" tabindex="-1">
+  <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+    <div class="modal-content modal-dark">
+      <div class="modal-header">
+        <h5 class="modal-title"><i class="fas fa-plus-circle me-2 text-orange"></i>Add Theater</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <form method="POST" action="{{ url_for('admin_bp.add_theater') }}">
+        <div class="modal-body">
+          <div class="row g-3">
+            <div class="col-md-8">
+              <label class="form-label">Theater Name *</label>
+              <input type="text" name="name" class="form-control" placeholder="e.g. PVR Cinemas Banjara Hills" required>
+            </div>
+            <div class="col-md-4">
+              <label class="form-label">Brand</label>
+              <select name="brand_id" class="form-select">
+                <option value="">No Brand</option>
+                {% for b in brands %}<option value="{{ b.brand_id }}">{{ b.brand_name }}</option>{% endfor %}
+              </select>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Assign to Owner</label>
+              <select name="owner_id" class="form-select">
+                <option value="">No Owner</option>
+                {% for o in owners %}<option value="{{ o.id }}">{{ o.name }} ({{ o.email }})</option>{% endfor %}
+              </select>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">New Brand Name (if no brand selected)</label>
+              <input type="text" name="brand_name" class="form-control" placeholder="Brand name">
+            </div>
+            <div class="col-12">
+              <div
+                style="color:var(--admin-muted);font-size:0.75rem;text-transform:uppercase;letter-spacing:1px;margin-top:4px">
+                Location</div>
+            </div>
+            <div class="col-md-4">
+              <div class="d-flex align-items-center justify-content-between mb-1">
+                <label class="form-label mb-0">State *</label>
+                <button type="button" class="btn btn-sm px-2 py-0" style="font-size:0.72rem;background:rgba(229,9,20,0.12);color:#e50914;border:1px solid rgba(229,9,20,0.3);border-radius:5px" onclick="openAddLocationModal('state')">
+                  <i class="fas fa-plus me-1"></i>New State
+                </button>
+              </div>
+              <select name="state" id="add_state" class="form-select" required>
+                <option value="">-- Select State --</option>
+              </select>
+            </div>
+            <div class="col-md-4">
+              <div class="d-flex align-items-center justify-content-between mb-1">
+                <label class="form-label mb-0">City *</label>
+                <button type="button" class="btn btn-sm px-2 py-0" style="font-size:0.72rem;background:rgba(56,139,253,0.12);color:#388bfd;border:1px solid rgba(56,139,253,0.3);border-radius:5px" onclick="openAddLocationModal('city')">
+                  <i class="fas fa-plus me-1"></i>New City
+                </button>
+              </div>
+              <select name="city" id="add_city" class="form-select" required disabled>
+                <option value="">-- Select City --</option>
+              </select>
+            </div>
+            <div class="col-md-4">
+              <div class="d-flex align-items-center justify-content-between mb-1">
+                <label class="form-label mb-0">Area / Location</label>
+                <button type="button" class="btn btn-sm px-2 py-0" style="font-size:0.72rem;background:rgba(63,185,80,0.12);color:#3fb950;border:1px solid rgba(63,185,80,0.3);border-radius:5px" onclick="openAddLocationModal('location')">
+                  <i class="fas fa-plus me-1"></i>New Location
+                </button>
+              </div>
+              <input type="text" name="location" id="add_location" class="form-control" placeholder="Area name">
+            </div>
+            <div class="col-12">
+              <label class="form-label">Full Address</label>
+              <input type="text" name="address" class="form-control" placeholder="Street, landmark, pin code">
+            </div>
+            <div class="col-12">
+              <div
+                style="color:var(--admin-muted);font-size:0.75rem;text-transform:uppercase;letter-spacing:1px;margin-top:4px">
+                Screens</div>
+            </div>
+            <div class="col-md-4">
+              <label class="form-label">Number of Screens</label>
+              <input type="number" name="num_screens" id="numScreens" class="form-control" value="1" min="1" max="20"
+                onchange="buildScreens()">
+            </div>
+            <div class="col-12" id="screenFields"></div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-admin-primary"><i class="fas fa-save me-1"></i>Add Theater</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+{# ── EDIT THEATER MODAL ── #}
+<div class="modal fade" id="editTheaterModal" tabindex="-1">
+  <div class="modal-dialog modal-lg modal-dialog-centered">
+    <div class="modal-content modal-dark">
+      <div class="modal-header">
+        <h5 class="modal-title"><i class="fas fa-edit me-2" style="color:#388bfd"></i>Edit Theater</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <form method="POST" id="editTheaterForm">
+        <div class="modal-body">
+          <div class="row g-3">
+            <div class="col-md-8">
+              <label class="form-label">Theater Name *</label>
+              <input type="text" name="name" id="et_name" class="form-control" required>
+            </div>
+            <div class="col-md-4">
+              <label class="form-label">Brand</label>
+              <select name="brand_id" id="et_brand" class="form-select">
+                <option value="">No Brand</option>
+                {% for b in brands %}<option value="{{ b.brand_id }}">{{ b.brand_name }}</option>{% endfor %}
+              </select>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Assign to Owner</label>
+              <select name="owner_id" id="et_owner" class="form-select">
+                <option value="">No Owner</option>
+                {% for o in owners %}<option value="{{ o.id }}">{{ o.name }}</option>{% endfor %}
+              </select>
+            </div>
+            <div class="col-md-4">
+              <label class="form-label">State</label>
+              <select name="state" id="et_state" class="form-select">
+  <option value="">Select State</option>
+</select>
+            </div>
+            <div class="col-md-4">
+              <label class="form-label">City</label>
+              <select name="city" id="et_city" class="form-select" disabled>
+  <option value="">Select City</option>
+</select>
+            </div>
+            <div class="col-md-4">
+              <label class="form-label">Area / Location</label>
+              <input type="text" name="location" id="et_location" class="form-control">
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-admin-primary"><i class="fas fa-save me-1"></i>Save Changes</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+<form method="POST" id="delTheaterForm"></form>
+
+{# ══════════════════════════════════════════════
+   ADD STATE / CITY / LOCATION MODAL
+══════════════════════════════════════════════ #}
+<div class="modal fade" id="addLocationModal" tabindex="-1" data-bs-backdrop="static">
+  <div class="modal-dialog modal-sm modal-dialog-centered">
+    <div class="modal-content modal-dark">
+      <div class="modal-header py-2">
+        <h6 class="modal-title mb-0" id="addLocModalTitle">
+          <i class="fas fa-plus-circle me-2 text-orange"></i>Add New State
+        </h6>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+
+        {# State selector shown only when adding city or location #}
+        <div id="addLocStateRow" style="display:none;margin-bottom:12px">
+          <label class="form-label" style="font-size:0.8rem">State <span class="text-danger">*</span></label>
+          <select id="addLocStateSelect" class="form-select form-select-sm">
+            <option value="">-- Select State --</option>
+          </select>
+        </div>
+
+        {# City selector shown only when adding location #}
+        <div id="addLocCityRow" style="display:none;margin-bottom:12px">
+          <label class="form-label" style="font-size:0.8rem">City <span class="text-danger">*</span></label>
+          <select id="addLocCitySelect" class="form-select form-select-sm" disabled>
+            <option value="">-- Select City first --</option>
+          </select>
+        </div>
+
+        <div>
+          <label class="form-label" style="font-size:0.8rem" id="addLocInputLabel">State Name <span class="text-danger">*</span></label>
+          <input type="text" id="addLocInput" class="form-control" placeholder="e.g. Maharashtra">
+        </div>
+
+        <div id="addLocError" style="display:none;margin-top:8px;font-size:0.8rem;color:#e50914"></div>
+        <div id="addLocSuccess" style="display:none;margin-top:8px;font-size:0.8rem;color:#3fb950"></div>
+      </div>
+      <div class="modal-footer py-2">
+        <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
+        <button type="button" class="btn btn-sm btn-admin-primary" id="addLocSaveBtn" onclick="saveNewLocation()">
+          <i class="fas fa-save me-1"></i>Save
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function buildScreens() {
+  const n = parseInt(document.getElementById('numScreens').value) || 1;
+  let html = '<div class="row g-2">';
+  for (let i = 1; i <= n; i++) {
+    html += `<div class="col-md-6"><div class="p-2 rounded" style="background:var(--admin-bg);border:1px solid var(--admin-border)">
+    <div style="font-size:0.8rem;color:var(--text-muted);margin-bottom:6px">Screen ${i}</div>
+    <div class="row g-2">
+      <div class="col-6"><input type="text" name="screen_name_${i}" class="form-control" placeholder="Name" value="Screen ${i}"></div>
+      <div class="col-6"><input type="number" name="screen_capacity_${i}" class="form-control" placeholder="Seats" value="150"></div>
+    </div></div></div>`;
+  }
+  html += '</div>';
+  document.getElementById('screenFields').innerHTML = html;
+}
+buildScreens();
+
+function editTheater(id, data) {
+  _adminEditTheaterSetup(id, data);
+}
+
+function delTheater(id, name) {
+  if (!confirm(`Delete theater "${name}"?`)) return;
+  const f = document.getElementById('delTheaterForm');
+  f.action = `/admin/theaters/delete/${id}`;
+  f.submit();
+}
+
+function liveLocSearch(val) {
+  const q = val.toLowerCase();
+  document.querySelectorAll('#theatersTable tbody tr').forEach(row => {
+    const text = row.textContent.toLowerCase();
+    row.style.display = (!q || text.includes(q)) ? '' : 'none';
+  });
+}
+
+// Dropdowns are initialized by initAdminTheatersPage() in admin.js
+</script>
+
+<script>
+// ─── Add State / City / Location Modal ───────────────────────
+let _addLocType = 'state'; // 'state' | 'city' | 'location'
+
+function openAddLocationModal(type) {
+  _addLocType = type;
+  const modal = document.getElementById('addLocationModal');
+  const title = document.getElementById('addLocModalTitle');
+  const label = document.getElementById('addLocInputLabel');
+  const inp   = document.getElementById('addLocInput');
+  const stateRow = document.getElementById('addLocStateRow');
+  const cityRow  = document.getElementById('addLocCityRow');
+  const stateEl  = document.getElementById('addLocStateSelect');
+  const cityEl   = document.getElementById('addLocCitySelect');
+  const errEl    = document.getElementById('addLocError');
+  const okEl     = document.getElementById('addLocSuccess');
+
+  errEl.style.display = 'none'; errEl.textContent = '';
+  okEl.style.display  = 'none'; okEl.textContent  = '';
+  inp.value = '';
+
+  if (type === 'state') {
+    title.innerHTML = '<i class="fas fa-plus-circle me-2 text-orange"></i>Add New State';
+    label.innerHTML = 'State Name <span class="text-danger">*</span>';
+    inp.placeholder = 'e.g. Maharashtra';
+    stateRow.style.display = 'none';
+    cityRow.style.display  = 'none';
+
+  } else if (type === 'city') {
+    title.innerHTML = '<i class="fas fa-plus-circle me-2" style="color:#388bfd"></i>Add New City';
+    label.innerHTML = 'City Name <span class="text-danger">*</span>';
+    inp.placeholder = 'e.g. Nashik';
+    stateRow.style.display = '';
+    cityRow.style.display  = 'none';
+    // Populate state dropdown from DB_LOCATIONS
+    populateStateSelect(stateEl);
+    stateEl.addEventListener('change', function() {
+      // No city needed for adding city
+    });
+
+  } else if (type === 'location') {
+    title.innerHTML = '<i class="fas fa-plus-circle me-2" style="color:#3fb950"></i>Add New Location / Area';
+    label.innerHTML = 'Area / Location Name <span class="text-danger">*</span>';
+    inp.placeholder = 'e.g. Nashik 21';
+    stateRow.style.display = '';
+    cityRow.style.display  = '';
+    populateStateSelect(stateEl);
+    stateEl.onchange = function() {
+      const s = this.value;
+      if (s) {
+        populateCitySelect(cityEl, s);
+        cityEl.disabled = false;
+      } else {
+        cityEl.innerHTML = '<option value="">-- Select City first --</option>';
+        cityEl.disabled = true;
+      }
+    };
+  }
+
+  new bootstrap.Modal(modal).show();
+  setTimeout(() => inp.focus(), 400);
+}
+
+async function saveNewLocation() {
+  const inp    = document.getElementById('addLocInput');
+  const stateEl= document.getElementById('addLocStateSelect');
+  const cityEl = document.getElementById('addLocCitySelect');
+  const errEl  = document.getElementById('addLocError');
+  const okEl   = document.getElementById('addLocSuccess');
+  const btn    = document.getElementById('addLocSaveBtn');
+
+  errEl.style.display = 'none'; errEl.textContent = '';
+  okEl.style.display  = 'none'; okEl.textContent  = '';
+
+  const name  = inp.value.trim();
+  const state = stateEl.value.trim();
+  const city  = cityEl.value ? cityEl.value.trim() : '';
+
+  if (!name) { errEl.textContent = 'Please enter a name.'; errEl.style.display = ''; return; }
+  if (_addLocType === 'city' && !state) { errEl.textContent = 'Please select a state first.'; errEl.style.display = ''; return; }
+  if (_addLocType === 'location' && !state) { errEl.textContent = 'Please select a state first.'; errEl.style.display = ''; return; }
+  if (_addLocType === 'location' && !city) { errEl.textContent = 'Please select a city first.'; errEl.style.display = ''; return; }
+
+  btn.disabled = true;
+  btn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Saving...';
+
+  try {
+    const res = await fetch('/admin/locations/add', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ type: _addLocType, name, state, city })
+    });
+    const data = await res.json();
+
+    if (data.success) {
+      okEl.textContent = data.message || 'Saved!';
+      okEl.style.display = '';
+
+      // Reload DB_LOCATIONS and refresh all dropdowns on the page
+      await loadLocationsFromDB();
+
+      if (_addLocType === 'state') {
+        ['add_state', 'et_state', 'filterState', 'addLocStateSelect'].forEach(id => {
+          const el = document.getElementById(id);
+          if (el) populateStateSelect(el, name);
+        });
+        // Auto-select the new state in add modal
+        const addSt = document.getElementById('add_state');
+        if (addSt) { addSt.value = name; addSt.dispatchEvent(new Event('change')); }
+
+      } else if (_addLocType === 'city') {
+        // Refresh city dropdowns for the selected state
+        const selState = stateEl.value;
+        ['add_city', 'et_city'].forEach(id => {
+          const el = document.getElementById(id);
+          if (el) populateCitySelect(el, selState, name);
+        });
+        // If add_state matches, auto-select city
+        const addSt = document.getElementById('add_state');
+        if (addSt && addSt.value === selState) {
+          const addCt = document.getElementById('add_city');
+          if (addCt) { addCt.disabled = false; addCt.value = name; }
+        }
+
+      } else if (_addLocType === 'location') {
+        // Auto-fill the location input in the add theater modal
+        const locInp = document.getElementById('add_location');
+        if (locInp) locInp.value = name;
+      }
+
+      // Close modal after short delay
+      setTimeout(() => {
+        bootstrap.Modal.getInstance(document.getElementById('addLocationModal')).hide();
+      }, 900);
+
+    } else {
+      errEl.textContent = data.message || 'Error saving. Try again.';
+      errEl.style.display = '';
+    }
+  } catch (e) {
+    errEl.textContent = 'Network error. Please try again.';
+    errEl.style.display = '';
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = '<i class="fas fa-save me-1"></i>Save';
+  }
+}
+
+// Enter key in input triggers save
+document.getElementById('addLocInput')?.addEventListener('keydown', function(e) {
+  if (e.key === 'Enter') saveNewLocation();
+});
+</script>
+{% endblock %}

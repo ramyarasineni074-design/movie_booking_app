@@ -1,0 +1,801 @@
+{% extends 'user/base.html' %}
+{% block title %}Home{% endblock %}
+
+{% block content %}
+
+<!-- ═══════════════════════════════════════════
+     HERO
+════════════════════════════════════════════ -->
+<section class="hero-section">
+  <div class="hero-overlay"></div>
+  <div class="container hero-content py-5">
+    <div class="row align-items-center">
+
+      <div class="col-lg-7">
+        <div class="lang-badge mb-3">
+          <i class="fas fa-map-marker-alt me-1"></i>
+          {{ city or 'All Cities' }}
+        </div>
+        <h1 class="hero-title">
+          Book Your <span>Movie</span><br>Experience Today
+        </h1>
+        <p style="color:rgba(255,255,255,0.6);font-size:1rem;
+                  max-width:480px;margin-top:16px">
+          Choose from hundreds of movies across thousands of theaters.
+          Fast, easy, secure booking.
+        </p>
+        <div class="d-flex gap-3 flex-wrap mt-4">
+          <a href="{{ url_for('user_bp.movies') }}" class="btn btn-cinema px-4 py-2">
+            <i class="fas fa-film me-2"></i>Browse Movies
+          </a>
+          <button class="btn btn-cinema-outline px-4 py-2 open-city-modal" type="button">
+            <i class="fas fa-map-marker-alt me-2"></i>
+            {% if city %}Change City{% else %}Select City{% endif %}
+          </button>
+        </div>
+      </div>
+
+      <div class="col-lg-5 d-none d-lg-block text-end">
+        <div style="display:flex;gap:12px;justify-content:flex-end">
+          {% for movie in now_showing[:3] %}
+          {% set _pi = (loop.index0 % 200) + 1 %}
+          {% set _fallback = url_for('static', filename='uploads/posters/poster_%03d.jpg' | format(_pi)) %}
+          <a href="{{ url_for('user_bp.movie_detail', movie_id=movie.movie_id) }}" style="width:120px;border-radius:12px;overflow:hidden;
+                    box-shadow:0 20px 40px rgba(0,0,0,0.6);
+                    transform:{% if loop.index==2 %}translateY(-20px){% else %}translateY(0){% endif %};
+                    display:block">
+            <img src="{{ movie.poster_url or _fallback }}" alt="{{ movie.title }}" onerror="this.src='{{ _fallback }}'" style="width:100%;height:180px;object-fit:cover">
+          </a>
+          {% endfor %}
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════
+     VIDEO CAROUSEL  — infinite loop, play-to-pause
+════════════════════════════════════════════ -->
+<section class="video-carousel-section">
+  <div class="container">
+    <div class="d-flex align-items-center justify-content-between mb-3">
+      <div class="d-flex align-items-center gap-2">
+        <h2 class="section-title mb-0">🎬 Featured Trailers</h2>
+        <span style="background:var(--orange);color:#fff;font-size:0.7rem;padding:3px 10px;border-radius:20px;font-weight:600">Watch Now</span>
+      </div>
+      <div class="d-flex gap-2">
+        <button class="vc-nav-btn" id="vcPrev" aria-label="Previous"><i class="fas fa-chevron-left"></i></button>
+        <button class="vc-nav-btn" id="vcNext" aria-label="Next"><i class="fas fa-chevron-right"></i></button>
+      </div>
+    </div>
+
+    <div class="vc-wrapper" id="vcWrapper">
+      <div class="vc-track" id="vcTrack">
+
+        <div class="vc-slide" data-vid="6ZfuNTqbHE8">
+          <div class="vc-video-wrap">
+            <img class="vc-thumb-img" src="https://img.youtube.com/vi/6ZfuNTqbHE8/maxresdefault.jpg" alt="Avengers: Doomsday">
+            <button class="vc-play-btn" aria-label="Play trailer"><i class="fas fa-play"></i></button>
+          </div>
+          <div class="vc-info">
+            <span class="vc-badge">Marvel</span>
+            <div class="vc-movie-title">Avengers: Doomsday</div>
+            <div class="vc-movie-meta">Action / Sci-Fi &nbsp;•&nbsp; 2025</div>
+          </div>
+        </div>
+
+        <div class="vc-slide" data-vid="LEjhY15eCx0">
+          <div class="vc-video-wrap">
+            <img class="vc-thumb-img" src="https://img.youtube.com/vi/LEjhY15eCx0/maxresdefault.jpg" alt="Mission: Impossible">
+            <button class="vc-play-btn" aria-label="Play trailer"><i class="fas fa-play"></i></button>
+          </div>
+          <div class="vc-info">
+            <span class="vc-badge">Action</span>
+            <div class="vc-movie-title">Mission: Impossible – The Final Reckoning</div>
+            <div class="vc-movie-meta">Action / Thriller &nbsp;•&nbsp; 2025</div>
+          </div>
+        </div>
+
+        <div class="vc-slide" data-vid="pAsmrKyMqaA">
+          <div class="vc-video-wrap">
+            <img class="vc-thumb-img" src="https://img.youtube.com/vi/pAsmrKyMqaA/maxresdefault.jpg" alt="The Fantastic Four">
+            <button class="vc-play-btn" aria-label="Play trailer"><i class="fas fa-play"></i></button>
+          </div>
+          <div class="vc-info">
+            <span class="vc-badge">Marvel</span>
+            <div class="vc-movie-title">The Fantastic Four: First Steps</div>
+            <div class="vc-movie-meta">Action / Sci-Fi &nbsp;•&nbsp; 2025</div>
+          </div>
+        </div>
+
+        <div class="vc-slide" data-vid="9Im1q4gvk1M">
+          <div class="vc-video-wrap">
+            <img class="vc-thumb-img" src="https://img.youtube.com/vi/9Im1q4gvk1M/maxresdefault.jpg" alt="Salaar">
+            <button class="vc-play-btn" aria-label="Play trailer"><i class="fas fa-play"></i></button>
+          </div>
+          <div class="vc-info">
+            <span class="vc-badge">Telugu</span>
+            <div class="vc-movie-title">Salaar: Part 1 – Ceasefire</div>
+            <div class="vc-movie-meta">Action / Thriller &nbsp;•&nbsp; 2023</div>
+          </div>
+        </div>
+
+        <div class="vc-slide" data-vid="Po3jStA673E">
+          <div class="vc-video-wrap">
+            <img class="vc-thumb-img" src="https://img.youtube.com/vi/Po3jStA673E/maxresdefault.jpg" alt="Leo">
+            <button class="vc-play-btn" aria-label="Play trailer"><i class="fas fa-play"></i></button>
+          </div>
+          <div class="vc-info">
+            <span class="vc-badge">Tamil</span>
+            <div class="vc-movie-title">Leo</div>
+            <div class="vc-movie-meta">Action / Thriller &nbsp;•&nbsp; 2023</div>
+          </div>
+        </div>
+
+        <div class="vc-slide" data-vid="NcCYq3bvlJM">
+          <div class="vc-video-wrap">
+            <img class="vc-thumb-img" src="https://img.youtube.com/vi/NcCYq3bvlJM/maxresdefault.jpg" alt="Devara">
+            <button class="vc-play-btn" aria-label="Play trailer"><i class="fas fa-play"></i></button>
+          </div>
+          <div class="vc-info">
+            <span class="vc-badge">Telugu</span>
+            <div class="vc-movie-title">Devara: Part 1</div>
+            <div class="vc-movie-meta">Action / Drama &nbsp;•&nbsp; 2024</div>
+          </div>
+        </div>
+
+        <div class="vc-slide" data-vid="Ljk6tGZ1l3A">
+          <div class="vc-video-wrap">
+            <img class="vc-thumb-img" src="https://img.youtube.com/vi/Ljk6tGZ1l3A/maxresdefault.jpg" alt="Sita Ramam">
+            <button class="vc-play-btn" aria-label="Play trailer"><i class="fas fa-play"></i></button>
+          </div>
+          <div class="vc-info">
+            <span class="vc-badge">Telugu</span>
+            <div class="vc-movie-title">Sita Ramam</div>
+            <div class="vc-movie-meta">Romance / Drama &nbsp;•&nbsp; 2022</div>
+          </div>
+        </div>
+
+      </div><!-- /.vc-track -->
+    </div><!-- /.vc-wrapper -->
+    <div class="vc-dots" id="vcDots"></div>
+  </div>
+</section>
+
+<style>
+/* ── Video Carousel ─────────────────────── */
+.video-carousel-section { padding: 50px 0 20px; }
+
+.vc-nav-btn {
+  width: 36px; height: 36px; border-radius: 50%;
+  background: rgba(255,255,255,0.08);
+  border: 1px solid rgba(255,255,255,0.15);
+  color: #fff; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  transition: background 0.2s, border-color 0.2s; font-size: 0.85rem;
+}
+.vc-nav-btn:hover { background: var(--orange); border-color: var(--orange); }
+
+.vc-wrapper { overflow: hidden; border-radius: 14px; }
+
+.vc-track {
+  display: flex;
+  transition: transform 0.45s cubic-bezier(0.25,0.46,0.45,0.94);
+  will-change: transform;
+}
+
+.vc-slide {
+  flex: 0 0 100%;
+  min-width: 0;
+  background: var(--card-bg, #1a1a2e);
+  border-radius: 14px;
+  overflow: hidden;
+  border: 1px solid rgba(255,255,255,0.08);
+  box-shadow: 0 8px 30px rgba(0,0,0,0.4);
+}
+
+.vc-video-wrap {
+  position: relative;
+  padding-bottom: 43.75%;
+  height: 0;
+  overflow: hidden;
+  background: #000;
+  cursor: pointer;
+}
+
+.vc-thumb-img {
+  position: absolute;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.vc-play-btn {
+  position: absolute;
+  top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+  width: 72px; height: 72px;
+  border-radius: 50%;
+  background: rgba(217,108,44,0.92);
+  border: 3px solid #fff;
+  color: #fff; font-size: 1.5rem;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer;
+  transition: transform 0.2s, background 0.2s;
+  padding-left: 4px;
+  z-index: 2;
+  box-shadow: 0 4px 24px rgba(0,0,0,0.5);
+}
+.vc-play-btn:hover {
+  transform: translate(-50%, -50%) scale(1.1);
+  background: rgba(217,108,44,1);
+}
+
+.vc-video-wrap iframe {
+  position: absolute;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  border: none;
+}
+
+.vc-info { padding: 16px 20px; }
+.vc-badge {
+  display: inline-block;
+  background: rgba(217,108,44,0.18);
+  color: var(--orange);
+  font-size: 0.68rem; font-weight: 700;
+  padding: 2px 10px; border-radius: 20px;
+  border: 1px solid rgba(217,108,44,0.35);
+  text-transform: uppercase; letter-spacing: 0.04em;
+  margin-bottom: 6px;
+}
+.vc-movie-title { color: #fff; font-weight: 700; font-size: 1.1rem; margin-bottom: 4px; }
+.vc-movie-meta  { color: rgba(255,255,255,0.45); font-size: 0.82rem; }
+
+.vc-dots { display: flex; justify-content: center; gap: 8px; margin-top: 18px; }
+.vc-dot {
+  width: 8px; height: 8px; border-radius: 50%;
+  background: rgba(255,255,255,0.2);
+  cursor: pointer; transition: background 0.25s, transform 0.25s; border: none;
+}
+.vc-dot.active { background: var(--orange); transform: scale(1.3); }
+</style>
+
+<script>
+(function(){
+  var track  = document.getElementById('vcTrack');
+  var dotsEl = document.getElementById('vcDots');
+  if (!track) return;
+
+  var realSlides = Array.from(track.querySelectorAll('.vc-slide'));
+  var total      = realSlides.length;
+  var playing    = false;
+  var timer      = null;
+  var cur        = 0;          /* logical index into realSlides */
+
+  /* ── Build CLONE set for infinite loop:
+       [clone of last] + [all real] + [clone of first]
+     We keep track separately so dots always map to real slides. */
+  var firstClone = realSlides[0].cloneNode(true);
+  var lastClone  = realSlides[total - 1].cloneNode(true);
+  firstClone.setAttribute('aria-hidden', 'true');
+  lastClone.setAttribute('aria-hidden', 'true');
+  track.insertBefore(lastClone, realSlides[0]);
+  track.appendChild(firstClone);
+
+  /* All nodes in track (includes clones) */
+  var allSlides  = Array.from(track.querySelectorAll('.vc-slide'));
+  /* Real slides now at indices 1 … total  (clone-last at 0, clone-first at total+1) */
+
+  /* Start at visual index 1 (= real slide 0) without animation */
+  var visIdx = 1;
+  track.style.transition = 'none';
+  track.style.transform  = 'translateX(-' + (visIdx * slideWidth()) + 'px)';
+
+  /* ── Dots (one per REAL slide) ── */
+  var dots = realSlides.map(function(_, i){
+    var d = document.createElement('button');
+    d.className = 'vc-dot' + (i === 0 ? ' active' : '');
+    d.setAttribute('aria-label', 'Slide ' + (i + 1));
+    d.dataset.idx = i;
+    dotsEl.appendChild(d);
+    return d;
+  });
+
+  function slideWidth() {
+    return allSlides[0].getBoundingClientRect().width || track.parentElement.offsetWidth;
+  }
+
+  function updateDots(realI) {
+    dots.forEach(function(d, j){ d.classList.toggle('active', j === realI); });
+  }
+
+  /* Jump without animation (used for infinite wrap) */
+  function jumpTo(vi) {
+    track.style.transition = 'none';
+    track.style.transform  = 'translateX(-' + (vi * slideWidth()) + 'px)';
+    visIdx = vi;
+  }
+
+  /* Slide WITH animation */
+  function goToVis(vi) {
+    track.style.transition = 'transform 0.45s cubic-bezier(0.25,0.46,0.45,0.94)';
+    track.style.transform  = 'translateX(-' + (vi * slideWidth()) + 'px)';
+    visIdx = vi;
+    /* Real index = visIdx - 1 (clamped) */
+    cur = Math.min(Math.max(visIdx - 1, 0), total - 1);
+    updateDots(cur);
+  }
+
+  /* After CSS transition ends, silently jump if we landed on a clone */
+  track.addEventListener('transitionend', function(){
+    if (visIdx === 0) {
+      /* Landed on clone-of-last → jump to real last */
+      jumpTo(total);
+      cur = total - 1;
+      updateDots(cur);
+    } else if (visIdx === total + 1) {
+      /* Landed on clone-of-first → jump to real first */
+      jumpTo(1);
+      cur = 0;
+      updateDots(cur);
+    }
+  });
+
+  function next() { if (!playing) goToVis(visIdx + 1); }
+  function prev() { if (!playing) goToVis(visIdx - 1); }
+
+  function startTimer() {
+    clearInterval(timer);
+    timer = setInterval(next, 10000);
+  }
+  function stopTimer() { clearInterval(timer); timer = null; }
+
+  /* ── Play button logic ── */
+  function bindPlay(slide) {
+    var btn  = slide.querySelector('.vc-play-btn');
+    var wrap = slide.querySelector('.vc-video-wrap');
+    var vid  = slide.dataset.vid;
+    if (!btn || !vid) return;
+
+    btn.addEventListener('click', function(e){
+      e.stopPropagation();
+      playing = true;
+      stopTimer();
+
+      var iframe = document.createElement('iframe');
+      iframe.src = 'https://www.youtube.com/embed/' + vid
+        + '?autoplay=1&rel=0&modestbranding=1&enablejsapi=1&origin=' + window.location.origin;
+      iframe.allow = 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture';
+      iframe.allowFullscreen = true;
+      wrap.innerHTML = '';
+      wrap.appendChild(iframe);
+
+      /* YouTube sends postMessage events in multiple formats — handle all */
+      function onMsg(ev) {
+        try {
+          var raw  = typeof ev.data === 'string' ? JSON.parse(ev.data) : ev.data;
+          var ended = false;
+
+          /* Format 1 — YT IFrame API: {event:"infoDelivery", info:{playerState:0}} */
+          if (raw && raw.info && raw.info.playerState === 0) ended = true;
+
+          /* Format 2 — some embeds: {event:"onStateChange", info:0} */
+          if (raw && raw.event === 'onStateChange' && raw.info === 0) ended = true;
+
+          /* Format 3 — older format: {playerState:0} */
+          if (raw && raw.playerState === 0) ended = true;
+
+          if (ended) {
+            clearTimeout(fallbackTimer);
+            window.removeEventListener('message', onMsg);
+            restoreThumb(slide, wrap, vid);
+            playing = false;
+            next();
+            startTimer();
+          }
+        } catch(err){}
+      }
+      window.addEventListener('message', onMsg);
+
+      /* Fallback: if postMessage never fires (some restricted videos),
+         poll the iframe src change as a proxy — skip after 3 min max */
+      var fallbackTimer = setTimeout(function(){
+        window.removeEventListener('message', onMsg);
+        if (playing) {
+          restoreThumb(slide, wrap, vid);
+          playing = false;
+          next();
+          startTimer();
+        }
+      }, 180000);
+    });
+  }
+
+  function restoreThumb(slide, wrap, vid) {
+    var img = document.createElement('img');
+    img.className = 'vc-thumb-img';
+    img.src = 'https://img.youtube.com/vi/' + vid + '/maxresdefault.jpg';
+    img.alt = '';
+    var btn = document.createElement('button');
+    btn.className = 'vc-play-btn';
+    btn.setAttribute('aria-label', 'Play trailer');
+    btn.innerHTML = '<i class="fas fa-play"></i>';
+    wrap.innerHTML = '';
+    wrap.appendChild(img);
+    wrap.appendChild(btn);
+    bindPlay(slide);
+  }
+
+  /* Bind ALL slides including clones */
+  Array.from(track.querySelectorAll('.vc-slide')).forEach(function(s){ bindPlay(s); });
+
+  /* Nav */
+  document.getElementById('vcPrev').addEventListener('click', prev);
+  document.getElementById('vcNext').addEventListener('click', next);
+
+  dotsEl.addEventListener('click', function(e){
+    var b = e.target.closest('.vc-dot');
+    if (b) goToVis(parseInt(b.dataset.idx) + 1);
+  });
+
+  window.addEventListener('resize', function(){
+    track.style.transition = 'none';
+    track.style.transform  = 'translateX(-' + (visIdx * slideWidth()) + 'px)';
+  });
+
+  startTimer();
+})();
+</script>
+
+<!-- ═══════════════════════════════════════════
+     STATS BAR
+════════════════════════════════════════════ -->
+<div style="background:rgba(255,255,255,0.02);
+            border-top:1px solid var(--border);
+            border-bottom:1px solid var(--border);
+            padding:20px 0">
+  <div class="container">
+    <div class="row text-center g-3">
+      <div class="col-6 col-md-3">
+        <div style="font-size:1.6rem;font-weight:800;color:#fff">{{ stats.total_movies }}+</div>
+        <div style="font-size:0.8rem;color:var(--text-muted)">Movies</div>
+      </div>
+      <div class="col-6 col-md-3">
+        <div style="font-size:1.6rem;font-weight:800;color:#fff">{{ stats.total_theaters }}+</div>
+        <div style="font-size:0.8rem;color:var(--text-muted)">Theaters</div>
+      </div>
+      <div class="col-6 col-md-3">
+        <div style="font-size:1.6rem;font-weight:800;color:var(--orange)">10+</div>
+        <div style="font-size:0.8rem;color:var(--text-muted)">States</div>
+      </div>
+      <div class="col-6 col-md-3">
+        <div style="font-size:1.6rem;font-weight:800;color:var(--orange)">100K+</div>
+        <div style="font-size:0.8rem;color:var(--text-muted)">Happy Users</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     CITY MOVIES  (only when city is set)
+════════════════════════════════════════════ -->
+{% if city and city_movies %}
+<section style="padding:60px 0 0">
+  <div class="container">
+
+    <div class="d-flex align-items-center justify-content-between mb-4">
+      <div>
+        <h2 class="section-title mb-1">
+          <i class="fas fa-map-marker-alt me-2" style="color:var(--orange)"></i>
+          Movies in {{ city }}
+        </h2>
+        <p style="color:var(--text-muted);font-size:0.85rem;margin:0">Shows available now in your city</p>
+      </div>
+      <a href="{{ url_for('user_bp.movies') }}" class="btn btn-cinema-outline btn-sm">
+        View All <i class="fas fa-arrow-right ms-1"></i>
+      </a>
+    </div>
+
+    <div class="row g-3 row-cols-2 row-cols-md-3 row-cols-lg-5">
+      {% for movie in city_movies %}
+      {% set _pi = (loop.index0 % 200) + 1 %}
+      {% set _fallback = url_for('static', filename='uploads/posters/poster_%03d.jpg' | format(_pi)) %}
+      <div class="col">
+        <div class="movie-card" data-languages="{{ (movie.languages_list or []) | join(',') }}"
+          data-genres="{{ movie.genres_display or '' }}">
+          <div class="poster-wrap">
+            <img src="{{ movie.poster_url or _fallback }}" alt="{{ movie.title }}" onerror="this.src='{{ _fallback }}'">
+            <div class="poster-overlay">
+              <div class="w-100">
+                <a href="{{ url_for('user_bp.movie_detail', movie_id=movie.movie_id) }}"
+                  class="btn btn-cinema btn-sm w-100 mb-1">
+                  <i class="fas fa-ticket-alt me-1"></i>Book Now
+                </a>
+                <a href="{{ url_for('user_bp.movie_detail', movie_id=movie.movie_id) }}"
+                  class="btn btn-cinema-outline btn-sm w-100" style="font-size:0.75rem">
+                  <i class="fas fa-info-circle me-1"></i>Details
+                </a>
+              </div>
+            </div>
+          </div>
+          <div class="card-body">
+            <div class="movie-title" title="{{ movie.title }}">{{ movie.title }}</div>
+            <div class="card-meta-row">
+              {% if movie.genres_display %}
+              <span class="genre-tag">{{ movie.genres_display.split(' / ')[0] }}</span>
+              {% endif %}
+              {% if movie.languages_list %}
+              <span class="lang-inline">
+                {{ movie.languages_list[0] }}{% if movie.lang_count > 1 %} +{{ movie.lang_count - 1 }}{% endif %}
+              </span>
+              {% endif %}
+            </div>
+            {% if movie.rating %}
+            <div class="mt-2"><span class="movie-rating">⭐ {{ movie.rating }}</span></div>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+
+    {% if city_theaters %}
+    <div class="mt-5 mb-2">
+      <div class="d-flex align-items-center justify-content-between">
+        <h4 style="color:#fff;font-weight:700">
+          <i class="fas fa-building me-2" style="color:var(--orange)"></i>
+          Theaters in {{ city }}
+        </h4>
+        <a href="{{ url_for('user_bp.theaters', city=city) }}" class="btn btn-cinema-outline btn-sm">
+          View All <i class="fas fa-arrow-right ms-1"></i>
+        </a>
+      </div>
+    </div>
+    <div class="row g-3 mb-4">
+      {% for theater in city_theaters %}
+      <div class="col-md-4">
+        <a href="{{ url_for('user_bp.theater_detail', theater_id=theater.theater_id) }}" style="text-decoration:none;display:block">
+          <div class="user-theater-card p-3" style="background:var(--card-bg)">
+            <div class="d-flex align-items-center gap-3">
+              <div style="width:40px;height:40px;flex-shrink:0;background:rgba(217,108,44,0.15);
+                          border-radius:10px;display:flex;align-items:center;justify-content:center">
+                <i class="fas fa-building" style="color:var(--orange)"></i>
+              </div>
+              <div class="flex-grow-1 min-w-0">
+                <div class="theater-name" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">
+                  {{ theater.name }}
+                </div>
+                <div class="theater-location mt-1">
+                  <i class="fas fa-map-marker-alt me-1" style="color:var(--orange)"></i>
+                  {{ theater.location }}{% if theater.city %}, {{ theater.city }}{% endif %}
+                </div>
+                {% if theater.brand %}
+                <div style="font-size:0.72rem;color:var(--text-muted);margin-top:3px">
+                  <i class="fas fa-tag me-1"></i>{{ theater.brand.brand_name }}
+                </div>
+                {% endif %}
+              </div>
+              <i class="fas fa-chevron-right" style="color:var(--orange);font-size:0.8rem;flex-shrink:0"></i>
+            </div>
+            <div style="margin-top:10px;padding-top:10px;border-top:1px solid rgba(255,255,255,0.05);
+                        font-size:0.72rem;color:var(--text-muted)">
+              <i class="fas fa-film me-1"></i>Click to see movies &amp; shows
+            </div>
+          </div>
+        </a>
+      </div>
+      {% endfor %}
+    </div>
+    {% endif %}
+
+  </div>
+</section>
+{% endif %}
+
+<!-- ═══════════════════════════════════════════
+     NEW ADDITIONS
+════════════════════════════════════════════ -->
+<section style="padding:60px 0 0">
+  <div class="container">
+    <div class="d-flex align-items-center justify-content-between mb-4">
+      <div class="d-flex align-items-center gap-2">
+        <h2 class="section-title mb-0">New Additions</h2>
+        <span style="background:var(--orange);color:#fff;font-size:0.7rem;padding:3px 10px;border-radius:20px;font-weight:600">Just Added</span>
+      </div>
+      <a href="{{ url_for('user_bp.movies') }}" class="btn btn-cinema-outline btn-sm">
+        View All <i class="fas fa-arrow-right ms-1"></i>
+      </a>
+    </div>
+    {% if new_additions %}
+    <div class="row g-3 row-cols-2 row-cols-md-3 row-cols-lg-5">
+      {% for movie in new_additions %}
+      {% set _pi = (loop.index0 % 200) + 1 %}
+      {% set _fallback = url_for('static', filename='uploads/posters/poster_%03d.jpg' | format(_pi)) %}
+      <div class="col">
+        <div class="movie-card" data-languages="{{ (movie.languages_list or []) | join(',') }}"
+          data-genres="{{ movie.genres_display or '' }}">
+          <div class="poster-wrap">
+            <img src="{{ movie.poster_url or _fallback }}" alt="{{ movie.title }}" onerror="this.src='{{ _fallback }}'">
+            <div class="poster-overlay">
+              <div class="w-100">
+                <a href="{{ url_for('user_bp.movie_detail', movie_id=movie.movie_id) }}"
+                  class="btn btn-cinema btn-sm w-100 mb-1">
+                  <i class="fas fa-ticket-alt me-1"></i>Book Now
+                </a>
+                <a href="{{ url_for('user_bp.movie_detail', movie_id=movie.movie_id) }}"
+                  class="btn btn-cinema-outline btn-sm w-100" style="font-size:0.75rem">
+                  <i class="fas fa-info-circle me-1"></i>Details
+                </a>
+              </div>
+            </div>
+          </div>
+          <div class="card-body">
+            <div class="movie-title" title="{{ movie.title }}">{{ movie.title }}</div>
+            <div class="d-flex align-items-center justify-content-between mt-1">
+              {% if movie.genres_display %}
+              <span class="movie-genre">{{ movie.genres_display.split(' / ')[0] }}</span>
+              {% endif %}
+              {% if movie.rating %}
+              <span class="movie-rating">⭐ {{ movie.rating }}</span>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}
+    <p style="color:var(--text-muted);font-size:0.9rem">No new additions recently. Check back soon!</p>
+    {% endif %}
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════
+     NOW SHOWING
+════════════════════════════════════════════ -->
+<section style="padding:60px 0 0">
+  <div class="container">
+    <div class="d-flex align-items-center justify-content-between mb-4">
+      <h2 class="section-title mb-0">Now Showing</h2>
+      <a href="{{ url_for('user_bp.movies') }}" class="btn btn-cinema-outline btn-sm">
+        View All <i class="fas fa-arrow-right ms-1"></i>
+      </a>
+    </div>
+    <div class="row g-3 row-cols-2 row-cols-md-3 row-cols-lg-5">
+      {% for movie in now_showing %}
+      {% set _pi = (loop.index0 % 200) + 1 %}
+      {% set _fallback = url_for('static', filename='uploads/posters/poster_%03d.jpg' | format(_pi)) %}
+      <div class="col">
+        <div class="movie-card" data-languages="{{ (movie.languages_list or []) | join(',') }}"
+          data-genres="{{ movie.genres_display or '' }}">
+          <div class="poster-wrap">
+            <img src="{{ movie.poster_url or _fallback }}" alt="{{ movie.title }}" onerror="this.src='{{ _fallback }}'">
+            <div class="poster-overlay">
+              <div class="w-100">
+                <a href="{{ url_for('user_bp.movie_detail', movie_id=movie.movie_id) }}"
+                  class="btn btn-cinema btn-sm w-100 mb-1">
+                  <i class="fas fa-ticket-alt me-1"></i>Book Now
+                </a>
+                <a href="{{ url_for('user_bp.movie_detail', movie_id=movie.movie_id) }}"
+                  class="btn btn-cinema-outline btn-sm w-100" style="font-size:0.75rem">
+                  <i class="fas fa-info-circle me-1"></i>Details
+                </a>
+              </div>
+            </div>
+          </div>
+          <div class="card-body">
+            <div class="movie-title" title="{{ movie.title }}">{{ movie.title }}</div>
+            <div class="card-meta-row">
+              {% if movie.genres_display %}
+              <span class="genre-tag">{{ movie.genres_display.split(' / ')[0] }}</span>
+              {% endif %}
+              {% if movie.languages_list %}
+              <span class="lang-inline">
+                {{ movie.languages_list[0] }}{% if movie.lang_count > 1 %} +{{ movie.lang_count - 1 }}{% endif %}
+              </span>
+              {% endif %}
+            </div>
+            {% if movie.rating %}
+            <div class="mt-2"><span class="movie-rating">⭐ {{ movie.rating }}</span></div>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+      {% else %}
+      <div class="col-12 empty-state">
+        <i class="fas fa-film"></i>
+        <h5>No movies currently showing</h5>
+        <p>Check back soon.</p>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════
+     COMING SOON
+════════════════════════════════════════════ -->
+<section style="padding:40px 0 60px">
+  <div class="container">
+
+    <div class="d-flex align-items-center justify-content-between mb-4">
+      <div class="d-flex align-items-center gap-2">
+        <h2 class="section-title mb-0">Coming Soon</h2>
+        {% if upcoming %}
+        <span style="background:rgba(243,156,18,0.15);color:#f39c12;font-size:0.7rem;
+                     padding:3px 10px;border-radius:20px;font-weight:600;
+                     border:1px solid rgba(243,156,18,0.3)">
+          {{ upcoming|length }} Upcoming
+        </span>
+        {% endif %}
+      </div>
+    </div>
+
+    {% if upcoming %}
+    <div class="row g-3 row-cols-2 row-cols-md-3 row-cols-lg-5">
+      {% for movie in upcoming %}
+      {% set _pi = (loop.index0 % 200) + 1 %}
+      {% set _fallback = url_for('static', filename='uploads/posters/poster_%03d.jpg' | format(_pi)) %}
+      <div class="col">
+        <div class="movie-card" style="opacity:0.92" data-languages="{{ (movie.languages_list or []) | join(',') }}"
+          data-genres="{{ movie.genres_display or '' }}">
+          <div class="poster-wrap">
+            <img src="{{ movie.poster_url or _fallback }}" alt="{{ movie.title }}" onerror="this.src='{{ _fallback }}'">
+
+            <div style="position:absolute;top:8px;left:8px;background:rgba(243,156,18,0.92);
+                        color:#000;font-weight:700;border-radius:6px;padding:4px 10px;
+                        font-size:0.72rem;backdrop-filter:blur(4px)">
+              <i class="fas fa-clock me-1"></i>
+              {% if movie.release_date %}
+                {% if movie.release_date is not string %}{{ movie.release_date.strftime('%d %b %Y') }}
+                {% else %}{{ movie.release_date }}{% endif %}
+              {% else %}Coming Soon{% endif %}
+            </div>
+
+            {% if movie.release_date and movie.release_date is not string %}
+            {% set days_left = (movie.release_date - today).days %}
+            <div style="position:absolute;bottom:8px;right:8px;background:rgba(0,0,0,0.78);
+                        color:#fff;font-size:0.68rem;padding:3px 8px;border-radius:6px;backdrop-filter:blur(4px)">
+              {% if days_left == 1 %}🔥 Tomorrow!
+              {% elif days_left <= 7 %}🔥 In {{ days_left }} days
+              {% else %}📅 In {{ days_left }} days{% endif %}
+            </div>
+            {% endif %}
+
+            <div class="poster-overlay">
+              <a href="{{ url_for('user_bp.movie_detail', movie_id=movie.movie_id) }}"
+                class="btn btn-cinema-outline btn-sm w-100">
+                <i class="fas fa-info-circle me-1"></i>Details
+              </a>
+            </div>
+          </div>
+
+          <div class="card-body">
+            <div class="movie-title">{{ movie.title }}</div>
+            <div style="font-size:0.72rem;color:var(--orange);margin-top:6px;font-weight:600">
+              <i class="fas fa-calendar-alt me-1"></i>
+              {% if movie.release_date %}
+                {% if movie.release_date is not string %}{{ movie.release_date.strftime('%d %b %Y') }}
+                {% else %}{{ movie.release_date }}{% endif %}
+              {% else %}Date TBA{% endif %}
+            </div>
+            {% if movie.rating %}
+            <div class="d-flex align-items-center gap-1 mt-1">
+              <span class="movie-rating">⭐ {{ movie.rating }}</span>
+            </div>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}
+    <p style="color:var(--text-muted);font-size:0.9rem">No upcoming movies at the moment. Check back soon!</p>
+    {% endif %}
+  </div>
+</section>
+
+{% endblock %}

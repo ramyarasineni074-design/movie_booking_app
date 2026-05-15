@@ -1,0 +1,134 @@
+{% extends 'user/base.html' %}
+{% block title %}Contact Us{% endblock %}
+
+{% block content %}
+<div style="background:#0d1117;min-height:calc(100vh - 70px);padding:60px 0">
+<div class="container">
+
+    <!-- Page Header -->
+    <div class="text-center mb-5">
+        <div style="width:64px;height:64px;background:rgba(217,108,44,0.15);border:1px solid rgba(217,108,44,0.3);border-radius:16px;display:flex;align-items:center;justify-content:center;margin:0 auto 16px;font-size:1.6rem">
+            <i class="fas fa-headset" style="color:var(--orange)"></i>
+        </div>
+        <h1 style="color:#fff;font-weight:800;font-size:2rem">Contact Us</h1>
+        <p style="color:var(--text-muted);max-width:500px;margin:12px auto 0">
+            Have a complaint, feedback, or question? We're here to help. Send us a message and we'll respond within 24 hours.
+        </p>
+    </div>
+
+    <div class="row g-5 justify-content-center">
+
+        <!-- Contact Form -->
+        <div class="col-lg-7">
+            <div class="data-card p-4 p-md-5">
+                <h4 style="color:#fff;margin-bottom:24px"><i class="fas fa-envelope me-2 text-orange"></i>Send a Message</h4>
+
+                <form method="POST" action="{{ url_for('contact_bp.contact') }}">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label style="color:rgba(255,255,255,0.6);font-size:0.85rem;margin-bottom:6px">Your Name *</label>
+                            <input type="text" name="name" class="form-control" required
+                                   placeholder="Full name"
+                                   style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.12);color:#fff">
+                        </div>
+                        <div class="col-md-6">
+                            <label style="color:rgba(255,255,255,0.6);font-size:0.85rem;margin-bottom:6px">Email Address *</label>
+                            <input type="email" name="email" class="form-control" required
+                                   placeholder="your@email.com"
+                                   style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.12);color:#fff">
+                        </div>
+                        <div class="col-md-6">
+                            <label style="color:rgba(255,255,255,0.6);font-size:0.85rem;margin-bottom:6px">Message Type</label>
+                            <select name="message_type" class="form-select filter-select">
+                                <option value="complaint">🚨 Complaint</option>
+                                <option value="feedback">💬 Feedback</option>
+                                <option value="refund">💰 Refund Issue</option>
+                                <option value="booking">🎫 Booking Issue</option>
+                                <option value="technical">🔧 Technical Problem</option>
+                                <option value="query">❓ General Query</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label style="color:rgba(255,255,255,0.6);font-size:0.85rem;margin-bottom:6px">Subject</label>
+                            <input type="text" name="subject" class="form-control"
+                                   placeholder="Brief subject line"
+                                   style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.12);color:#fff">
+                        </div>
+                        <div class="col-12">
+                            <label style="color:rgba(255,255,255,0.6);font-size:0.85rem;margin-bottom:6px">Message *</label>
+                            <textarea name="message" class="form-control" rows="5" required
+                                      placeholder="Describe your issue or feedback in detail..."
+                                      style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.12);color:#fff;resize:vertical"></textarea>
+                        </div>
+                        <div class="col-12">
+                            <button type="submit" class="btn btn-cinema w-100 py-3">
+                                <i class="fas fa-paper-plane me-2"></i>Send Message
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Info Cards -->
+        <div class="col-lg-4">
+            <div class="d-flex flex-column gap-3">
+
+                <div class="data-card p-4">
+                    <div class="d-flex gap-3 align-items-start">
+                        <div style="width:40px;height:40px;background:rgba(56,139,253,0.15);border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0">
+                            <i class="fas fa-clock" style="color:#388bfd"></i>
+                        </div>
+                        <div>
+                            <div style="color:#fff;font-weight:600;margin-bottom:4px">Response Time</div>
+                            <div style="color:var(--text-muted);font-size:0.85rem">We respond to all messages within <strong style="color:var(--orange)">24 hours</strong>.</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="data-card p-4">
+                    <div class="d-flex gap-3 align-items-start">
+                        <div style="width:40px;height:40px;background:rgba(63,185,80,0.15);border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0">
+                            <i class="fas fa-undo-alt" style="color:#3fb950"></i>
+                        </div>
+                        <div>
+                            <div style="color:#fff;font-weight:600;margin-bottom:4px">Refund Issues</div>
+                            <div style="color:var(--text-muted);font-size:0.85rem">Refunds are processed in <strong style="color:#3fb950">5–7 business days</strong> after approval.</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="data-card p-4">
+                    <div class="d-flex gap-3 align-items-start">
+                        <div style="width:40px;height:40px;background:rgba(217,108,44,0.15);border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0">
+                            <i class="fas fa-envelope" style="color:var(--orange)"></i>
+                        </div>
+                        <div>
+                            <div style="color:#fff;font-weight:600;margin-bottom:4px">Email Support</div>
+                            <div style="color:var(--text-muted);font-size:0.85rem">support@cinebook.in</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="data-card p-4">
+                    <div class="d-flex gap-3 align-items-start">
+                        <div style="width:40px;height:40px;background:rgba(229,9,20,0.12);border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0">
+                            <i class="fas fa-handshake" style="color:#e50914"></i>
+                        </div>
+                        <div>
+                            <div style="color:#fff;font-weight:600;margin-bottom:4px">Theater Owner?</div>
+                            <div style="color:var(--text-muted);font-size:0.85rem">
+                                Want to list your theaters on CineBook?
+                                <a href="{{ url_for('contact_bp.partner') }}" style="color:var(--orange)">Apply here →</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+    </div>
+</div>
+</div>
+{% endblock %}

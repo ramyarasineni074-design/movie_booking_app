@@ -1,0 +1,193 @@
+{% extends 'user/base.html' %}
+{% block title %}My Bookings{% endblock %}
+
+{% block content %}
+<div style="background:#0d1117;min-height:calc(100vh - 70px);padding:40px 0">
+<div class="container">
+    <h2 class="section-title mb-4">My Bookings</h2>
+
+    <ul class="nav mb-4 gap-2" id="bookingTabs">
+        <li class="nav-item"><button class="btn btn-cinema btn-sm" id="tab-all" onclick="filterBookings('all',this)">All</button></li>
+        <li class="nav-item"><button class="btn btn-cinema-outline btn-sm" id="tab-completed" onclick="filterBookings('completed',this)">
+            <i class="fas fa-check-circle me-1" style="color:#3fb950"></i>Confirmed</button></li>
+        <li class="nav-item"><button class="btn btn-cinema-outline btn-sm" id="tab-cancelled" onclick="filterBookings('cancelled',this)">
+            <i class="fas fa-times-circle me-1" style="color:#e50914"></i>Cancelled</button></li>
+        <li class="nav-item"><button class="btn btn-cinema-outline btn-sm" id="tab-failed" onclick="filterBookings('failed',this)">
+            <i class="fas fa-exclamation-circle me-1" style="color:#f39c12"></i>Failed</button></li>
+    </ul>
+
+    {% if bookings %}
+    <div class="row g-3" id="bookingsList">
+        {% for booking in bookings %}
+        <div class="col-12 booking-item" data-status="{{ booking.payment_status | lower }}">
+            <div class="data-card p-0" style="overflow:hidden">
+                <div class="row g-0 align-items-stretch">
+                    <div class="col-auto">
+                        <img src="{{ booking._movie.poster_url or url_for('static', filename='uploads/default.png') if booking._movie else url_for('static', filename='uploads/default.png') }}"
+                             onerror="this.src='{{ url_for('static', filename='uploads/default.png') }}'"
+                             style="width:80px;height:110px;object-fit:cover;border-radius:14px 0 0 14px">
+                    </div>
+                    <div class="col p-3">
+                        <div class="d-flex justify-content-between align-items-start flex-wrap gap-2">
+                            <div>
+                                <div style="font-weight:700;color:#fff;font-size:1rem">
+                                    {{ booking._movie.title if booking._movie else '–' }}
+                                </div>
+                                <div style="font-size:0.8rem;color:var(--text-muted);margin-top:3px">
+                                    <i class="fas fa-building me-1"></i>{{ booking._theater.name if booking._theater else '–' }}
+                                    {% if booking._theater and booking._theater.city %} · {{ booking._theater.city }}{% endif %}
+                                </div>
+                                <div style="font-size:0.8rem;color:var(--text-muted);margin-top:3px">
+                                    <i class="fas fa-calendar me-1"></i>{{ booking._show.show_date if booking._show else '' }}
+                                    &nbsp;|&nbsp;
+                                    <i class="fas fa-clock me-1"></i>{{ booking._show.start_time.strftime('%I:%M %p') if booking._show and booking._show.start_time else '' }}
+                                </div>
+                            </div>
+                            <span class="badge-pill
+                                {% if booking.payment_status|lower in ['completed', 'paid'] %}badge-success
+                                {% elif booking.payment_status|lower == 'cancelled' %}badge-danger
+                                {% else %}badge-warning{% endif %}">
+                                {{ booking.payment_status | capitalize }}
+                            </span>
+                        </div>
+
+                        <div class="d-flex flex-wrap gap-3 mt-3 align-items-center">
+                            <div>
+                                <span style="font-size:0.75rem;color:var(--text-muted)">SEATS</span>
+                                <div style="color:#fff;font-weight:600;font-size:0.875rem">{{ booking.seat_numbers or '–' }}</div>
+                            </div>
+                            <div style="width:1px;height:30px;background:var(--border)" class="d-none d-md-block"></div>
+                            <div>
+                                <span style="font-size:0.75rem;color:var(--text-muted)">AMOUNT</span>
+                                {# Show grand total (incl. fees) from Payment if available #}
+                                <div style="color:var(--orange);font-weight:700">
+                                    ₹{{ (booking._payment.amount|int) if booking._payment and booking._payment.amount else (booking.total_amount|int if booking.total_amount else 0) }}
+                                </div>
+                            </div>
+                            <div style="width:1px;height:30px;background:var(--border)" class="d-none d-md-block"></div>
+
+                            {# ── NEW: Payment method pill ── #}
+                            <div>
+                                <span style="font-size:0.75rem;color:var(--text-muted)">PAID VIA</span>
+                                <div style="margin-top:2px">
+                                    {% if booking._payment and booking._payment.payment_method %}
+                                        {% set pm = booking._payment.payment_method | upper %}
+                                        {% if pm == 'UPI' %}
+                                            <span style="background:rgba(255,106,0,0.12);border:1px solid rgba(255,106,0,0.3);color:#ff8c42;border-radius:20px;padding:2px 9px;font-size:0.72rem;font-weight:600;white-space:nowrap">
+                                                <i class="fas fa-mobile-alt me-1"></i>UPI
+                                            </span>
+                                        {% elif pm == 'RAZORPAY' %}
+                                            <span style="background:rgba(51,149,255,0.12);border:1px solid rgba(51,149,255,0.3);color:#3395FF;border-radius:20px;padding:2px 9px;font-size:0.72rem;font-weight:600;white-space:nowrap">
+                                                <i class="fas fa-bolt me-1"></i>Razorpay
+                                            </span>
+                                        {% elif pm == 'CARD' %}
+                                            <span style="background:rgba(255,106,0,0.12);border:1px solid rgba(255,106,0,0.3);color:#ff8c42;border-radius:20px;padding:2px 9px;font-size:0.72rem;font-weight:600;white-space:nowrap">
+                                                <i class="fas fa-credit-card me-1"></i>Card
+                                            </span>
+                                        {% elif pm == 'NETBANKING' %}
+                                            <span style="background:rgba(255,106,0,0.12);border:1px solid rgba(255,106,0,0.3);color:#ff8c42;border-radius:20px;padding:2px 9px;font-size:0.72rem;font-weight:600;white-space:nowrap">
+                                                <i class="fas fa-university me-1"></i>Net Banking
+                                            </span>
+                                        {% else %}
+                                            <span style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.12);color:rgba(255,255,255,0.5);border-radius:20px;padding:2px 9px;font-size:0.72rem;font-weight:600">
+                                                {{ booking._payment.payment_method }}
+                                            </span>
+                                        {% endif %}
+                                    {% else %}
+                                        <span style="color:var(--text-muted);font-size:0.8rem">–</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+
+                            <div style="width:1px;height:30px;background:var(--border)" class="d-none d-md-block"></div>
+                            <div>
+                                <span style="font-size:0.75rem;color:var(--text-muted)">BOOKING ID</span>
+                                <div style="color:var(--text-muted);font-size:0.75rem;font-family:monospace">{{ booking.booking_id }}</div>
+                            </div>
+                            <div class="ms-auto d-flex gap-2 flex-wrap">
+                                {% if booking.payment_status|lower in ['completed', 'paid'] %}
+                                <a href="{{ url_for('payment_bp.ticket', booking_id=booking.booking_id) }}"
+                                   class="btn btn-cinema btn-sm">
+                                    <i class="fas fa-ticket-alt me-1"></i>View Ticket
+                                </a>
+                                {% set show_dt = booking._show.show_date ~ 'T' ~ booking._show.start_time.strftime('%H:%M') if booking._show and booking._show.show_date and booking._show.start_time else '' %}
+                                {% set show_passed = booking._show and booking._show.show_date and booking._show.start_time and (booking._show.show_date.strftime('%Y-%m-%d') ~ 'T' ~ booking._show.start_time.strftime('%H:%M')) < now_str %}
+                                {% if show_passed %}
+                                <button class="btn btn-sm" disabled
+                                        title="Cannot cancel after show time"
+                                        style="background:rgba(100,100,100,0.1);border:1px solid rgba(100,100,100,0.3);color:#888;border-radius:8px;font-size:0.8rem;cursor:not-allowed;opacity:0.6">
+                                    <i class="fas fa-ban me-1"></i>Expired
+                                </button>
+                                {% else %}
+                                <button class="btn btn-sm" onclick="cancelBooking('{{ booking.booking_id }}', this)"
+                                        style="background:rgba(229,9,20,0.1);border:1px solid rgba(229,9,20,0.3);color:#e50914;border-radius:8px;font-size:0.8rem">
+                                    <i class="fas fa-times me-1"></i>Cancel
+                                </button>
+                                {% endif %}
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        {# ── NEW: UPI ID sub-line (if UPI used) ── #}
+                        {% if booking._payment and booking._payment.payment_method and booking._payment.payment_method|upper == 'UPI' and booking._payment.transaction_ref and 'UPI:' in booking._payment.transaction_ref %}
+                        <div style="margin-top:6px;font-size:0.75rem;color:var(--text-muted)">
+                            <i class="fas fa-at me-1"></i>{{ booking._payment.transaction_ref.split('UPI:')[1] }}
+                        </div>
+                        {% endif %}
+
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="empty-state">
+        <i class="fas fa-ticket-alt"></i>
+        <h5>No bookings yet</h5>
+        <p>You haven't booked any tickets yet.</p>
+        <a href="{{ url_for('user_bp.movies') }}" class="btn btn-cinema mt-2">Browse Movies</a>
+    </div>
+    {% endif %}
+</div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function filterBookings(status, btn) {
+    document.querySelectorAll('#bookingTabs button').forEach(b => {
+        b.classList.remove('btn-cinema');
+        b.classList.add('btn-cinema-outline');
+    });
+    btn.classList.add('btn-cinema');
+    btn.classList.remove('btn-cinema-outline');
+
+    document.querySelectorAll('.booking-item').forEach(item => {
+        const s = (item.dataset.status || '').toLowerCase();
+        item.style.display = (status === 'all' || s === status) ? '' : 'none';
+    });
+}
+
+function cancelBooking(id, btn) {
+    if (!confirm('Cancel this booking? Refund in 5–7 business days.')) return;
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Cancelling...';
+    fetch('/cancel-booking/' + id, { method: 'POST' })
+        .then(r => r.json())
+        .then(data => {
+            showToast(data.message, data.success ? 'success' : 'danger');
+            if (data.success) setTimeout(() => location.reload(), 1500);
+            else {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fas fa-times me-1"></i>Cancel';
+            }
+        })
+        .catch(() => {
+            showToast('Request failed', 'danger');
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fas fa-times me-1"></i>Cancel';
+        });
+}
+</script>
+{% endblock %}

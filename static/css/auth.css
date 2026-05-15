@@ -1,0 +1,78 @@
+/* ============================================================
+   CineBook — AUTH STYLES
+   Dark cinematic theme for login, register, change-password.
+   Depends on: base.css
+   ============================================================ */
+
+/* ── Body override for auth pages ── */
+body {
+  background: var(--dark);
+  color: var(--text-primary);
+}
+
+/* ============================================================
+   AUTH LAYOUT
+   ============================================================ */
+.auth-body {
+  background: linear-gradient(135deg, #0B0B0F, #14141A, #1C1C24);
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 30px 15px;
+}
+
+/* ============================================================
+   AUTH CARD
+   ============================================================ */
+.auth-card {
+  background: rgba(20,20,26,0.95);
+  backdrop-filter: blur(10px);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 40px;
+  width: 100%;
+  max-width: 460px;
+}
+
+/* ── Logo ── */
+.auth-logo {
+  font-family: 'Platypi', serif;
+  font-size: 2rem;
+  font-weight: 800;
+  background: linear-gradient(90deg, var(--orange), var(--primary));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* ── Inputs ── */
+.auth-card .form-control {
+  background: rgba(255,255,255,0.06);
+  border: 1px solid var(--border);
+  color: #fff;
+  border-radius: 10px;
+  padding: 12px 14px;
+}
+
+.auth-card .form-control:focus {
+  background: rgba(255,255,255,0.09);
+  border-color: var(--orange);
+  color: #fff;
+  box-shadow: 0 0 0 3px rgba(255,106,0,0.15);
+}
+
+.auth-card .form-control::placeholder { color: rgba(255,255,255,0.3); }
+
+.auth-card label {
+  color: rgba(255,255,255,0.6);
+  font-size: 0.85rem;
+  margin-bottom: 6px;
+}
+
+/* ============================================================
+   RESPONSIVE
+   ============================================================ */
+@media (max-width: 768px) {
+  .auth-card { padding: 25px 20px; }
+}
