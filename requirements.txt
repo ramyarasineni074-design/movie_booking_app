@@ -8,5 +8,6 @@ gunicorn
 eventlet
 qrcode
 pillow
+pandas
 razorpay
 python-dotenv
