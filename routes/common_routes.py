@@ -16,3 +16,25 @@ def home():
 
     # ✅ Guest users go to home page
     return redirect(url_for('user_bp.home'))
+
+
+from flask_mail import Message
+from extensions import mail
+
+@common_bp.route('/test-mail')
+def test_mail():
+
+    try:
+
+        msg = Message(
+            subject="Test Mail",
+            recipients=["your_email@gmail.com"],
+            body="Mail working successfully"
+        )
+
+        mail.send(msg)
+
+        return "Mail sent successfully"
+
+    except Exception as e:
+        return str(e)
