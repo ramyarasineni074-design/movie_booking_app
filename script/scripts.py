@@ -290,56 +290,197 @@ for name, df in sheets.items():
     print(f"Saved {name}.csv ({len(df)} rows)")
 
 # -----------------------
-# DB INSERT
+# RENDER DB SEEDING
 # -----------------------
-conn = psycopg2.connect(
-    host="localhost",
-    database="movie_booking_db",
-    user="postgres",
-    password="Ramya"
+
+from extensions import db
+
+from models import (
+    C_User,
+    Movie,
+    TheaterBrand,
+    Theater,
+    Screen,
+    Show,
+    Seat
 )
-cursor = conn.cursor()
 
-table_columns = {
-    "c_user":         "user_id,name,email,phone_number,dob",
-    "movies":         "movie_id,title,genre,language,duration,rating,release_date,description,poster_url,status",
-    "theater_brands": "brand_id,brand_name",
-    "theaters":       "theater_id,brand_id,name,location,city,state",
-    "screens":        "screen_id,theater_id,screen_number,total_seats",
-    "shows":          "show_id,movie_id,theater_id,screen_id,show_date,start_time,price,available_seats,status",
-    "bookings":       "booking_id,user_id,show_id,booking_date,total_tickets,seat_numbers,total_amount,payment_status,transaction_ref",
-    "seats":          "seat_id,booking_id,screen_id,seat_number,seat_type,charger,status,show_id",
-    "payments":       "payment_id,booking_id,user_id,amount,payment_method,payment_date,status,transaction_ref",
-    "reviews":        "review_id,user_id,movie_id,rating,comment,review_date",
-}
 
-def copy_csv(table, file_path):
-    try:
-        with open(file_path, "r", encoding="utf-8") as f:
-            cursor.copy_expert(
-                f"COPY {table}({table_columns[table]}) FROM STDIN WITH CSV HEADER",
-                f
+def seed_csv_data():
+
+    # Prevent duplicate inserts
+    if Movie.query.first():
+        print("CSV data already seeded")
+        return
+
+    print("Starting CSV database seeding...")
+
+    # ---------------- USERS ----------------
+
+    if os.path.exists(os.path.join(BASE_DIR, "c_user.csv")):
+
+        users = pd.read_csv(os.path.join(BASE_DIR, "c_user.csv"))
+
+        for _, row in users.iterrows():
+
+            user = C_User(
+                user_id=row["user_id"],
+                name=row["name"],
+                email=row["email"],
+                phone_number=row["phone_number"],
+                dob=row["dob"]
             )
-        conn.commit()
-        print(f"✅ Inserted into {table}")
-    except Exception as e:
-        conn.rollback()
-        print(f"❌ Error inserting {table}: {e}")
 
-# Strict FK-safe insert order
-tables = [
-    "c_user", "movies", "theater_brands", "theaters",
-    "screens", "shows", "bookings", "seats", "payments", "reviews"
-]
+            db.session.add(user)
 
-for table in tables:
-    path = os.path.join(BASE_DIR, f"{table}.csv")
-    if os.path.exists(path):
-        copy_csv(table, path)
-    else:
-        print(f"⚠️  Skipping {table} — CSV not found")
+        db.session.commit()
 
-conn.commit()
-cursor.close()
-conn.close()
-print("\n✅ All done!")
+        print("Users inserted")
+
+    # ---------------- MOVIES ----------------
+
+    if os.path.exists(os.path.join(BASE_DIR, "movies.csv")):
+
+        movies = pd.read_csv(os.path.join(BASE_DIR, "movies.csv"))
+
+        for _, row in movies.iterrows():
+
+            poster_path = row.get("poster_url")
+
+            if pd.isna(poster_path) or not poster_path:
+                poster_path = "uploads/posters/default.jpg"
+
+            movie = Movie(
+                movie_id=row["movie_id"],
+                title=row["title"],
+                genre=row["genre"],
+                language=row["language"],
+                duration=row["duration"],
+                rating=row["rating"],
+                release_date=row["release_date"],
+                description=row["description"],
+                poster_url=poster_path,
+                status=row["status"]
+            )
+
+            db.session.add(movie)
+
+        db.session.commit()
+
+        print("Movies inserted")
+
+    # ---------------- THEATER BRANDS ----------------
+
+    if os.path.exists(os.path.join(BASE_DIR, "theater_brands.csv")):
+
+        brands = pd.read_csv(os.path.join(BASE_DIR, "theater_brands.csv"))
+
+        for _, row in brands.iterrows():
+
+            brand = TheaterBrand(
+                brand_id=row["brand_id"],
+                brand_name=row["brand_name"]
+            )
+
+            db.session.add(brand)
+
+        db.session.commit()
+
+        print("Brands inserted")
+
+    # ---------------- THEATERS ----------------
+
+    if os.path.exists(os.path.join(BASE_DIR, "theaters.csv")):
+
+        theaters = pd.read_csv(os.path.join(BASE_DIR, "theaters.csv"))
+
+        for _, row in theaters.iterrows():
+
+            theater = Theater(
+                theater_id=row["theater_id"],
+                brand_id=row["brand_id"],
+                name=row["name"],
+                location=row["location"],
+                city=row["city"],
+                state=row["state"]
+            )
+
+            db.session.add(theater)
+
+        db.session.commit()
+
+        print("Theaters inserted")
+
+    # ---------------- SCREENS ----------------
+
+    if os.path.exists(os.path.join(BASE_DIR, "screens.csv")):
+
+        screens = pd.read_csv(os.path.join(BASE_DIR, "screens.csv"))
+
+        for _, row in screens.iterrows():
+
+            screen = Screen(
+                screen_id=row["screen_id"],
+                theater_id=row["theater_id"],
+                screen_number=row["screen_number"],
+                total_seats=row["total_seats"]
+            )
+
+            db.session.add(screen)
+
+        db.session.commit()
+
+        print("Screens inserted")
+
+    # ---------------- SHOWS ----------------
+
+    if os.path.exists(os.path.join(BASE_DIR, "shows.csv")):
+
+        shows = pd.read_csv(os.path.join(BASE_DIR, "shows.csv"))
+
+        for _, row in shows.iterrows():
+
+            show = Show(
+                show_id=row["show_id"],
+                movie_id=row["movie_id"],
+                theater_id=row["theater_id"],
+                screen_id=row["screen_id"],
+                show_date=row["show_date"],
+                start_time=row["start_time"],
+                price=row["price"],
+                available_seats=row["available_seats"],
+                status=row["status"]
+            )
+
+            db.session.add(show)
+
+        db.session.commit()
+
+        print("Shows inserted")
+
+    # ---------------- SEATS ----------------
+
+    if os.path.exists(os.path.join(BASE_DIR, "seats.csv")):
+
+        seats = pd.read_csv(os.path.join(BASE_DIR, "seats.csv"))
+
+        for _, row in seats.iterrows():
+
+            seat = Seat(
+                seat_id=row["seat_id"],
+                booking_id=row.get("booking_id"),
+                screen_id=row["screen_id"],
+                seat_number=row["seat_number"],
+                seat_type=row["seat_type"],
+                charger=row["charger"],
+                status=row["status"],
+                show_id=row.get("show_id")
+            )
+
+            db.session.add(seat)
+
+        db.session.commit()
+
+        print("Seats inserted")
+
+    print("CSV seeding completed successfully")

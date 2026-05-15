@@ -38,8 +38,14 @@ def create_app():
 
         # Auto-run migrations on startup
     with app.app_context():
+
         from flask_migrate import upgrade
         upgrade()
+
+        import seed
+
+        from script.scripts import seed_csv_data
+        seed_csv_data()
 
 
 
