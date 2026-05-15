@@ -296,7 +296,7 @@ for name, df in sheets.items():
 from extensions import db
 
 from models import (
-    C_User,
+    User,
     Movie,
     TheaterBrand,
     Theater,
@@ -323,7 +323,7 @@ def seed_csv_data():
 
         for _, row in users.iterrows():
 
-            user = C_User(
+            user = User(
                 user_id=row["user_id"],
                 name=row["name"],
                 email=row["email"],
