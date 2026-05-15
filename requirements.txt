@@ -9,5 +9,6 @@ eventlet
 qrcode
 pillow
 pandas
+openpyxl
 razorpay
 python-dotenv
