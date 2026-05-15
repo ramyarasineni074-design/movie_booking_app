@@ -468,13 +468,21 @@ def seed_csv_data():
 
             seat = Seat(
                 seat_id=row["seat_id"],
-                booking_id=row.get("booking_id"),
+                booking_id=(
+                    None
+                    if pd.isna(row.get("booking_id"))
+                    else row.get("booking_id")
+                ),
                 screen_id=row["screen_id"],
                 seat_number=row["seat_number"],
                 seat_type=row["seat_type"],
                 charger=row["charger"],
                 status=row["status"],
-                show_id=row.get("show_id")
+                show_id=(
+                    None
+                    if pd.isna(row.get("show_id"))
+                    else row.get("show_id")
+                )
             )
 
             db.session.add(seat)
