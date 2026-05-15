@@ -36,6 +36,13 @@ def create_app():
     #  INIT MIGRATE (VERY IMPORTANT)
     migrate = Migrate(app, db)
 
+        # Auto-run migrations on startup
+    with app.app_context():
+        from flask_migrate import upgrade
+        upgrade()
+
+
+
     # 🔹 Register blueprints
     app.register_blueprint(common_bp)
     app.register_blueprint(auth_bp)
