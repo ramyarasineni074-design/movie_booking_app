@@ -5,8 +5,16 @@
 import os
 
 class Config:
-    SQLALCHEMY_DATABASE_URI = 'postgresql://postgres:Ramya@localhost:5432/movie_booking_db'
+     # DATABASE
+    _db_url = os.environ.get('DATABASE_URL', '')
+
+    # Fix Render postgres URL issue
+    if _db_url.startswith('postgres://'):
+        _db_url = _db_url.replace('postgres://', 'postgresql://', 1)
+
+    SQLALCHEMY_DATABASE_URI = _db_url
     SQLALCHEMY_TRACK_MODIFICATIONS = False
+
     SECRET_KEY = os.environ.get('SECRET_KEY')
 
     UPLOAD_FOLDER = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'static', 'uploads')
