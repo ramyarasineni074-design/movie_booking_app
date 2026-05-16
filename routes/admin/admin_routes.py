@@ -667,26 +667,55 @@ def toggle_owner(owner_id):
 @admin_required
 @handle_exceptions
 def resend_credentials(owner_id):
-    owner = db.session.get(AppUser, owner_id)
-    if not owner:
-        return jsonify({'success': False, 'message': 'Owner not found'}), 404
-    plain_pw = gen_password()
-    owner.password = generate_password_hash(plain_pw)
-    owner.is_first_login = True
-    db.session.commit()
-    sent = send_credentials_email(owner.email, owner.name, 'owner', owner.email, plain_pw)
-    if sent:
+
+    try:
+
+        print("===== RESEND START =====")
+
+        owner = db.session.get(AppUser, owner_id)
+
+        if not owner:
+            return jsonify({
+                'success': False,
+                'message': 'Owner not found'
+            }),404
+
+        plain_pw = gen_password()
+
+        owner.password = generate_password_hash(plain_pw)
+        owner.is_first_login = True
+
+        db.session.commit()
+
+        print("Owner:", owner.email)
+
+        sent = send_credentials_email(
+            owner.email,
+            owner.name,
+            'owner',
+            owner.email,
+            plain_pw
+        )
+
+        print("Email sent result:", sent)
+
         return jsonify({
             'success': True,
-            'message': f'Email sent to {owner.email}. Temporary password: {plain_pw}',
+            'message': f'Credentials processed',
             'password': plain_pw
         })
-    return jsonify({
-        'success': False,
-        'message': f'Email failed. Temporary password: {plain_pw}',
-        'password': plain_pw
-    })
 
+    except Exception as e:
+
+        print("====== RESEND ERROR ======")
+        print(type(e).__name__)
+        print(str(e))
+        print("==========================")
+
+        return jsonify({
+            'success': False,
+            'message': str(e)
+        }),500
 
 # ─────────────────────────────────────────────────────────────
 # PARTNERSHIP REQUESTS  (approve → auto-create owner account + email)
