@@ -578,15 +578,12 @@ def create_owner():
 
     email_sent = send_credentials_email(email, name, 'owner', email, plain_pw)
     if email_sent:
-        flash(
-            f'Owner "{name}" created. Email sent to {email}. '
-            f'Temporary password: {plain_pw}',
-            'success'
-        )
+        flash(f'Owner "{name}" created. Credentials sent to {email}.', 'success')
     else:
         flash(
-            f'Owner "{name}" created. Email failed — '
-            f'Temporary password: {plain_pw} — save this now!',
+            f'Owner "{name}" created successfully. '
+            f'Email delivery failed — temporary password: <strong>{plain_pw}</strong>. '
+            f'Please share it manually.',
             'warning'
         )
     return redirect(url_for('admin_bp.owners'))
@@ -654,12 +651,12 @@ def resend_credentials(owner_id):
     if sent:
         return jsonify({
             'success': True,
-            'message': f'Email sent! Temporary password: {plain_pw}',
+            'message': f'Email sent to {owner.email}. Temporary password: {plain_pw}',
             'password': plain_pw
         })
     return jsonify({
         'success': False,
-        'message': f'Email failed. Temporary password: {plain_pw} — save this now!',
+        'message': f'Email failed. Temporary password: {plain_pw}',
         'password': plain_pw
     })
 
@@ -734,9 +731,7 @@ def approve_partnership(req_id):
     return jsonify({
         'success': True,
         'message': f'Owner account created for {req.owner_name}. ' +
-                   (f'Email sent. ' if sent else 'Email failed. ') +
-                   f'Temporary password: {plain_pw}',
-        'password': plain_pw
+                   ('Credentials emailed.' if sent else 'Email failed — check server logs.')
     })
 
 

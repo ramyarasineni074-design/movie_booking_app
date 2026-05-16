@@ -44,8 +44,9 @@ def create_app():
 
         import seed
 
-        from script.scripts import seed_csv_data
+        from script.scripts import seed_csv_data, seed_bookings_only
         seed_csv_data()
+        seed_bookings_only()   # seeds bookings/payments/reviews if not already present
 
 
 

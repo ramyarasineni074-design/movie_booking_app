@@ -91,12 +91,13 @@ if __name__ == "__main__":
             sheets["seats"] = sheets["seats"].rename(columns={"charges": "charger"})
 
     # -----------------------
-    # BRAND BUILD
+    # BRAND BUILD  ← KEY FIX: build ONCE, consistently, no post-upper() needed
     # -----------------------
     if "theaters" in sheets:
         df = sheets["theaters"].copy()
         df["brand_name"] = df["name"].apply(lambda x: str(x).strip().split()[0])
 
+        # Sort brand names for stable IDs across runs
         unique_brands = sorted(df["brand_name"].unique())
         brands = pd.DataFrame({
             "brand_name": unique_brands,
@@ -108,6 +109,7 @@ if __name__ == "__main__":
         sheets["theater_brands"] = brands[["brand_id", "brand_name"]].copy()
         sheets["theaters"] = df[["theater_id", "brand_id", "name", "location", "city", "state"]].copy()
 
+        # Verify FK consistency immediately
         valid_brands = set(sheets["theater_brands"]["brand_id"])
         used_brands  = set(sheets["theaters"]["brand_id"])
         missing = used_brands - valid_brands
@@ -126,7 +128,7 @@ if __name__ == "__main__":
             sheets[child] = sheets[child][sheets[child][fk_col].astype(str).isin(valid)].copy()
             print(f"FK {child}.{fk_col}: {before} → {len(sheets[child])} rows")
 
-    enforce_fk("theaters", "theater_brands", "brand_id", "brand_id")
+    enforce_fk("theaters", "theater_brands", "brand_id", "brand_id")  # ← added
     enforce_fk("screens",  "theaters",       "theater_id", "theater_id")
 
     if "shows" in sheets:
@@ -160,12 +162,14 @@ if __name__ == "__main__":
             sheets["seats"]["screen_id"].isin(sheets["screens"]["screen_id"])
         ].copy()
 
+        # Nullify booking_id values that don't exist in bookings (avoids FK violation)
         valid_bookings = set(sheets["bookings"]["booking_id"].astype(str))
         sheets["seats"]["booking_id"] = sheets["seats"]["booking_id"].apply(
             lambda x: x if str(x) in valid_bookings else None
         )
         print(f"FK seats (screen only): {before} → {len(sheets['seats'])} rows")
 
+        
     if "reviews" in sheets:
         before = len(sheets["reviews"])
         sheets["reviews"] = sheets["reviews"][
@@ -176,36 +180,14 @@ if __name__ == "__main__":
 
     # -----------------------
     # STATUS STANDARDIZATION
-    # FIX: normalize payment status to lowercase so analytics queries work
     # -----------------------
-    STATUS_MAP = {
-        "success":   "completed",
-        "Success":   "completed",
-        "Completed": "completed",
-        "completed": "completed",
-        "failed":    "failed",
-        "Failed":    "failed",
-        "refunded":  "refunded",
-        "Refunded":  "refunded",
-        "pending":   "pending",
-        "Pending":   "pending",
-        "cancelled": "cancelled",
-        "Cancelled": "cancelled",
-    }
-
     if "payments" in sheets:
-        sheets["payments"]["status"] = (
-            sheets["payments"]["status"]
-            .str.strip()
-            .str.lower()
-            .replace({
-                "success":  "completed",
-                "failed":   "failed",
-                "refunded": "refunded",
-                "pending":  "pending",
-                "cancelled": "cancelled",
-            })
-        )
+        sheets["payments"]["status"] = sheets["payments"]["status"].str.lower().replace({
+            "success":  "completed",
+            "failed":   "failed",
+            "refunded": "refunded",
+            "pending":  "pending",
+        })
 
     # -----------------------
     # MERGE PAYMENT STATUS INTO BOOKINGS
@@ -216,20 +198,7 @@ if __name__ == "__main__":
             sheets["payments"][["booking_id", "status"]],
             on="booking_id", how="left"
         ).rename(columns={"status": "payment_status"})
-        # FIX: normalize here too, in case bookings CSV had its own status column
-        sheets["bookings"]["payment_status"] = (
-            sheets["bookings"]["payment_status"]
-            .fillna("failed")
-            .str.strip()
-            .str.lower()
-            .replace({
-                "success":  "completed",
-                "failed":   "failed",
-                "refunded": "refunded",
-                "pending":  "pending",
-                "cancelled": "cancelled",
-            })
-        )
+        sheets["bookings"]["payment_status"] = sheets["bookings"]["payment_status"].fillna("failed")
 
     # -----------------------
     # ADD MISSING COLUMNS
@@ -272,19 +241,9 @@ if __name__ == "__main__":
 
     # -----------------------
     # DEFAULTS
-    # FIX: poster_url — assign numbered fallback per movie so each movie
-    # shows a distinct poster (poster_001.jpg … poster_020.jpg cycling)
-    # instead of the same default.png for every movie.
     # -----------------------
     if "movies" in sheets:
-        NUM_POSTERS = 20
-        def _poster(idx):
-            n = (idx % NUM_POSTERS) + 1
-            return f"uploads/posters/poster_{n:03d}.jpg"
-
-        sheets["movies"]["poster_url"] = [
-            _poster(i) for i in range(len(sheets["movies"]))
-        ]
+        sheets["movies"]["poster_url"] = None
         sheets["movies"]["status"] = "active"
 
     if "shows" in sheets:
@@ -351,22 +310,6 @@ from models import (
     Review,
 )
 
-# Number of poster files in static/uploads/posters/
-_NUM_POSTERS = 20
-
-
-def _poster_for_index(idx: int) -> str:
-    """Return a cycling poster filename so every movie gets a distinct image."""
-    n = (idx % _NUM_POSTERS) + 1
-    return f"uploads/posters/poster_{n:03d}.jpg"
-
-
-def _bulk_insert(session, objects, chunk=500):
-    """Add objects in chunks to avoid huge transactions."""
-    for i in range(0, len(objects), chunk):
-        session.add_all(objects[i:i + chunk])
-        session.commit()
-
 
 def seed_csv_data():
 
@@ -378,209 +321,277 @@ def seed_csv_data():
     print("Starting CSV database seeding...")
 
     # ---------------- USERS ----------------
-    path = os.path.join(BASE_DIR, "c_user.csv")
-    if os.path.exists(path):
-        users_df = pd.read_csv(path)
-        objs = []
-        for _, row in users_df.iterrows():
-            objs.append(User(
+
+    if os.path.exists(os.path.join(BASE_DIR, "c_user.csv")):
+
+        users = pd.read_csv(os.path.join(BASE_DIR, "c_user.csv"))
+
+        for _, row in users.iterrows():
+
+            user = User(
                 user_id=row["user_id"],
                 name=row["name"],
                 email=row["email"],
                 phone_number=row["phone_number"],
-                dob=row["dob"] if not pd.isna(row.get("dob", None)) else None,
-            ))
-        _bulk_insert(db.session, objs)
-        print(f"Users inserted ({len(objs)})")
+                dob=row["dob"]
+            )
+
+            db.session.add(user)
+
+        db.session.commit()
+
+        print("Users inserted")
 
     # ---------------- MOVIES ----------------
-    path = os.path.join(BASE_DIR, "movies.csv")
-    if os.path.exists(path):
-        movies_df = pd.read_csv(path)
-        objs = []
-        for idx, row in movies_df.iterrows():
-            raw_poster = row.get("poster_url", "")
-            # FIX: if seeded CSV still has empty poster_url, assign a numbered fallback
-            if pd.isna(raw_poster) or str(raw_poster).strip() in ("", "nan"):
-                poster = _poster_for_index(idx)
-            else:
-                poster = str(raw_poster).strip()
-            objs.append(Movie(
+
+    if os.path.exists(os.path.join(BASE_DIR, "movies.csv")):
+
+        movies = pd.read_csv(os.path.join(BASE_DIR, "movies.csv"))
+
+        for _, row in movies.iterrows():
+
+            poster_path = row.get("poster_url")
+
+            if pd.isna(poster_path) or not poster_path:
+                poster_path = "uploads/posters/default.jpg"
+
+            movie = Movie(
                 movie_id=row["movie_id"],
                 title=row["title"],
                 genre=row["genre"],
                 language=row["language"],
-                duration=row["duration"] if not pd.isna(row.get("duration")) else None,
-                rating=row["rating"] if not pd.isna(row.get("rating")) else None,
-                release_date=row["release_date"] if not pd.isna(row.get("release_date")) else None,
-                description=row["description"] if not pd.isna(row.get("description")) else None,
-                poster_url=poster,
-                status=row.get("status", "active"),
-            ))
-        _bulk_insert(db.session, objs)
-        print(f"Movies inserted ({len(objs)})")
+                duration=row["duration"],
+                rating=row["rating"],
+                release_date=row["release_date"],
+                description=row["description"],
+                poster_url=poster_path,
+                status=row["status"]
+            )
+
+            db.session.add(movie)
+
+        db.session.commit()
+
+        print("Movies inserted")
 
     # ---------------- THEATER BRANDS ----------------
-    path = os.path.join(BASE_DIR, "theater_brands.csv")
-    if os.path.exists(path):
-        brands_df = pd.read_csv(path)
-        objs = [
-            TheaterBrand(brand_id=row["brand_id"], brand_name=row["brand_name"])
-            for _, row in brands_df.iterrows()
-        ]
-        _bulk_insert(db.session, objs)
-        print(f"Brands inserted ({len(objs)})")
+
+    if os.path.exists(os.path.join(BASE_DIR, "theater_brands.csv")):
+
+        brands = pd.read_csv(os.path.join(BASE_DIR, "theater_brands.csv"))
+
+        for _, row in brands.iterrows():
+
+            brand = TheaterBrand(
+                brand_id=row["brand_id"],
+                brand_name=row["brand_name"]
+            )
+
+            db.session.add(brand)
+
+        db.session.commit()
+
+        print("Brands inserted")
 
     # ---------------- THEATERS ----------------
-    path = os.path.join(BASE_DIR, "theaters.csv")
-    if os.path.exists(path):
-        theaters_df = pd.read_csv(path)
-        objs = [
-            Theater(
+
+    if os.path.exists(os.path.join(BASE_DIR, "theaters.csv")):
+
+        theaters = pd.read_csv(os.path.join(BASE_DIR, "theaters.csv"))
+
+        for _, row in theaters.iterrows():
+
+            theater = Theater(
                 theater_id=row["theater_id"],
                 brand_id=row["brand_id"],
                 name=row["name"],
-                location=row.get("location"),
-                city=row.get("city"),
-                state=row.get("state"),
+                location=row["location"],
+                city=row["city"],
+                state=row["state"]
             )
-            for _, row in theaters_df.iterrows()
-        ]
-        _bulk_insert(db.session, objs)
-        print(f"Theaters inserted ({len(objs)})")
+
+            db.session.add(theater)
+
+        db.session.commit()
+
+        print("Theaters inserted")
 
     # ---------------- SCREENS ----------------
-    path = os.path.join(BASE_DIR, "screens.csv")
-    if os.path.exists(path):
-        screens_df = pd.read_csv(path)
-        objs = [
-            Screen(
+
+    if os.path.exists(os.path.join(BASE_DIR, "screens.csv")):
+
+        screens = pd.read_csv(os.path.join(BASE_DIR, "screens.csv"))
+
+        for _, row in screens.iterrows():
+
+            screen = Screen(
                 screen_id=row["screen_id"],
                 theater_id=row["theater_id"],
                 screen_number=row["screen_number"],
-                total_seats=row["total_seats"] if not pd.isna(row.get("total_seats")) else None,
+                total_seats=row["total_seats"]
             )
-            for _, row in screens_df.iterrows()
-        ]
-        _bulk_insert(db.session, objs)
-        print(f"Screens inserted ({len(objs)})")
+
+            db.session.add(screen)
+
+        db.session.commit()
+
+        print("Screens inserted")
 
     # ---------------- SHOWS ----------------
-    path = os.path.join(BASE_DIR, "shows.csv")
-    if os.path.exists(path):
-        shows_df = pd.read_csv(path)
-        objs = [
-            Show(
+
+    if os.path.exists(os.path.join(BASE_DIR, "shows.csv")):
+
+        shows = pd.read_csv(os.path.join(BASE_DIR, "shows.csv"))
+
+        for _, row in shows.iterrows():
+
+            show = Show(
                 show_id=row["show_id"],
                 movie_id=row["movie_id"],
                 theater_id=row["theater_id"],
                 screen_id=row["screen_id"],
-                show_date=row["show_date"] if not pd.isna(row.get("show_date")) else None,
-                start_time=row["start_time"] if not pd.isna(row.get("start_time")) else None,
-                price=row["price"] if not pd.isna(row.get("price")) else None,
-                available_seats=row["available_seats"] if not pd.isna(row.get("available_seats")) else None,
-                status=row.get("status", "active"),
+                show_date=row["show_date"],
+                start_time=row["start_time"],
+                price=row["price"],
+                available_seats=row["available_seats"],
+                status=row["status"]
             )
-            for _, row in shows_df.iterrows()
-        ]
-        _bulk_insert(db.session, objs)
-        print(f"Shows inserted ({len(objs)})")
 
-    # ---------------- BOOKINGS ----------------
-    # FIX: Bookings were not being seeded at all — this is why revenue showed 0
-    path = os.path.join(BASE_DIR, "bookings.csv")
-    if os.path.exists(path):
-        bookings_df = pd.read_csv(path)
-        # Normalize payment_status so analytics queries match 'completed'
-        bookings_df["payment_status"] = (
-            bookings_df["payment_status"]
-            .astype(str).str.strip().str.lower()
-            .replace({
-                "success":   "completed",
-                "complete":  "completed",
-            })
-            .fillna("failed")
-        )
-        objs = []
-        for _, row in bookings_df.iterrows():
-            objs.append(Booking(
-                booking_id=row["booking_id"],
-                user_id=row["user_id"],
-                show_id=row["show_id"],
-                booking_date=row["booking_date"] if not pd.isna(row.get("booking_date")) else None,
-                total_tickets=int(row["total_tickets"]) if not pd.isna(row.get("total_tickets")) else 0,
-                seat_numbers=row["seat_numbers"] if not pd.isna(row.get("seat_numbers")) else None,
-                total_amount=float(row["total_amount"]) if not pd.isna(row.get("total_amount")) else 0.0,
-                payment_status=row["payment_status"],
-                transaction_ref=row["transaction_ref"] if not pd.isna(row.get("transaction_ref")) else None,
-            ))
-        _bulk_insert(db.session, objs)
-        print(f"Bookings inserted ({len(objs)})")
+            db.session.add(show)
 
-    # ---------------- PAYMENTS ----------------
-    # FIX: Payments were not being seeded — payment method chart was empty
-    path = os.path.join(BASE_DIR, "payments.csv")
-    if os.path.exists(path):
-        payments_df = pd.read_csv(path)
-        payments_df["status"] = (
-            payments_df["status"]
-            .astype(str).str.strip().str.lower()
-            .replace({
-                "success":  "completed",
-                "complete": "completed",
-            })
-            .fillna("failed")
-        )
-        objs = []
-        for _, row in payments_df.iterrows():
-            objs.append(Payment(
-                payment_id=row["payment_id"],
-                booking_id=row["booking_id"] if not pd.isna(row.get("booking_id")) else None,
-                user_id=row["user_id"] if not pd.isna(row.get("user_id")) else None,
-                amount=float(row["amount"]) if not pd.isna(row.get("amount")) else 0.0,
-                payment_method=row["payment_method"] if not pd.isna(row.get("payment_method")) else None,
-                payment_date=row["payment_date"] if not pd.isna(row.get("payment_date")) else None,
-                status=row["status"],
-                transaction_ref=row["transaction_ref"] if not pd.isna(row.get("transaction_ref")) else None,
-            ))
-        _bulk_insert(db.session, objs)
-        print(f"Payments inserted ({len(objs)})")
+        db.session.commit()
 
-    # ---------------- REVIEWS ----------------
-    # FIX: Reviews were not being seeded
-    path = os.path.join(BASE_DIR, "reviews.csv")
-    if os.path.exists(path):
-        reviews_df = pd.read_csv(path)
-        objs = []
-        for _, row in reviews_df.iterrows():
-            objs.append(Review(
-                review_id=row["review_id"],
-                user_id=row["user_id"],
-                movie_id=row["movie_id"],
-                rating=float(row["rating"]) if not pd.isna(row.get("rating")) else None,
-                comment=row["comment"] if not pd.isna(row.get("comment")) else None,
-                review_date=row.get("review_date") if not pd.isna(row.get("review_date", None)) else None,
-            ))
-        _bulk_insert(db.session, objs)
-        print(f"Reviews inserted ({len(objs)})")
+        print("Shows inserted")
 
     # ---------------- SEATS ----------------
-    path = os.path.join(BASE_DIR, "seats.csv")
-    if os.path.exists(path):
-        seats_df = pd.read_csv(path)
-        objs = []
-        for _, row in seats_df.iterrows():
-            objs.append(Seat(
+
+    if os.path.exists(os.path.join(BASE_DIR, "seats.csv")):
+
+        seats = pd.read_csv(os.path.join(BASE_DIR, "seats.csv"))
+
+        for _, row in seats.iterrows():
+
+            seat = Seat(
                 seat_id=row["seat_id"],
-                booking_id=None if pd.isna(row.get("booking_id")) else row.get("booking_id"),
+                booking_id=(
+                    None
+                    if pd.isna(row.get("booking_id"))
+                    else row.get("booking_id")
+                ),
                 screen_id=row["screen_id"],
                 seat_number=row["seat_number"],
-                seat_type=row["seat_type"] if not pd.isna(row.get("seat_type")) else None,
-                charger=row["charger"] if not pd.isna(row.get("charger")) else False,
-                status=row["status"] if not pd.isna(row.get("status")) else "available",
-                show_id=None if pd.isna(row.get("show_id")) else row.get("show_id"),
-            ))
-        _bulk_insert(db.session, objs)
-        print(f"Seats inserted ({len(objs)})")
+                seat_type=row["seat_type"],
+                charger=row["charger"],
+                status=row["status"],
+                show_id=(
+                    None
+                    if pd.isna(row.get("show_id"))
+                    else row.get("show_id")
+                )
+            )
+
+            db.session.add(seat)
+
+        db.session.commit()
+
+        print("Seats inserted")
 
     print("CSV seeding completed successfully")
+
+# -----------------------
+# SEED BOOKINGS / PAYMENTS / REVIEWS ONLY
+# Called separately when movies already exist but bookings were never seeded
+# -----------------------
+def seed_bookings_only():
+    """
+    Seeds only Booking, Payment, Review rows.
+    Safe to call even when movies/theaters already exist.
+    Skips if bookings are already present.
+    """
+    if Booking.query.first():
+        print("Bookings already seeded — skipping")
+        return
+
+    print("Seeding bookings, payments, reviews...")
+
+    def _bulk(objs, chunk=500):
+        for i in range(0, len(objs), chunk):
+            db.session.add_all(objs[i:i + chunk])
+            db.session.commit()
+
+    # ---- BOOKINGS ----
+    path = os.path.join(BASE_DIR, "bookings.csv")
+    if os.path.exists(path):
+        import pandas as pd
+        df = pd.read_csv(path)
+        df["payment_status"] = (
+            df["payment_status"].astype(str).str.strip().str.lower()
+            .replace({"success": "completed", "complete": "completed"})
+        )
+        df["payment_status"] = df["payment_status"].fillna("failed")
+        objs = []
+        for _, row in df.iterrows():
+            objs.append(Booking(
+                booking_id    = row["booking_id"],
+                user_id       = row["user_id"],
+                show_id       = row["show_id"],
+                booking_date  = row["booking_date"]  if not pd.isna(row.get("booking_date"))  else None,
+                total_tickets = int(row["total_tickets"]) if not pd.isna(row.get("total_tickets")) else 0,
+                seat_numbers  = row["seat_numbers"]  if not pd.isna(row.get("seat_numbers"))  else None,
+                total_amount  = float(row["total_amount"]) if not pd.isna(row.get("total_amount")) else 0.0,
+                payment_status= row["payment_status"],
+                transaction_ref= row["transaction_ref"] if not pd.isna(row.get("transaction_ref")) else None,
+            ))
+        _bulk(objs)
+        print(f"  Bookings inserted: {len(objs)}")
+    else:
+        print("  bookings.csv not found — skipping")
+
+    # ---- PAYMENTS ----
+    path = os.path.join(BASE_DIR, "payments.csv")
+    if os.path.exists(path):
+        import pandas as pd
+        df = pd.read_csv(path)
+        df["status"] = (
+            df["status"].astype(str).str.strip().str.lower()
+            .replace({"success": "completed", "complete": "completed"})
+        )
+        df["status"] = df["status"].fillna("failed")
+        objs = []
+        for _, row in df.iterrows():
+            objs.append(Payment(
+                payment_id     = row["payment_id"],
+                booking_id     = row["booking_id"]     if not pd.isna(row.get("booking_id"))     else None,
+                user_id        = row["user_id"]        if not pd.isna(row.get("user_id"))        else None,
+                amount         = float(row["amount"])  if not pd.isna(row.get("amount"))         else 0.0,
+                payment_method = row["payment_method"] if not pd.isna(row.get("payment_method")) else None,
+                payment_date   = row["payment_date"]   if not pd.isna(row.get("payment_date"))   else None,
+                status         = row["status"],
+                transaction_ref= row["transaction_ref"] if not pd.isna(row.get("transaction_ref")) else None,
+            ))
+        _bulk(objs)
+        print(f"  Payments inserted: {len(objs)}")
+    else:
+        print("  payments.csv not found — skipping")
+
+    # ---- REVIEWS ----
+    path = os.path.join(BASE_DIR, "reviews.csv")
+    if os.path.exists(path):
+        import pandas as pd
+        df = pd.read_csv(path)
+        objs = []
+        for _, row in df.iterrows():
+            objs.append(Review(
+                review_id   = row["review_id"],
+                user_id     = row["user_id"],
+                movie_id    = row["movie_id"],
+                rating      = float(row["rating"])  if not pd.isna(row.get("rating"))  else None,
+                comment     = row["comment"]        if not pd.isna(row.get("comment")) else None,
+                review_date = row["review_date"]    if not pd.isna(row.get("review_date", None)) else None,
+            ))
+        _bulk(objs)
+        print(f"  Reviews inserted: {len(objs)}")
+    else:
+        print("  reviews.csv not found — skipping")
+
+    print("Booking seeding complete!")
