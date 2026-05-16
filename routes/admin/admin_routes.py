@@ -47,11 +47,10 @@ def send_credentials_email(to_email, user_name, role,
 
             f"Login Details\n"
             f"─────────────\n"
-
-            f"Role     : {role.title()}\n"
-            f"Name      : {user_name}\n"
-            f"Email     : {login_email}\n"
-            f"Password  : {plain_pw}\n"
+            f"Role : {role.title()}\n"
+            f"Name : {user_name}\n"
+            f"Email : {login_email}\n"
+            f"Password : {plain_pw}\n"
         )
 
         if brand_name:
@@ -66,20 +65,22 @@ def send_credentials_email(to_email, user_name, role,
         )
 
         print("Mail object created")
+        print("STARTING MAIL SEND")
 
-        try:
-            print("STARTING MAIL SEND")
+        mail.send(msg)
 
-            mail.send(msg)
-
-            print("MAIL SENT SUCCESSFULLY")
-
-        except Exception as e:
-            print("MAIL SEND ERROR:", type(e).__name__)
-            print("ERROR DETAILS:", str(e))
-            raise
+        print("MAIL SENT SUCCESSFULLY")
 
         return True
+
+    except Exception as e:
+
+        print("========== EMAIL ERROR ==========")
+        print(type(e).__name__)
+        print(str(e))
+        print("==============================")
+
+        return False
 
     
     
