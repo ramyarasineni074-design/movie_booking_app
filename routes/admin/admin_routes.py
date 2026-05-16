@@ -67,21 +67,21 @@ def send_credentials_email(to_email, user_name, role,
 
         print("Mail object created")
 
-        mail.send(msg)
+        try:
+            print("STARTING MAIL SEND")
 
-        print("MAIL SENT SUCCESSFULLY")
-        print("==============================")
+            mail.send(msg)
+
+            print("MAIL SENT SUCCESSFULLY")
+
+        except Exception as e:
+            print("MAIL SEND ERROR:", type(e).__name__)
+            print("ERROR DETAILS:", str(e))
+            raise
 
         return True
 
-    except Exception as e:
-
-        print("========== EMAIL ERROR ==========")
-        print(type(e).__name__)
-        print(str(e))
-        print("==============================")
-
-        raise
+    
     
     
 
