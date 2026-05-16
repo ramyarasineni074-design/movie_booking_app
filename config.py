@@ -14,9 +14,18 @@ class Config:
 
     SQLALCHEMY_DATABASE_URI = _db_url
     SQLALCHEMY_ENGINE_OPTIONS = {
-    "pool_pre_ping": True,
-    "pool_recycle": 300,
-}
+        "pool_pre_ping": True,
+        "pool_recycle": 300,
+        "pool_size": 5,
+        "max_overflow": 2,
+        "connect_args": {
+            "keepalives": 1,
+            "keepalives_idle": 30,
+            "keepalives_interval": 10,
+            "keepalives_count": 5,
+            "connect_timeout": 10,
+        }
+    }
     SQLALCHEMY_TRACK_MODIFICATIONS = False
 
     SECRET_KEY = os.environ.get('SECRET_KEY')
@@ -29,17 +38,16 @@ class Config:
     ADMIN_EMAIL = 'admin@gmail.com'
     ADMIN_PASSWORD = 'admin123'
 
-    # Email (Gmail SMTP - same as school project)
+    # Email (Gmail SMTP)
     MAIL_SERVER = 'smtp.gmail.com'
     MAIL_PORT = 587
     MAIL_USE_TLS = True
-    MAIL_USERNAME = 'ramyarasineni074@gmail.com'
+    MAIL_USERNAME = os.environ.get('MAIL_USERNAME', 'ramyarasineni074@gmail.com')
     MAIL_PASSWORD = os.environ.get('MAIL_PASSWORD')
-    MAIL_DEFAULT_SENDER = 'ramyarasineni074@gmail.com'
+    MAIL_DEFAULT_SENDER = os.environ.get('MAIL_USERNAME', 'ramyarasineni074@gmail.com')
 
     # Pagination
     PAGE_SIZE = 12
 
-
-    RAZORPAY_KEY_ID     = os.environ.get('RAZORPAY_KEY_ID')  # same as above
-    RAZORPAY_KEY_SECRET = os.environ.get('RAZORPAY_KEY_SECRET')   # your secret key
+    RAZORPAY_KEY_ID     = os.environ.get('RAZORPAY_KEY_ID')
+    RAZORPAY_KEY_SECRET = os.environ.get('RAZORPAY_KEY_SECRET')

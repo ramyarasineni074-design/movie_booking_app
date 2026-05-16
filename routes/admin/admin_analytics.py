@@ -4,7 +4,7 @@ Separate file for dashboard analytics (charts & graphs).
 Mounted under admin_bp via app.py registration.
 """
 from datetime import datetime, timedelta
-from flask import Blueprint, render_template, jsonify
+from flask import Blueprint, render_template, jsonify, request
 from sqlalchemy import func, extract, case
 from extensions import db
 from models import (AppUser, User, Movie, Theater, Show,
@@ -47,10 +47,28 @@ def api_revenue_summary():
     })
 
 
-# Q1 – Daily bookings trend (last 60 days)
+# Q1 – Daily bookings trend
+# FIX: removed hard 60-day cap; now returns last 90 days of actual data,
+# falling back to the most-recent 90 days in the dataset so seeded
+# historical bookings always appear.
 @admin_analytics_bp.route('/api/daily-bookings-trend')
 @admin_required
 def api_daily_bookings_trend():
+    # Find the latest booking date in the DB (works for both live and seeded data)
+    latest = db.session.query(func.max(Booking.booking_date))\
+        .filter(Booking.payment_status.in_(PAID)).scalar()
+
+    if latest is None:
+        return jsonify([])
+
+    # Show 90 days ending at the latest booking date
+    if isinstance(latest, datetime):
+        end_date = latest
+    else:
+        end_date = datetime.combine(latest, datetime.max.time())
+
+    start_date = end_date - timedelta(days=90)
+
     rows = (
         db.session.query(
             func.date(Booking.booking_date).label('day'),
@@ -58,7 +76,8 @@ def api_daily_bookings_trend():
             func.sum(Booking.total_amount).label('revenue')
         )
         .filter(Booking.payment_status.in_(PAID))
-        .filter(Booking.booking_date >= datetime.now() - timedelta(days=60))
+        .filter(Booking.booking_date >= start_date)
+        .filter(Booking.booking_date <= end_date)
         .group_by(func.date(Booking.booking_date))
         .order_by(func.date(Booking.booking_date))
         .all()
@@ -536,9 +555,24 @@ def api_language_popularity():
 
 
 # Kept – revenue trend
+# FIX: same as daily trend — use latest booking date in DB, not today's date.
+# This makes seeded historical data visible instead of an empty chart.
 @admin_analytics_bp.route('/api/revenue-trend')
 @admin_required
 def api_revenue_trend():
+    latest = db.session.query(func.max(Booking.booking_date))\
+        .filter(Booking.payment_status.in_(PAID)).scalar()
+
+    if latest is None:
+        return jsonify([])
+
+    if isinstance(latest, datetime):
+        end_date = latest
+    else:
+        end_date = datetime.combine(latest, datetime.max.time())
+
+    start_date = end_date - timedelta(days=365)
+
     rows = (
         db.session.query(
             extract('year',  Booking.booking_date).label('yr'),
@@ -547,7 +581,8 @@ def api_revenue_trend():
             func.count(Booking.booking_id).label('bookings')
         )
         .filter(Booking.payment_status.in_(PAID))
-        .filter(Booking.booking_date >= datetime.now() - timedelta(days=365))
+        .filter(Booking.booking_date >= start_date)
+        .filter(Booking.booking_date <= end_date)
         .group_by('yr', 'mo')
         .order_by('yr', 'mo')
         .all()

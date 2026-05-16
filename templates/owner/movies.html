@@ -70,10 +70,13 @@
       </thead>
       <tbody>
         {% for movie in movies %}
+        {%- set _mv_num = movie.movie_id | replace('MV_','') | int(default=loop.index) -%}
+        {%- set _pi = ((_mv_num - 1) % 20) + 1 -%}
+        {%- set _fp = url_for('static', filename='uploads/posters/poster_%03d.jpg' | format(_pi)) -%}
         <tr>
           <td>
-            <img src="{{ movie.poster_url or url_for('static', filename='uploads/default.png') }}"
-              onerror="this.src='{{ url_for('static', filename='uploads/default.png') }}'"
+            <img src="{{ movie.poster_url or _fp }}"
+              onerror="this.src='{{ _fp }}'"
               style="width:42px;height:58px;object-fit:cover;border-radius:6px">
           </td>
           <td style="max-width:200px">
@@ -178,7 +181,7 @@
           <div class="col-md-3 text-center">
             <img id="vPoster" src="" alt=""
               style="width:100%;max-width:160px;border-radius:12px;box-shadow:0 8px 24px rgba(0,0,0,0.5)"
-              onerror="this.src='{{ url_for('static', filename='uploads/default.png') }}'">
+              onerror="this.src='/static/uploads/posters/poster_001.jpg'">
           </div>
           <div class="col-md-9">
             <h4 id="vTitle" style="color:var(--admin-text);font-weight:800;margin-bottom:12px"></h4>
@@ -371,7 +374,7 @@
               <label class="form-label">Current Poster</label>
               <div class="d-flex gap-3 align-items-center">
                 <img id="em_posterImg" src="" style="width:50px;height:70px;object-fit:cover;border-radius:8px"
-                  onerror="this.src='{{ url_for('static', filename='uploads/default.png') }}'">
+                  onerror="this.src='/static/uploads/posters/poster_001.jpg'">
                 <div class="flex-grow-1">
                   <input type="text" name="poster_url" id="em_posterUrl" class="form-control mb-2" placeholder="Poster URL">
                   <input type="file" name="poster_file" class="form-control" accept="image/*"
@@ -531,6 +534,14 @@
 
 {% block extra_js %}
 <script>
+  // Helper: derive per-movie poster fallback from movie_id
+  function getPosterFallback(movieId) {
+    if (!movieId) return '/static/uploads/posters/poster_001.jpg';
+    const num = parseInt((movieId || '').replace('MV_', ''), 10) || 1;
+    const idx = ((num - 1) % 20) + 1;
+    const padded = String(idx).padStart(3, '0');
+    return '/static/uploads/posters/poster_' + padded + '.jpg';
+  }
 // ─── Theater data for cascade filters ───
 const ALL_THEATERS = {{ all_theaters_json | tojson | safe }};
 
@@ -557,7 +568,7 @@ function viewMovie(data) {
   document.getElementById('vRelease').textContent = data.release_date || '–';
   document.getElementById('vStatus').textContent = data.status || '–';
   document.getElementById('vDesc').textContent = data.description || 'No description.';
-  document.getElementById('vPoster').src = data.poster_url || '{{ url_for("static", filename="uploads/default.png") }}';
+  document.getElementById('vPoster').src = data.poster_url || getPosterFallback(data.movie_id);
   new bootstrap.Modal(document.getElementById('viewMovieModal')).show();
 }
 
@@ -574,7 +585,7 @@ function editMovie(id, data) {
   document.getElementById('em_status').value = data.status || 'active';
   document.getElementById('em_desc').value = data.description || '';
   document.getElementById('em_posterUrl').value = data.poster_url || '';
-  document.getElementById('em_posterImg').src = data.poster_url || '{{ url_for("static", filename="uploads/default.png") }}';
+  document.getElementById('em_posterImg').src = data.poster_url || getPosterFallback(data.movie_id);
   new bootstrap.Modal(document.getElementById('editMovieModal')).show();
 }
 
@@ -618,7 +629,8 @@ function openAssignModal(movieId, movieTitle, posterUrl) {
   document.getElementById('assignMovieId').value = movieId;
   document.getElementById('assignMovieTitle').textContent = movieTitle;
   const thumb = document.getElementById('assignPosterThumb');
-  if (posterUrl) { thumb.src = posterUrl; thumb.style.display = ''; }
+  thumb.src = posterUrl || getPosterFallback(movieId);
+  thumb.style.display = '';
   else { thumb.style.display = 'none'; }
 
   // Reset filters

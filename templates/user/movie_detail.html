@@ -2,6 +2,10 @@
 {% block title %}{{ movie.title }}{% endblock %}
 
 {% block content %}
+{# ── POSTER FALLBACK: derive a per-movie index so every movie shows a distinct poster ── #}
+{%- set _mv_num = movie.movie_id | replace('MV_','') | int(default=1) -%}
+{%- set _poster_idx = ((_mv_num - 1) % 20) + 1 -%}
+{%- set _fallback_poster = url_for('static', filename='uploads/posters/poster_%03d.jpg' | format(_poster_idx)) -%}
 <div style="background:#0d1117;min-height:calc(100vh - 70px)">
 
   <!-- MOVIE BANNER — BookMyShow style -->
@@ -9,7 +13,7 @@
 
     <!-- Full-width blurred poster background -->
     <div style="position:absolute;inset:0;
-                background:url('{{ movie.poster_url or url_for('static',filename='uploads/default.png') }}') center/cover no-repeat;
+                background:url('{{ movie.poster_url or _fallback_poster }}') center/cover no-repeat;
                 filter:blur(18px) brightness(0.35) saturate(1.4);
                 transform:scale(1.08);
                 pointer-events:none"></div>
@@ -28,9 +32,9 @@
         <!-- LEFT: Poster -->
         <div class="col-auto">
           <div style="position:relative;width:170px;flex-shrink:0">
-            <img src="{{ movie.poster_url or url_for('static', filename='uploads/default.png') }}"
+            <img src="{{ movie.poster_url or _fallback_poster }}"
                  alt="{{ movie.title }}"
-                 onerror="this.src='{{ url_for('static', filename='uploads/default.png') }}'"
+                 onerror="this.src='{{ _fallback_poster }}'"
                  style="width:170px;height:250px;object-fit:cover;border-radius:14px;
                         box-shadow:0 24px 56px rgba(0,0,0,0.85);
                         border:2px solid rgba(255,255,255,0.08);display:block">
