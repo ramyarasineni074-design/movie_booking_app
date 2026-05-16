@@ -180,7 +180,7 @@
                         </div>
                         <div class="col-md-6">
                             <label>Show Date *</label>
-                            <input type="date" name="show_date" class="form-control" required min="{{ today }}">
+                            <input type="date" name="show_date" class="form-control" required min="{{ today }}" onchange="applyPastSlotDisabling()">
                         </div>
                         <div class="col-md-6">
                             <label>Available Seats</label>
@@ -216,10 +216,10 @@
                                              style="border:1.5px solid var(--admin-border);border-radius:10px;padding:10px 8px;cursor:pointer;text-align:center;transition:all 0.2s;background:var(--admin-bg)">
                                             <div style="font-size:1.4rem;margin-bottom:4px">☀️</div>
                                             <div style="font-size:0.78rem;font-weight:700;color:var(--admin-text);text-transform:uppercase;letter-spacing:0.5px">Afternoon</div>
-                                            <input type="time" name="start_time" id="time_afternoon" value="14:00"
+                                            <input type="time" name="start_time" id="time_afternoon" value="13:30"
                                                    onclick="event.stopPropagation()"
                                                    style="width:100%;margin-top:6px;background:transparent;border:1px solid var(--admin-border);border-radius:6px;color:var(--admin-text);font-size:0.8rem;padding:3px 4px;text-align:center;display:none">
-                                            <div id="label_afternoon" style="margin-top:6px;font-size:0.82rem;color:var(--admin-muted);font-weight:600">2:00 PM</div>
+                                            <div id="label_afternoon" style="margin-top:6px;font-size:0.82rem;color:var(--admin-muted);font-weight:600">01:30 PM</div>
                                             <input type="checkbox" name="slot_afternoon" id="check_afternoon" value="1" style="display:none">
                                         </div>
                                     </div>
@@ -230,10 +230,10 @@
                                              style="border:1.5px solid var(--admin-border);border-radius:10px;padding:10px 8px;cursor:pointer;text-align:center;transition:all 0.2s;background:var(--admin-bg)">
                                             <div style="font-size:1.4rem;margin-bottom:4px">🌆</div>
                                             <div style="font-size:0.78rem;font-weight:700;color:var(--admin-text);text-transform:uppercase;letter-spacing:0.5px">Evening</div>
-                                            <input type="time" name="start_time" id="time_evening" value="18:00"
+                                            <input type="time" name="start_time" id="time_evening" value="17:00"
                                                    onclick="event.stopPropagation()"
                                                    style="width:100%;margin-top:6px;background:transparent;border:1px solid var(--admin-border);border-radius:6px;color:var(--admin-text);font-size:0.8rem;padding:3px 4px;text-align:center;display:none">
-                                            <div id="label_evening" style="margin-top:6px;font-size:0.82rem;color:var(--admin-muted);font-weight:600">6:00 PM</div>
+                                            <div id="label_evening" style="margin-top:6px;font-size:0.82rem;color:var(--admin-muted);font-weight:600">05:00 PM</div>
                                             <input type="checkbox" name="slot_evening" id="check_evening" value="1" style="display:none">
                                         </div>
                                     </div>
@@ -244,10 +244,10 @@
                                              style="border:1.5px solid var(--admin-border);border-radius:10px;padding:10px 8px;cursor:pointer;text-align:center;transition:all 0.2s;background:var(--admin-bg)">
                                             <div style="font-size:1.4rem;margin-bottom:4px">🌙</div>
                                             <div style="font-size:0.78rem;font-weight:700;color:var(--admin-text);text-transform:uppercase;letter-spacing:0.5px">Midnight</div>
-                                            <input type="time" name="start_time" id="time_midnight" value="23:00"
+                                            <input type="time" name="start_time" id="time_midnight" value="21:00"
                                                    onclick="event.stopPropagation()"
                                                    style="width:100%;margin-top:6px;background:transparent;border:1px solid var(--admin-border);border-radius:6px;color:var(--admin-text);font-size:0.8rem;padding:3px 4px;text-align:center;display:none">
-                                            <div id="label_midnight" style="margin-top:6px;font-size:0.82rem;color:var(--admin-muted);font-weight:600">11:00 PM</div>
+                                            <div id="label_midnight" style="margin-top:6px;font-size:0.82rem;color:var(--admin-muted);font-weight:600">09:00 PM</div>
                                             <input type="checkbox" name="slot_midnight" id="check_midnight" value="1" style="display:none">
                                         </div>
                                     </div>
@@ -371,6 +371,73 @@ const theaterScreens = {{ theater_screens_json|default('{}')|safe }};
 const SLOT_NAMES = ['morning','afternoon','evening','midnight'];
 const activeSlots = new Set();
 
+// Fixed slot times in minutes-since-midnight (must match FIXED_SHOW_SLOTS in user_routes.py)
+const SLOT_MINUTES = {
+    morning:   10 * 60 + 0,   // 10:00
+    afternoon: 13 * 60 + 30,  // 13:30
+    evening:   17 * 60 + 0,   // 17:00
+    midnight:  21 * 60 + 0    // 21:00
+};
+
+// IST offset from UTC in minutes
+const IST_OFFSET = 5 * 60 + 30;
+
+function getISTMinutes() {
+    const now = new Date();
+    const utcMs = now.getTime() + now.getTimezoneOffset() * 60000;
+    const ist = new Date(utcMs + IST_OFFSET * 60000);
+    return ist.getHours() * 60 + ist.getMinutes();
+}
+
+function isToday(dateStr) {
+    if (!dateStr) return false;
+    const now = new Date();
+    const utcMs = now.getTime() + now.getTimezoneOffset() * 60000;
+    const ist = new Date(utcMs + IST_OFFSET * 60000);
+    const todayStr = ist.getFullYear() + '-' +
+        String(ist.getMonth() + 1).padStart(2, '0') + '-' +
+        String(ist.getDate()).padStart(2, '0');
+    return dateStr === todayStr;
+}
+
+function applyPastSlotDisabling() {
+    const dateInput = document.querySelector('[name="show_date"]');
+    const selectedDate = dateInput ? dateInput.value : '';
+    const todaySelected = isToday(selectedDate);
+    const nowMinutes = getISTMinutes();
+
+    SLOT_NAMES.forEach(slot => {
+        const card  = document.getElementById('card_' + slot);
+        const check = document.getElementById('check_' + slot);
+        const label = document.getElementById('label_' + slot);
+
+        if (todaySelected && SLOT_MINUTES[slot] <= nowMinutes) {
+            // Disable past slot
+            card.style.opacity = '0.4';
+            card.style.pointerEvents = 'none';
+            card.style.cursor = 'not-allowed';
+            card.title = 'This slot has already passed today';
+            // Deselect if it was selected
+            if (activeSlots.has(slot)) {
+                activeSlots.delete(slot);
+                card.style.border = '1.5px solid var(--admin-border)';
+                card.style.background = 'var(--admin-bg)';
+                card.style.boxShadow = 'none';
+                document.getElementById('time_' + slot).style.display = 'none';
+                document.getElementById('time_' + slot).disabled = true;
+                if (label) label.style.display = 'block';
+                if (check) check.checked = false;
+            }
+        } else {
+            // Re-enable future slots
+            card.style.opacity = '1';
+            card.style.pointerEvents = 'auto';
+            card.style.cursor = 'pointer';
+            card.title = '';
+        }
+    });
+}
+
 function fmt12(val) {
     if (!val) return '';
     const [h, m] = val.split(':').map(Number);
@@ -413,6 +480,8 @@ function toggleSlot(slot) {
 
 // Intercept form submit to validate at least one slot chosen
 document.addEventListener('DOMContentLoaded', function() {
+    applyPastSlotDisabling();  // Disable past slots on page load if today is pre-selected
+
     const addShowForm = document.querySelector('#addShowModal form');
     if (addShowForm) {
         addShowForm.addEventListener('submit', function(e) {

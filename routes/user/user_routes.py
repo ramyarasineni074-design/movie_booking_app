@@ -750,8 +750,9 @@ def movie_detail(movie_id):
         {'label': 'Night',     'time': _time(21, 0),  'display': '09:00 PM'},
     ]
 
-    # Current IST time for disabling past slots
-    now_dt   = datetime.now()
+    # Current IST time for disabling past slots (Render runs UTC; IST = UTC+5:30)
+    from datetime import timezone
+    now_dt   = datetime.now(timezone.utc) + timedelta(hours=5, minutes=30)
     now_time = now_dt.time()
 
     # Build virtual show IDs keyed by (movie_id, date, slot_time) so seats
@@ -822,7 +823,8 @@ def select_seats(show_id):
         movie = Movie.query.get_or_404(movie_id)
 
         # ── Disable past slots ────────────────────────────────────────────
-        now_dt    = datetime.now()
+        from datetime import timezone
+        now_dt    = datetime.now(timezone.utc) + timedelta(hours=5, minutes=30)
         today_d   = now_dt.date()
         now_t     = now_dt.time()
         if show_date < today_d or (show_date == today_d and slot_time <= now_t):
@@ -857,7 +859,8 @@ def select_seats(show_id):
         movie   = db.session.get(Movie,   show.movie_id)
 
         # ── Disable past real shows ────────────────────────────────────────
-        now_dt  = datetime.now()
+        from datetime import timezone
+        now_dt  = datetime.now(timezone.utc) + timedelta(hours=5, minutes=30)
         today_d = now_dt.date()
         now_t   = now_dt.time()
         if show.show_date and (
