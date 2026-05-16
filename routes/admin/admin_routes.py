@@ -578,12 +578,15 @@ def create_owner():
 
     email_sent = send_credentials_email(email, name, 'owner', email, plain_pw)
     if email_sent:
-        flash(f'Owner "{name}" created. Credentials sent to {email}.', 'success')
+        flash(
+            f'Owner "{name}" created. Email sent to {email}. '
+            f'Temporary password: {plain_pw}',
+            'success'
+        )
     else:
         flash(
-            f'Owner "{name}" created successfully. '
-            f'Email delivery failed — temporary password: <strong>{plain_pw}</strong>. '
-            f'Please share it manually.',
+            f'Owner "{name}" created. Email failed — '
+            f'Temporary password: {plain_pw} — save this now!',
             'warning'
         )
     return redirect(url_for('admin_bp.owners'))
@@ -649,10 +652,15 @@ def resend_credentials(owner_id):
     db.session.commit()
     sent = send_credentials_email(owner.email, owner.name, 'owner', owner.email, plain_pw)
     if sent:
-        return jsonify({'success': True, 'message': 'New credentials sent to email!'})
+        return jsonify({
+            'success': True,
+            'message': f'Email sent! Temporary password: {plain_pw}',
+            'password': plain_pw
+        })
     return jsonify({
         'success': False,
-        'message': f'Email delivery failed. Temporary password: {plain_pw} — share manually.'
+        'message': f'Email failed. Temporary password: {plain_pw} — save this now!',
+        'password': plain_pw
     })
 
 
@@ -726,7 +734,9 @@ def approve_partnership(req_id):
     return jsonify({
         'success': True,
         'message': f'Owner account created for {req.owner_name}. ' +
-                   ('Credentials emailed.' if sent else 'Email failed — check server logs.')
+                   (f'Email sent. ' if sent else 'Email failed. ') +
+                   f'Temporary password: {plain_pw}',
+        'password': plain_pw
     })
 
 
