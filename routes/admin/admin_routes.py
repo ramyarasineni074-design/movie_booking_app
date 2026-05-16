@@ -25,36 +25,63 @@ def gen_password(length=10):
     return ''.join(secrets.choice(chars) for _ in range(length))
 
 
-def send_credentials_email(to_email, user_name, role, login_email, plain_pw, brand_name=None):
+def send_credentials_email(to_email, user_name, role,
+                           login_email, plain_pw,
+                           brand_name=None):
+
     try:
+
+        print("========== EMAIL DEBUG ==========")
+        print("Sending to:", to_email)
+
         msg = Message(
             subject=f'CineBook — {role.title()} Account Created',
             recipients=[to_email]
         )
+
+        login_url = "https://movie-booking-app-7taz.onrender.com/login"
+
         msg.body = (
             f"Hello {user_name},\n\n"
             f"Your CineBook {role.title()} account has been created.\n\n"
+
             f"Login Details\n"
             f"─────────────\n"
+
             f"Role     : {role.title()}\n"
-            f"Name     : {user_name}\n"
-            f"Email    : {login_email}\n"
-            f"Password : {plain_pw}\n"
+            f"Name      : {user_name}\n"
+            f"Email     : {login_email}\n"
+            f"Password  : {plain_pw}\n"
         )
+
         if brand_name:
-            msg.body += f"Brand    : {brand_name}\n"
+            msg.body += f"Brand : {brand_name}\n"
 
         msg.body += (
-            f"\n"
-            f"Login at: http://localhost:5000/login\n"
+            f"\nLogin here:\n"
+            f"{login_url}\n\n"
             f"Please change your password after first login.\n\n"
-            f"Regards,\nCineBook Admin Team"
+            f"Regards,\n"
+            f"CineBook Team"
         )
+
+        print("Mail object created")
+
         mail.send(msg)
+
+        print("MAIL SENT SUCCESSFULLY")
+        print("==============================")
+
         return True
+
     except Exception as e:
-        print(f'Email error: {e}')
-        return False
+
+        print("========== EMAIL ERROR ==========")
+        print(type(e).__name__)
+        print(str(e))
+        print("==============================")
+
+        raise
     
     
 
