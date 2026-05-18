@@ -38,7 +38,7 @@
       <div class="col-lg-5 d-none d-lg-block text-end">
         <div style="display:flex;gap:12px;justify-content:flex-end">
           {% for movie in now_showing[:3] %}
-          {% set _pi = (loop.index0 % 200) + 1 %}
+          {% set _pi = ((loop.index0 % 200) + 1) %}
           {% set _fallback = url_for('static', filename='uploads/posters/poster_%03d.jpg' | format(_pi)) %}
           <a href="{{ url_for('user_bp.movie_detail', movie_id=movie.movie_id) }}" style="width:120px;border-radius:12px;overflow:hidden;
                     box-shadow:0 20px 40px rgba(0,0,0,0.6);
@@ -501,7 +501,7 @@
 
     <div class="row g-3 row-cols-2 row-cols-md-3 row-cols-lg-5">
       {% for movie in city_movies %}
-      {% set _pi = (loop.index0 % 200) + 1 %}
+      {% set _pi = ((loop.index0 % 200) + 1) %}
       {% set _fallback = url_for('static', filename='uploads/posters/poster_%03d.jpg' | format(_pi)) %}
       <div class="col">
         <div class="movie-card" data-languages="{{ (movie.languages_list or []) | join(',') }}"
@@ -612,7 +612,7 @@
     {% if new_additions %}
     <div class="row g-3 row-cols-2 row-cols-md-3 row-cols-lg-5">
       {% for movie in new_additions %}
-      {% set _pi = (loop.index0 % 200) + 1 %}
+      {% set _pi = ((loop.index0 % 200) + 1) %}
       {% set _fallback = url_for('static', filename='uploads/posters/poster_%03d.jpg' | format(_pi)) %}
       <div class="col">
         <div class="movie-card" data-languages="{{ (movie.languages_list or []) | join(',') }}"
@@ -666,7 +666,7 @@
     </div>
     <div class="row g-3 row-cols-2 row-cols-md-3 row-cols-lg-5">
       {% for movie in now_showing %}
-      {% set _pi = (loop.index0 % 200) + 1 %}
+      {% set _pi = ((loop.index0 % 200) + 1) %}
       {% set _fallback = url_for('static', filename='uploads/posters/poster_%03d.jpg' | format(_pi)) %}
       <div class="col">
         <div class="movie-card" data-languages="{{ (movie.languages_list or []) | join(',') }}"
@@ -737,7 +737,7 @@
     {% if upcoming %}
     <div class="row g-3 row-cols-2 row-cols-md-3 row-cols-lg-5">
       {% for movie in upcoming %}
-      {% set _pi = (loop.index0 % 200) + 1 %}
+      {% set _pi = ((loop.index0 % 200) + 1) %}
       {% set _fallback = url_for('static', filename='uploads/posters/poster_%03d.jpg' | format(_pi)) %}
       <div class="col">
         <div class="movie-card" style="opacity:0.92" data-languages="{{ (movie.languages_list or []) | join(',') }}"

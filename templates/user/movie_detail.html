@@ -4,7 +4,7 @@
 {% block content %}
 {# ── POSTER FALLBACK: derive a per-movie index so every movie shows a distinct poster ── #}
 {%- set _mv_num = movie.movie_id | replace('MV_','') | int(default=1) -%}
-{%- set _poster_idx = ((_mv_num - 1) % 20) + 1 -%}
+{%- set _poster_idx = ((_mv_num - 1) % 200) + 1 -%}
 {%- set _fallback_poster = url_for('static', filename='uploads/posters/poster_%03d.jpg' | format(_poster_idx)) -%}
 <div style="background:#0d1117;min-height:calc(100vh - 70px)">
 
