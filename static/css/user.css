@@ -858,3 +858,166 @@ input[type=radio]:checked + .version-pill {
   padding: 2px 8px;
   color: var(--text-muted);
 }
+
+/* ============================================================
+   MOBILE & RESPONSIVE FIXES  (≤ 576px phone, ≤ 768px tablet)
+   Covers: navbar, hero, movie cards, seat selection, payment,
+   ticket, profile, bookings, filters, theater cards, footer.
+   ============================================================ */
+
+/* ── Shared small-screen helpers ── */
+@media (max-width: 768px) {
+
+  /* Navbar */
+  .site-navbar .navbar-brand { font-size: 1.2rem; }
+  .city-badge { font-size: 0.72rem; padding: 3px 9px; }
+
+  /* Hero */
+  .hero-section { min-height: 320px; }
+  .hero-title   { font-size: 1.75rem; line-height: 1.25; }
+  .hero-section .hero-content { padding-top: 2rem !important; padding-bottom: 2rem !important; }
+  .hero-section .d-flex.gap-3 { gap: 0.5rem !important; }
+  .hero-section .btn { padding: 8px 16px; font-size: 0.85rem; }
+
+  /* Section spacing */
+  section[style*="padding:60px"] { padding: 36px 0 0 !important; }
+  section[style*="padding:40px"] { padding: 24px 0 36px !important; }
+
+  /* Section titles */
+  .section-title { font-size: 1.35rem; margin-bottom: 20px; }
+
+  /* Video carousel */
+  .video-carousel-section { padding: 30px 0 10px; }
+  .vc-info { padding: 10px 14px; }
+  .vc-movie-title { font-size: 0.95rem; }
+  .vc-play-btn { width: 52px; height: 52px; font-size: 1.1rem; }
+
+  /* Filters bar */
+  .filters-bar { padding: 14px; border-radius: 10px; }
+  .filters-bar .row { gap: 0.5rem; }
+
+  /* Movie cards — 2-col grid stays, just tighten */
+  .movie-card .movie-title { font-size: 0.82rem; }
+  .movie-card .card-body   { padding: 8px 10px 10px; }
+  .genre-tag   { font-size: 0.62rem; padding: 1px 5px; }
+  .lang-inline { font-size: 0.62rem; }
+
+  /* Theater cards */
+  .theater-card { padding: 14px; }
+  .theater-name { font-size: 0.88rem; }
+  .user-theater-card { border-radius: 10px; }
+  .show-time-btn { padding: 5px 10px; font-size: 0.8rem; }
+
+  /* Profile stats row */
+  .profile-stat-card  { padding: 16px 10px; border-radius: 10px; }
+  .profile-stat-value { font-size: 1.4rem; }
+  .profile-stat-label { font-size: 0.72rem; }
+
+  /* Ticket card notches */
+  .ticket-card::before { left: -12px;  width: 24px; height: 24px; }
+  .ticket-card::after  { right: -12px; width: 24px; height: 24px; }
+
+  /* Footer */
+  .site-footer   { padding: 36px 0 16px; }
+  .footer-brand  { font-size: 1.2rem; }
+  .footer-bottom { margin-top: 24px; padding-top: 14px; }
+
+  /* Payment page — stack panels */
+  #payPage .row > [class*="col"] { display: block !important; }
+}
+
+/* ── Phone-only (≤ 576px) ── */
+@media (max-width: 576px) {
+
+  /* Navbar — tighter padding */
+  .site-navbar .container,
+  .site-navbar .container-fluid { padding-left: 12px; padding-right: 12px; }
+  .site-navbar .navbar-brand     { font-size: 1.1rem; }
+  .site-navbar .nav-link         { padding: 0.4rem 0.6rem !important; font-size: 0.82rem; }
+  .site-navbar .dropdown-menu    { min-width: 170px; }
+
+  /* Hero — single column */
+  .hero-section  { min-height: 260px; }
+  .hero-title    { font-size: 1.45rem; }
+  .hero-section p { font-size: 0.85rem !important; margin-top: 10px; max-width: 100% !important; }
+  .hero-section .d-flex.gap-3 { flex-direction: column; gap: 0.4rem !important; }
+  .hero-section .btn           { width: 100%; text-align: center; }
+
+  /* Stat bar — 2×2 grid */
+  .hero-section + div .col-6 { flex: 0 0 50%; max-width: 50%; }
+
+  /* Section titles */
+  .section-title { font-size: 1.15rem; padding-bottom: 8px; margin-bottom: 14px; }
+
+  /* d-flex header rows — stack on phone */
+  .d-flex.align-items-center.justify-content-between.mb-4 {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 8px;
+  }
+
+  /* Movie cards — full 2-col, tighter */
+  .movie-card .poster-overlay { opacity: 1; }  /* always show on touch */
+  .movie-card .poster-overlay .btn-cinema,
+  .movie-card .poster-overlay .btn-cinema-outline { font-size: 0.65rem; padding: 4px 6px; }
+
+  /* Seat grid — smaller seats already handled above */
+  .seat { width: 26px; height: 26px; font-size: 0.48rem; border-radius: 4px 4px 2px 2px; }
+  .seat-row-label   { width: 18px; font-size: 0.65rem; }
+  .seat-row         { gap: 3px; }
+  .seat-grid        { gap: 4px; }
+  .seat-legend      { gap: 12px; }
+  .legend-item      { font-size: 0.72rem; }
+  .screen-label     { font-size: 0.7rem; letter-spacing: 2px; }
+  .seat-section-label { font-size: 0.62rem; letter-spacing: 1px; }
+
+  /* Payment page */
+  #payPage { padding-left: 0; padding-right: 0; }
+  #payPage .data-card { border-radius: 10px; }
+
+  /* Ticket — remove side notches that clip on small screens */
+  .ticket-card::before,
+  .ticket-card::after { display: none; }
+  .ticket-card { border-radius: 14px; }
+
+  /* Booking list cards */
+  .my-bookings-card,
+  .data-card { border-radius: 10px; }
+
+  /* Profile — full-width avatar row */
+  .profile-avatar-wrap { flex-direction: column; align-items: flex-start !important; gap: 10px; }
+
+  /* Contact / Partner form */
+  .contact-info-card { padding: 14px; border-radius: 10px; }
+
+  /* Generic page container padding */
+  .container,
+  .container-fluid { padding-left: 14px !important; padding-right: 14px !important; }
+
+  /* Filter bar — full-width stacked selects */
+  .filters-bar .col-md-3,
+  .filters-bar .col-md-4,
+  .filters-bar .col-6 { flex: 0 0 100%; max-width: 100%; }
+
+  .filter-select { font-size: 0.85rem; }
+
+  /* Theater detail — show times wrap nicely */
+  .show-time-btn { padding: 4px 8px; font-size: 0.75rem; border-radius: 6px; }
+
+  /* Footer — centre everything */
+  .site-footer .col-md-4,
+  .site-footer .col-md-2 { margin-bottom: 24px; }
+  .footer-social a { width: 32px; height: 32px; border-radius: 6px; }
+  .footer-bottom { text-align: center; }
+  .footer-bottom .d-flex { flex-direction: column; gap: 4px; text-align: center; }
+
+  /* Version pills (language selector) — wrap freely */
+  .version-pill { padding: 5px 12px; font-size: 0.78rem; }
+
+  /* Location selector steps */
+  .location-selector-wrap { padding: 14px; border-radius: 10px; }
+
+  /* Modals — full-screen-ish on phone */
+  .modal-dialog { margin: 0.5rem; }
+  .modal-content { border-radius: 12px; }
+}

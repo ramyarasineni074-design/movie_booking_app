@@ -97,26 +97,38 @@ function initAdminTheatersPage() {
 
 /* ── Override editTheater to also populate city dropdown ── */
 function _adminEditTheaterSetup(id, data) {
-  const form  = document.getElementById('editTheaterForm');
+  const form = document.getElementById('editTheaterForm');
   if (!form) return;
-  form.action = `/admin/theaters/edit/${id}`;
+  form.action = '/admin/theaters/edit/' + id;
+
   const nameEl  = document.getElementById('et_name');
   const brandEl = document.getElementById('et_brand');
   const ownerEl = document.getElementById('et_owner');
   const locEl   = document.getElementById('et_location');
   const stateEl = document.getElementById('et_state');
   const cityEl  = document.getElementById('et_city');
+
   if (nameEl)  nameEl.value  = data.name     || '';
   if (brandEl) brandEl.value = data.brand_id || '';
   if (ownerEl) ownerEl.value = data.owner_id || '';
   if (locEl)   locEl.value   = data.location || '';
+
+  // Re-populate state select fresh with correct selected value
   if (stateEl) {
-    stateEl.value = data.state || '';
-    if (data.state && cityEl) {
+    populateStateSelect(stateEl, data.state || '');
+  }
+
+  // Re-populate city select for theater's current state
+  if (cityEl) {
+    if (data.state) {
       populateCitySelect(cityEl, data.state, data.city || '');
       cityEl.disabled = false;
+    } else {
+      cityEl.innerHTML = '<option value="">Select City</option>';
+      cityEl.disabled = true;
     }
   }
+
   new bootstrap.Modal(document.getElementById('editTheaterModal')).show();
 }
 

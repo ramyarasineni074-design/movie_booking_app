@@ -33,11 +33,12 @@ class Theater(db.Model):
     def to_dict(self):
         return {
             "theater_id": self.theater_id,
-            "brand_id": self.brand_id,
-            "name": self.name,
-            "location": self.location,
-            "city": self.city,
-            "state": self.state
+            "brand_id":   self.brand_id,
+            "owner_id":   self.brand.owner_id if self.brand else None,
+            "name":       self.name,
+            "location":   self.location,
+            "city":       self.city,
+            "state":      self.state
         }
 
     def __repr__(self):
