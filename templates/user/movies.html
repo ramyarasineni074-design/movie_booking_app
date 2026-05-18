@@ -170,147 +170,255 @@
 </script>
 
 <script>
-  (function () {
-    var currentPage = {{ page }
-  };
-  var totalMovies = {{ total }};
-  var perPage = {{ per_page }};
-  var hasMore = {{ 'true' if (page * per_page) < total else 'false' }};
-  var loading = false;
-  var shownCount = {{ movies| length }};
-  /* 24 rotating cinematic posters — used when a movie has no uploaded poster */
-  /* 200 rotating posters */
-  var fallbackPosters = [
+(function () {
+
+    var currentPage = {{ page }};
+    var totalMovies = {{ total }};
+    var perPage = {{ per_page }};
+    var hasMore = {{ 'true' if (page * per_page) < total else 'false' }};
+    var loading = false;
+    var shownCount = {{ movies|length }};
+
+    /* 200 rotating posters */
+    var fallbackPosters = [
     {% for i in range(1, 201) %}
-  "{{ url_for('static', filename='uploads/posters/poster_%03d.jpg' | format(i)) }}"
-  {% if not loop.last %}, {% endif %}
-  {% endfor %}
-];
-  var detailBase = "{{ url_for('user_bp.movie_detail', movie_id='__MOVIE_ID__') }}";
+        "{{ url_for('static', filename='uploads/posters/poster_%03d.jpg' | format(i)) }}"
+        {% if not loop.last %},{% endif %}
+    {% endfor %}
+    ];
 
-  var filterParams = {
-    q: "{{ search | replace('"', '\\"') }}",
-    genre: "{{ genre | replace('"', '\\"') }}",
-    language: "{{ language | replace('"', '\\"') }}",
-    filter: "{{ status_filter | replace('"', '\\"') }}",
-    sort: "{{ sort | replace('"', '\\"') }}"
-  };
+    var detailBase = "{{ url_for('user_bp.movie_detail', movie_id='__MOVIE_ID__') }}";
 
-  function esc(s) {
-    return String(s || '')
-      .replace(/&/g, '&amp;').replace(/</g, '&lt;')
-      .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
-  }
+    var filterParams = {
+        q: "{{ search|replace('"','\\"') }}",
+        genre: "{{ genre|replace('"','\\"') }}",
+        language: "{{ language|replace('"','\\"') }}",
+        filter: "{{ status_filter|replace('"','\\"') }}",
+        sort: "{{ sort|replace('"','\\"') }}"
+    };
 
-  function buildCard(m) {
-    var href = detailBase.replace('__MOVIE_ID__', encodeURIComponent(m.movie_id));
-    var posterIndex = shownCount % fallbackPosters.length;
-    var poster = m.poster_url || fallbackPosters[posterIndex];
+    function esc(s){
+        return String(s || '')
+            .replace(/&/g,'&amp;')
+            .replace(/</g,'&lt;')
+            .replace(/>/g,'&gt;')
+            .replace(/"/g,'&quot;');
+    }
 
-    var genreTag = m.genres_display
-      ? '<span class="genre-tag">' + esc(m.genres_display.split(' / ')[0]) + '</span>' : '';
+    function buildCard(m){
 
-    var langTag = (m.languages_list && m.languages_list.length)
-      ? '<span class="lang-inline">' + esc(m.languages_list[0]) +
-      (m.lang_count > 1 ? ' +' + (m.lang_count - 1) : '') + '</span>' : '';
+        var href = detailBase.replace(
+            '__MOVIE_ID__',
+            encodeURIComponent(m.movie_id)
+        );
 
-    var ratingTag = m.rating
-      ? '<span class="movie-rating">&#11088; ' + m.rating + '</span>' : '';
+        var posterIndex = shownCount % fallbackPosters.length;
 
-    var durTag = m.duration
-      ? '<span style="font-size:0.7rem;color:var(--text-muted)">' + m.duration + 'm</span>' : '';
+        var poster = m.poster_url || fallbackPosters[posterIndex];
 
-    return [
-      '<div class="col">',
-      '<div class="movie-card">',
-      '<div class="poster-wrap">',
-      '<img src="' + esc(poster) + '" alt="' + esc(m.title) + '"',
-      'onerror="this.src=\'' +
-      fallbackPosters[posterIndex] +
-      '\'"',
-      '<div class="poster-overlay"><div class="w-100">',
-      '<a href="' + href + '" class="btn btn-cinema btn-sm w-100 mb-1">&#127903; Book Now</a>',
-      '<a href="' + href + '" class="btn btn-cinema-outline btn-sm w-100">&#8505; Details</a>',
-      '</div></div>',
-      '</div>',
-      '<div class="card-body">',
-      '<div class="movie-title">' + esc(m.title) + '</div>',
-      '<div class="card-meta-row">' + genreTag + langTag + '</div>',
-      '<div class="d-flex align-items-center gap-2 mt-2">' + ratingTag + durTag + '</div>',
-      '</div>',
-      '</div>',
-      '</div>'
-    ].join('');
-  }
+        var genreTag = m.genres_display
+            ? '<span class="genre-tag">'
+              + esc(m.genres_display.split(" / ")[0])
+              + '</span>'
+            : '';
 
-  function updateCount() {
-    var el = document.getElementById('visibleCount');
-    if (el) el.textContent = shownCount;
-  }
+        var langTag = (m.languages_list && m.languages_list.length)
+            ? '<span class="lang-inline">'
+              + esc(m.languages_list[0])
+              + (m.lang_count > 1
+                    ? ' +' + (m.lang_count-1)
+                    : '')
+              + '</span>'
+            : '';
 
-  function loadMore() {
-    if (loading || !hasMore) return;
-    loading = true;
-    document.getElementById('loadingSpinner').style.display = 'block';
+        var ratingTag = m.rating
+            ? '<span class="movie-rating">⭐ '
+              + m.rating +
+              '</span>'
+            : '';
 
-    var qs = new URLSearchParams(filterParams);
-    qs.set('page', currentPage + 1);
+        var durationTag = m.duration
+            ? '<span style="font-size:0.7rem;color:var(--text-muted)">'
+              + m.duration +
+              'm</span>'
+            : '';
 
-    fetch('/api/movies?' + qs.toString())
-      .then(function (r) { return r.json(); })
-      .then(function (data) {
-        loading = false;
-        document.getElementById('loadingSpinner').style.display = 'none';
+        return [
+            '<div class="col">',
+                '<div class="movie-card">',
+                    '<div class="poster-wrap">',
 
-        if (!data.movies || !data.movies.length) {
-          hasMore = false;
-          document.getElementById('endMessage').style.display = 'flex';
-          return;
+                        '<img src="' + esc(poster) + '" ' +
+                        'alt="' + esc(m.title) + '" ' +
+                        'onerror="this.src=\'' +
+                        fallbackPosters[posterIndex] +
+                        '\'">',
+
+                        '<div class="poster-overlay">',
+                            '<div class="w-100">',
+
+                                '<a href="' + href + '" class="btn btn-cinema btn-sm w-100 mb-1">',
+                                    '🎟 Book Now',
+                                '</a>',
+
+                                '<a href="' + href + '" class="btn btn-cinema-outline btn-sm w-100">',
+                                    'ℹ Details',
+                                '</a>',
+
+                            '</div>',
+                        '</div>',
+
+                    '</div>',
+
+                    '<div class="card-body">',
+                        '<div class="movie-title">' +
+                        esc(m.title) +
+                        '</div>',
+
+                        '<div class="card-meta-row">' +
+                        genreTag +
+                        langTag +
+                        '</div>',
+
+                        '<div class="d-flex align-items-center gap-2 mt-2">' +
+                        ratingTag +
+                        durationTag +
+                        '</div>',
+                    '</div>',
+                '</div>',
+            '</div>'
+        ].join('');
+
+    }
+
+    function updateCount(){
+        var el=document.getElementById('visibleCount');
+
+        if(el){
+            el.textContent=shownCount;
+        }
+    }
+
+    function loadMore(){
+
+        if(loading || !hasMore){
+            return;
         }
 
-        currentPage++;
-        var grid = document.getElementById('moviesGrid');
-        data.movies.forEach(function (m) {
+        loading=true;
 
-          shownCount++;
+        document.getElementById(
+            'loadingSpinner'
+        ).style.display='block';
 
-          grid.insertAdjacentHTML(
-            'beforeend',
-            buildCard(m)
-          );
+        var qs=new URLSearchParams(
+            filterParams
+        );
+
+        qs.set(
+            'page',
+            currentPage+1
+        );
+
+        fetch('/api/movies?' + qs.toString())
+
+        .then(function(r){
+            return r.json();
+        })
+
+        .then(function(data){
+
+            loading=false;
+
+            document.getElementById(
+                'loadingSpinner'
+            ).style.display='none';
+
+            if(!data.movies || !data.movies.length){
+
+                hasMore=false;
+
+                document.getElementById(
+                    'endMessage'
+                ).style.display='flex';
+
+                return;
+            }
+
+            currentPage++;
+
+            var grid=document.getElementById(
+                'moviesGrid'
+            );
+
+            data.movies.forEach(function(m){
+
+                grid.insertAdjacentHTML(
+                    'beforeend',
+                    buildCard(m)
+                );
+
+                shownCount++;
+
+            });
+
+            updateCount();
+
+            hasMore=data.has_more;
+
+            if(!hasMore){
+
+                document.getElementById(
+                    'endMessage'
+                ).style.display='flex';
+
+            }
+
+        })
+
+        .catch(function(){
+
+            loading=false;
+
+            document.getElementById(
+                'loadingSpinner'
+            ).style.display='none';
 
         });
-        updateCount();
 
-        hasMore = data.has_more;
-        if (!hasMore) {
-          document.getElementById('endMessage').style.display = 'flex';
-        }
-      })
-      .catch(function () {
-        loading = false;
-        document.getElementById('loadingSpinner').style.display = 'none';
-      });
-  }
+    }
 
-  // Use IntersectionObserver with 400px margin so load triggers before user hits bottom
-  var sentinel = document.getElementById('scrollSentinel');
-  if ('IntersectionObserver' in window) {
-    var observer = new IntersectionObserver(function (entries) {
-      if (entries[0].isIntersecting) loadMore();
-    }, { rootMargin: '400px' });
-    observer.observe(sentinel);
-  } else {
-    window.addEventListener('scroll', function () {
-      var rect = sentinel.getBoundingClientRect();
-      if (rect.top <= window.innerHeight + 400) loadMore();
-    });
-  }
+    var sentinel=document.getElementById(
+        'scrollSentinel'
+    );
 
-  // Show end message right away if everything already loaded
-  if (!hasMore) {
-    document.getElementById('endMessage').style.display = 'flex';
-  }
-}) ();
+    if('IntersectionObserver' in window){
+
+        var observer=new IntersectionObserver(
+            function(entries){
+
+                if(entries[0].isIntersecting){
+                    loadMore();
+                }
+
+            },
+            {
+                rootMargin:'400px'
+            }
+        );
+
+        observer.observe(sentinel);
+
+    }
+
+    if(!hasMore){
+
+        document.getElementById(
+            'endMessage'
+        ).style.display='flex';
+
+    }
+
+})();
 </script>
 {% endblock %}
