@@ -18,15 +18,13 @@
 
     <!-- CITY FILTER BANNER -->
     {% if city %}
-    <div class="d-flex align-items-center gap-2 mb-3 px-3 py-2"
-         style="background:rgba(217,108,44,0.08);border:1px solid rgba(217,108,44,0.3);
+    <div class="d-flex align-items-center gap-2 mb-3 px-3 py-2" style="background:rgba(217,108,44,0.08);border:1px solid rgba(217,108,44,0.3);
                 border-radius:10px;font-size:0.85rem">
       <i class="fas fa-map-marker-alt" style="color:var(--orange)"></i>
       <span style="color:rgba(255,255,255,0.85)">
         Showing movies available in <strong style="color:#fff">{{ city }}</strong>
       </span>
-      <button onclick="clearCityFilter()" class="btn btn-sm ms-auto"
-              style="background:rgba(229,9,20,0.12);color:#ff6b6b;
+      <button onclick="clearCityFilter()" class="btn btn-sm ms-auto" style="background:rgba(229,9,20,0.12);color:#ff6b6b;
                      border:1px solid rgba(229,9,20,0.3);border-radius:6px;
                      font-size:0.75rem;padding:3px 12px;cursor:pointer">
         <i class="fas fa-times me-1"></i>Clear City
@@ -89,12 +87,11 @@
     <div class="row g-4 row-cols-2 row-cols-md-3 row-cols-lg-5" id="moviesGrid">
       {% for movie in movies %}
       {% set _pi = (loop.index0 % 200) + 1 %}
-{% set _fallback = url_for('static', filename='uploads/posters/poster_%03d.jpg' | format(_pi)) %}
+      {% set _fallback = url_for('static', filename='uploads/posters/poster_%03d.jpg' | format(_pi)) %}
       <div class="col">
         <div class="movie-card">
           <div class="poster-wrap">
-            <img src="{{ movie.poster_url or _fallback }}"
-              alt="{{ movie.title }}" onerror="this.src='{{ _fallback }}'">
+            <img src="{{ movie.poster_url or _fallback }}" alt="{{ movie.title }}" onerror="this.src='{{ _fallback }}'">
             <div class="poster-overlay">
               <div class="w-100">
                 <a href="{{ url_for('user_bp.movie_detail', movie_id=movie.movie_id) }}"
@@ -166,15 +163,16 @@
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ city: '' })
     })
-    .then(function(r) { return r.json(); })
-    .then(function() { location.reload(); })
-    .catch(function() { location.reload(); });
+      .then(function (r) { return r.json(); })
+      .then(function () { location.reload(); })
+      .catch(function () { location.reload(); });
   }
 </script>
 
 <script>
   (function () {
-    var currentPage = {{ page }};
+    var currentPage = {{ page }
+  };
   var totalMovies = {{ total }};
   var perPage = {{ per_page }};
   var hasMore = {{ 'true' if (page * per_page) < total else 'false' }};
@@ -182,11 +180,11 @@
   var shownCount = {{ movies| length }};
   /* 24 rotating cinematic posters — used when a movie has no uploaded poster */
   /* 200 rotating posters */
-var fallbackPosters = [
-{% for i in range(1, 201) %}
-"{{ url_for('static', filename='uploads/posters/poster_%03d.jpg' | format(i)) }}"
-{% if not loop.last %},{% endif %}
-{% endfor %}
+  var fallbackPosters = [
+    {% for i in range(1, 201) %}
+  "{{ url_for('static', filename='uploads/posters/poster_%03d.jpg' | format(i)) }}"
+  {% if not loop.last %}, {% endif %}
+  {% endfor %}
 ];
   var detailBase = "{{ url_for('user_bp.movie_detail', movie_id='__MOVIE_ID__') }}";
 
@@ -206,7 +204,8 @@ var fallbackPosters = [
 
   function buildCard(m) {
     var href = detailBase.replace('__MOVIE_ID__', encodeURIComponent(m.movie_id));
-    var poster = m.poster_url || fallbackPosters[shownCount % fallbackPosters.length];
+    var posterIndex = shownCount % fallbackPosters.length;
+    var poster = m.poster_url || fallbackPosters[posterIndex];
 
     var genreTag = m.genres_display
       ? '<span class="genre-tag">' + esc(m.genres_display.split(' / ')[0]) + '</span>' : '';
@@ -226,7 +225,9 @@ var fallbackPosters = [
       '<div class="movie-card">',
       '<div class="poster-wrap">',
       '<img src="' + esc(poster) + '" alt="' + esc(m.title) + '"',
-      ' onerror="this.src=\'' + esc(poster) + '\'">',
+      'onerror="this.src=\'' +
+      fallbackPosters[posterIndex] +
+      '\'"',
       '<div class="poster-overlay"><div class="w-100">',
       '<a href="' + href + '" class="btn btn-cinema btn-sm w-100 mb-1">&#127903; Book Now</a>',
       '<a href="' + href + '" class="btn btn-cinema-outline btn-sm w-100">&#8505; Details</a>',
@@ -270,8 +271,14 @@ var fallbackPosters = [
         currentPage++;
         var grid = document.getElementById('moviesGrid');
         data.movies.forEach(function (m) {
-          grid.insertAdjacentHTML('beforeend', buildCard(m));
+
           shownCount++;
+
+          grid.insertAdjacentHTML(
+            'beforeend',
+            buildCard(m)
+          );
+
         });
         updateCount();
 
