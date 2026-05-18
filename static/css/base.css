@@ -691,8 +691,10 @@ ul { list-style: none; padding: 0; margin: 0; }
 ::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.2); }
 
 /* ============================================================
-   RESPONSIVE
+   RESPONSIVE — Admin / Owner panels
    ============================================================ */
+
+/* ── Tablet (≤ 768px): slide sidebar off-screen ── */
 @media (max-width: 768px) {
   :root { --sidebar-w: 0px; }
 
@@ -703,5 +705,220 @@ ul { list-style: none; padding: 0; margin: 0; }
   }
 
   .admin-sidebar.show { transform: translateX(0); }
-  .admin-main { margin-left: 0; }
+  .admin-main  { margin-left: 0; }
+
+  /* Topbar: hide date text to save space, shrink padding */
+  .admin-topbar { padding: 10px 16px; }
+  #currentDate  { display: none; }
+
+  /* Page padding: tighter on tablet */
+  .admin-page { padding: 16px; }
+
+  /* Stat cards: 2-col instead of 4 */
+  .admin-page .row.g-3.mb-4 > .col-md-3 { flex: 0 0 50%; max-width: 50%; }
+
+  /* Filter bar selects: allow wrapping and remove fixed min-width */
+  .admin-page .form-control,
+  .admin-page .form-select,
+  .admin-page select { min-width: 0 !important; }
+
+  /* Data table: let the wrapper scroll horizontally (already has table-responsive),
+     but make the Actions column sticky so it's always reachable */
+  .table-responsive { -webkit-overflow-scrolling: touch; }
+
+  /* Actions cell: keep buttons inline and touchable */
+  .admin-page .data-card tbody td .d-flex.gap-1,
+  .owner-page .data-card tbody td .d-flex.gap-1 {
+    flex-wrap: nowrap !important;
+    gap: 4px !important;
+  }
+
+  /* Action buttons: larger touch target */
+  .admin-page .data-card .btn-sm,
+  .owner-page .data-card .btn-sm {
+    min-width: 34px;
+    min-height: 34px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 6px 8px;
+  }
+
+  /* Modals: full-width on tablet */
+  .modal-dialog { margin: 0.75rem; }
+  .modal-lg     { max-width: calc(100vw - 1.5rem); }
+}
+
+/* ── Phone (≤ 576px): full phone optimisation ── */
+@media (max-width: 576px) {
+
+  /* Page area: minimal padding so table gets full width */
+  .admin-page { padding: 10px 8px; }
+
+  /* Topbar: compact */
+  .admin-topbar { padding: 8px 12px; gap: 8px; }
+  .admin-topbar .d-flex.align-items-center.gap-3 { gap: 8px !important; }
+  /* Hide the notification bell on very small screens */
+  .admin-topbar .btn.position-relative { display: none !important; }
+
+  /* Sidebar brand: tighter */
+  .admin-sidebar .sidebar-brand { padding: 14px 16px; }
+  .admin-sidebar .brand-text    { font-size: 0.95rem; }
+
+  /* Stat row: 2-column */
+  .admin-page .row.g-3.mb-4 > .col-6,
+  .admin-page .row.g-3.mb-4 > .col-md-3 { flex: 0 0 50%; max-width: 50%; }
+  .stat-card { padding: 14px 14px; border-radius: 10px; }
+  .stat-value { font-size: 1.5rem !important; }
+  .stat-icon  { width: 40px; height: 40px; font-size: 1.1rem; border-radius: 10px; }
+
+  /* Filter bar: stack all selects full-width */
+  .admin-page .data-card .row > [class*="col"],
+  .admin-page > .data-card ~ .data-card .row > [class*="col"],
+  .admin-page form.row > [class*="col"],
+  .admin-page .row.g-3 > .col-md-3,
+  .admin-page .row.g-3 > .col-md-2,
+  .admin-page .row.g-3 > .col-md-4 { flex: 0 0 100%; max-width: 100%; }
+
+  .admin-page .form-control,
+  .admin-page .form-select,
+  .admin-page input,
+  .admin-page select {
+    min-width: 0 !important;
+    width: 100% !important;
+    font-size: 0.82rem;
+    height: 38px;
+  }
+
+  /* ── CRITICAL: sticky Actions column on phone ──
+     Makes the last column (Actions) stick to the right of the
+     scrollable table so Edit/View/Assign are always visible     */
+  .admin-page .table-responsive,
+  .owner-page .table-responsive { overflow-x: auto; position: relative; }
+
+  .admin-page .data-card table thead th:last-child,
+  .admin-page .data-card table tbody td:last-child,
+  .owner-page .data-card table thead th:last-child,
+  .owner-page .data-card table tbody td:last-child {
+    position: sticky;
+    right: 0;
+    z-index: 2;
+    background: #fff !important;
+    box-shadow: -3px 0 8px rgba(0,0,0,0.08);
+  }
+
+  .admin-page .data-card table thead th:last-child {
+    background: var(--admin-darker) !important;
+  }
+
+  /* Action buttons: generous touch targets, no wrapping */
+  .admin-page .data-card tbody td .d-flex,
+  .owner-page .data-card tbody td .d-flex {
+    flex-wrap: nowrap !important;
+    gap: 4px !important;
+  }
+
+  .admin-page .data-card .btn-sm,
+  .owner-page .data-card .btn-sm {
+    min-width: 36px !important;
+    min-height: 36px !important;
+    padding: 6px !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    border-radius: 8px !important;
+    font-size: 0.82rem !important;
+  }
+
+  /* Assign button in owner movies: show icon + text, big enough to tap */
+  .owner-page .data-card .btn-sm.d-flex,
+  .owner-page .data-card td > .btn-sm { min-width: 70px !important; }
+
+  /* Hide less critical table columns on phone to free width for Actions.
+     Show: name + status + actions. Hide middle columns.
+     Using :nth-child selectors — adjust per table if needed.        */
+  /* Admin theaters table: hide Location, City, State columns (3,4,5) */
+  #theatersTable thead th:nth-child(3),
+  #theatersTable thead th:nth-child(4),
+  #theatersTable thead th:nth-child(5),
+  #theatersTable tbody td:nth-child(3),
+  #theatersTable tbody td:nth-child(4),
+  #theatersTable tbody td:nth-child(5) { display: none; }
+
+  /* Admin owners table: hide Email and Brand columns (3,4) */
+  #ownersTable thead th:nth-child(3),
+  #ownersTable thead th:nth-child(4),
+  #ownersTable tbody td:nth-child(3),
+  #ownersTable tbody td:nth-child(4) { display: none; }
+
+  /* Admin movies table: hide Duration, Release, Genre columns (3,4,5) */
+  #moviesTable thead th:nth-child(3),
+  #moviesTable thead th:nth-child(4),
+  #moviesTable thead th:nth-child(5),
+  #moviesTable tbody td:nth-child(3),
+  #moviesTable tbody td:nth-child(4),
+  #moviesTable tbody td:nth-child(5) { display: none; }
+
+  /* Owner movies table: hide Genre, Language, Duration columns (3,4,5) */
+  #ownerMoviesTable thead th:nth-child(3),
+  #ownerMoviesTable thead th:nth-child(4),
+  #ownerMoviesTable thead th:nth-child(5),
+  #ownerMoviesTable tbody td:nth-child(3),
+  #ownerMoviesTable tbody td:nth-child(4),
+  #ownerMoviesTable tbody td:nth-child(5) { display: none; }
+
+  /* Owner shows table: hide Screen, City, Price columns (3,4,7) */
+  #showsTable thead th:nth-child(3),
+  #showsTable thead th:nth-child(4),
+  #showsTable thead th:nth-child(7),
+  #showsTable tbody td:nth-child(3),
+  #showsTable tbody td:nth-child(4),
+  #showsTable tbody td:nth-child(7) { display: none; }
+
+  /* ── Owner theaters CARD grid (not a table) ──
+     Cards already stack to full width (col-lg-6 → 100%).
+     Ensure the Edit/View/Assign buttons in the card header are tappable. */
+  #theaterGrid .data-card .d-flex.gap-1 .btn-sm,
+  #theaterGrid .data-card .d-flex.gap-2 .btn-sm {
+    min-width: 40px !important;
+    min-height: 40px !important;
+    padding: 8px !important;
+    font-size: 0.85rem !important;
+  }
+  #theaterGrid .data-card .d-flex.gap-2 .flex-fill {
+    min-height: 40px;
+    font-size: 0.82rem;
+  }
+  /* Theater card: stack schedule/add-movie buttons vertically */
+  #theaterGrid .d-flex.gap-2:last-child { flex-direction: column; gap: 8px !important; }
+
+  /* Data card header: wrap title + button */
+  .data-card-header {
+    flex-wrap: wrap;
+    gap: 8px;
+    padding: 12px 14px;
+  }
+
+  /* Modal: near-fullscreen on phone */
+  .modal-dialog        { margin: 0.4rem; }
+  .modal-lg,
+  .modal-xl            { max-width: calc(100vw - 0.8rem); }
+  .modal-content       { border-radius: 12px; }
+  .modal-header        { padding: 14px 16px !important; }
+  .modal-body          { padding: 14px 16px; }
+  .modal-footer        { padding: 12px 16px !important; flex-wrap: wrap; gap: 8px; }
+  .modal-footer .btn   { flex: 1 1 auto; }
+
+  /* Modal form inputs: ensure readable size */
+  .modal .form-control,
+  .modal .form-select,
+  .modal input,
+  .modal select,
+  .modal textarea { font-size: 0.9rem !important; }
+
+  /* Pagination: smaller */
+  .admin-page .d-flex.gap-2 .btn-sm { padding: 4px 8px; font-size: 0.75rem; }
+
+  /* Toast: full-width on phone */
+  .toast-custom { left: 10px; right: 10px; min-width: 0; bottom: 14px; }
 }
