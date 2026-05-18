@@ -38,13 +38,9 @@ class Config:
     ADMIN_EMAIL = 'admin@gmail.com'
     ADMIN_PASSWORD = 'admin123'
 
-    # Email (Gmail SMTP)
-    MAIL_SERVER = 'smtp.gmail.com'
-    MAIL_PORT = 587
-    MAIL_USE_TLS = True
-    MAIL_USERNAME = os.environ.get('MAIL_USERNAME', 'ramyarasineni074@gmail.com')
-    MAIL_PASSWORD = os.environ.get('MAIL_PASSWORD')
-    MAIL_DEFAULT_SENDER = os.environ.get('MAIL_USERNAME', 'ramyarasineni074@gmail.com')
+    # Email (SendGrid)
+    SENDGRID_API_KEY   = os.environ.get('SENDGRID_API_KEY')
+    SENDGRID_FROM_EMAIL = os.environ.get('SENDGRID_FROM_EMAIL', 'ramyarasineni074@gmail.com')
 
     # Pagination
     PAGE_SIZE = 12

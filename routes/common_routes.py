@@ -18,23 +18,13 @@ def home():
     return redirect(url_for('user_bp.home'))
 
 
-from flask_mail import Message
-from extensions import mail
-
 @common_bp.route('/test-mail')
 def test_mail():
-
-    try:
-
-        msg = Message(
-            subject="Test Mail",
-            recipients=["your_email@gmail.com"],
-            body="Mail working successfully"
-        )
-
-        mail.send(msg)
-
-        return "Mail sent successfully"
-
-    except Exception as e:
-        return str(e)
+    from utils.email_utils import _send
+    ok = _send(
+        to_email='ramyarasineni074@gmail.com',
+        subject='CineBook — SendGrid Test',
+        plain='SendGrid is working correctly on CineBook!'
+    )
+    return ('SendGrid mail sent successfully ✅' if ok
+            else 'SendGrid mail FAILED ❌ — check SENDGRID_API_KEY env var and Render logs')

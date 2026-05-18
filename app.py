@@ -3,7 +3,7 @@ from werkzeug.security import generate_password_hash
 from flask_migrate import Migrate
 
 from config import Config
-from extensions import db, mail, socketio
+from extensions import db, socketio
 
 # Import models (IMPORTANT for migrations)
 
@@ -30,7 +30,6 @@ def create_app():
 
     #  Init extensions
     db.init_app(app)
-    mail.init_app(app)
     socketio.init_app(app, cors_allowed_origins='*', async_mode='eventlet')
 
     #  INIT MIGRATE (VERY IMPORTANT)

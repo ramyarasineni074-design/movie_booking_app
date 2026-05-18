@@ -7,8 +7,7 @@ from werkzeug.security import generate_password_hash
 from werkzeug.utils import secure_filename
 from sqlalchemy import func, distinct
 
-from extensions import db, mail
-from flask_mail import Message
+from extensions import db
 from models import (AppUser, User, Role, Movie, Theater, TheaterBrand,
                     Show, Booking, Screen, Seat, Payment, Review)
 from utils.decorators import admin_required, handle_exceptions
@@ -28,59 +27,9 @@ def gen_password(length=10):
 def send_credentials_email(to_email, user_name, role,
                            login_email, plain_pw,
                            brand_name=None):
-
-    try:
-
-        print("========== EMAIL DEBUG ==========")
-        print("Sending to:", to_email)
-
-        msg = Message(
-            subject=f'CineBook — {role.title()} Account Created',
-            recipients=[to_email]
-        )
-
-        login_url = "https://movie-booking-app-7taz.onrender.com/login"
-
-        msg.body = (
-            f"Hello {user_name},\n\n"
-            f"Your CineBook {role.title()} account has been created.\n\n"
-
-            f"Login Details\n"
-            f"─────────────\n"
-            f"Role : {role.title()}\n"
-            f"Name : {user_name}\n"
-            f"Email : {login_email}\n"
-            f"Password : {plain_pw}\n"
-        )
-
-        if brand_name:
-            msg.body += f"Brand : {brand_name}\n"
-
-        msg.body += (
-            f"\nLogin here:\n"
-            f"{login_url}\n\n"
-            f"Please change your password after first login.\n\n"
-            f"Regards,\n"
-            f"CineBook Team"
-        )
-
-        print("Mail object created")
-        print("STARTING MAIL SEND")
-
-        mail.send(msg)
-
-        print("MAIL SENT SUCCESSFULLY")
-
-        return True
-
-    except Exception as e:
-
-        print("========== EMAIL ERROR ==========")
-        print(type(e).__name__)
-        print(str(e))
-        print("==============================")
-
-        return False
+    """Delegate to SendGrid-based email_utils."""
+    from utils.email_utils import send_credentials_email as _sg_send
+    return _sg_send(to_email, user_name, role, login_email, plain_pw)
 
     
     
