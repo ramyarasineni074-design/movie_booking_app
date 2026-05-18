@@ -631,8 +631,21 @@ def add_movie():
         release_date=date.fromisoformat(request.form.get('release_date')) if request.form.get('release_date') else None,
         description=request.form.get('description'),
         status=request.form.get('status', 'active'),
-        poster_url=request.form.get('poster_url')
+        poster_url=request.form.get('poster_url') or None
     )
+
+    # Handle poster file upload (takes priority over poster_url text field)
+    file = request.files.get('poster_file')
+    if file and file.filename:
+        from werkzeug.utils import secure_filename
+        allowed = current_app.config.get('ALLOWED_EXTENSIONS', {'png', 'jpg', 'jpeg', 'gif', 'webp'})
+        ext = file.filename.rsplit('.', 1)[-1].lower() if '.' in file.filename else ''
+        if ext in allowed:
+            folder = current_app.config.get('UPLOAD_FOLDER', 'static/uploads')
+            os.makedirs(folder, exist_ok=True)
+            fname = f"{uuid.uuid4().hex}_{secure_filename(file.filename)}"
+            file.save(os.path.join(folder, fname))
+            movie.poster_url = f'/static/uploads/{fname}'
 
     db.session.add(movie)
     db.session.commit()
