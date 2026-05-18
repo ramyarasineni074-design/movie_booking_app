@@ -87,7 +87,7 @@
               style="width:42px;height:58px;object-fit:cover;border-radius:6px">
             {% else %}
             <img src="{{ _fp }}"
-              onerror="this.onerror=null;this.src='/static/img/no_poster.svg'"
+              onerror="this.onerror=null;this.src='{{ _fp }}'"
               style="width:42px;height:58px;object-fit:cover;border-radius:6px">
             {% endif %}
           </td>
@@ -516,11 +516,14 @@ ADMIN: ASSIGN MOVIE TO THEATERS MODAL
 
   function setPosterSrc(imgEl, posterUrl, movieId) {
     if (posterUrl) {
+      // Uploaded poster — on error show neutral placeholder, never a wrong seeded poster
       imgEl.src = posterUrl;
       imgEl.onerror = function() { this.onerror=null; this.src = NO_POSTER_PLACEHOLDER; };
     } else {
-      imgEl.src = getPosterFallback(movieId);
-      imgEl.onerror = function() { this.onerror=null; this.src = NO_POSTER_PLACEHOLDER; };
+      // No uploaded poster — use seeded fallback, keep it on error too
+      var fb = getPosterFallback(movieId);
+      imgEl.src = fb;
+      imgEl.onerror = function() { this.onerror=null; this.src = fb; };
     }
   }
 
