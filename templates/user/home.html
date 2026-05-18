@@ -44,7 +44,7 @@
                     box-shadow:0 20px 40px rgba(0,0,0,0.6);
                     transform:{% if loop.index==2 %}translateY(-20px){% else %}translateY(0){% endif %};
                     display:block">
-            <img src="{{ movie.poster_url or _fallback }}" alt="{{ movie.title }}" onerror="this.src='{{ _fallback }}'" style="width:100%;height:180px;object-fit:cover">
+            <img src="{{ movie.poster_url or _fallback }}" alt="{{ movie.title }}" onerror="this.onerror=null;this.src='{% if movie.poster_url %}/static/img/no_poster.svg{% else %}{{ _fallback }}{% endif %}'" style="width:100%;height:180px;object-fit:cover">
           </a>
           {% endfor %}
         </div>
@@ -507,7 +507,7 @@
         <div class="movie-card" data-languages="{{ (movie.languages_list or []) | join(',') }}"
           data-genres="{{ movie.genres_display or '' }}">
           <div class="poster-wrap">
-            <img src="{{ movie.poster_url or _fallback }}" alt="{{ movie.title }}" onerror="this.src='{{ _fallback }}'">
+            <img src="{{ movie.poster_url or _fallback }}" alt="{{ movie.title }}" onerror="this.onerror=null;this.src='{% if movie.poster_url %}/static/img/no_poster.svg{% else %}{{ _fallback }}{% endif %}'">
             <div class="poster-overlay">
               <div class="w-100">
                 <a href="{{ url_for('user_bp.movie_detail', movie_id=movie.movie_id) }}"
@@ -618,7 +618,7 @@
         <div class="movie-card" data-languages="{{ (movie.languages_list or []) | join(',') }}"
           data-genres="{{ movie.genres_display or '' }}">
           <div class="poster-wrap">
-            <img src="{{ movie.poster_url or _fallback }}" alt="{{ movie.title }}" onerror="this.src='{{ _fallback }}'">
+            <img src="{{ movie.poster_url or _fallback }}" alt="{{ movie.title }}" onerror="this.onerror=null;this.src='{% if movie.poster_url %}/static/img/no_poster.svg{% else %}{{ _fallback }}{% endif %}'">
             <div class="poster-overlay">
               <div class="w-100">
                 <a href="{{ url_for('user_bp.movie_detail', movie_id=movie.movie_id) }}"
@@ -672,7 +672,7 @@
         <div class="movie-card" data-languages="{{ (movie.languages_list or []) | join(',') }}"
           data-genres="{{ movie.genres_display or '' }}">
           <div class="poster-wrap">
-            <img src="{{ movie.poster_url or _fallback }}" alt="{{ movie.title }}" onerror="this.src='{{ _fallback }}'">
+            <img src="{{ movie.poster_url or _fallback }}" alt="{{ movie.title }}" onerror="this.onerror=null;this.src='{% if movie.poster_url %}/static/img/no_poster.svg{% else %}{{ _fallback }}{% endif %}'">
             <div class="poster-overlay">
               <div class="w-100">
                 <a href="{{ url_for('user_bp.movie_detail', movie_id=movie.movie_id) }}"
@@ -743,7 +743,7 @@
         <div class="movie-card" style="opacity:0.92" data-languages="{{ (movie.languages_list or []) | join(',') }}"
           data-genres="{{ movie.genres_display or '' }}">
           <div class="poster-wrap">
-            <img src="{{ movie.poster_url or _fallback }}" alt="{{ movie.title }}" onerror="this.src='{{ _fallback }}'">
+            <img src="{{ movie.poster_url or _fallback }}" alt="{{ movie.title }}" onerror="this.onerror=null;this.src='{% if movie.poster_url %}/static/img/no_poster.svg{% else %}{{ _fallback }}{% endif %}'">
 
             <div style="position:absolute;top:8px;left:8px;background:rgba(243,156,18,0.92);
                         color:#000;font-weight:700;border-radius:6px;padding:4px 10px;

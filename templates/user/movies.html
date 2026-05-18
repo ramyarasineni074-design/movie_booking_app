@@ -94,7 +94,7 @@
         <div class="movie-card">
           <div class="poster-wrap">
             <img src="{{ movie.poster_url or _fallback }}"
-              alt="{{ movie.title }}" onerror="this.src='{{ _fallback }}'">
+              alt="{{ movie.title }}" onerror="this.onerror=null;this.src='{% if movie.poster_url %}/static/img/no_poster.svg{% else %}{{ _fallback }}{% endif %}'">
             <div class="poster-overlay">
               <div class="w-100">
                 <a href="{{ url_for('user_bp.movie_detail', movie_id=movie.movie_id) }}"
@@ -204,6 +204,8 @@
   function buildCard(m) {
     var href = detailBase.replace('__MOVIE_ID__', encodeURIComponent(m.movie_id));
     var poster = m.poster_url || fallbackPosters[shownCount % 200];
+    // On error: if movie had an uploaded poster, show neutral placeholder; else keep fallback
+    var onErrSrc = m.poster_url ? '/static/img/no_poster.svg' : fallbackPosters[shownCount % 200];
 
     var genreTag = m.genres_display
       ? '<span class="genre-tag">' + esc(m.genres_display.split(' / ')[0]) + '</span>' : '';
@@ -223,7 +225,7 @@
       '<div class="movie-card">',
       '<div class="poster-wrap">',
       '<img src="' + esc(poster) + '" alt="' + esc(m.title) + '"',
-      ' onerror="this.src=\'' + esc(poster) + '\'">',
+      ' onerror="this.onerror=null;this.src=\'' + esc(onErrSrc) + '\'">',
       '<div class="poster-overlay"><div class="w-100">',
       '<a href="' + href + '" class="btn btn-cinema btn-sm w-100 mb-1">&#127903; Book Now</a>',
       '<a href="' + href + '" class="btn btn-cinema-outline btn-sm w-100">&#8505; Details</a>',

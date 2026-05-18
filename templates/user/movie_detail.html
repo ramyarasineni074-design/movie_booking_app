@@ -34,7 +34,7 @@
           <div style="position:relative;width:170px;flex-shrink:0">
             <img src="{{ movie.poster_url or _fallback_poster }}"
                  alt="{{ movie.title }}"
-                 onerror="this.src='{{ _fallback_poster }}'"
+                 onerror="this.onerror=null;this.src='{% if movie.poster_url %}/static/img/no_poster.svg{% else %}{{ _fallback_poster }}{% endif %}'"
                  style="width:170px;height:250px;object-fit:cover;border-radius:14px;
                         box-shadow:0 24px 56px rgba(0,0,0,0.85);
                         border:2px solid rgba(255,255,255,0.08);display:block">
