@@ -129,7 +129,7 @@ function _adminEditTheaterSetup(id, data) {
     }
   }
 
-  new bootstrap.Modal(document.getElementById('editTheaterModal')).show();
+  bootstrap.Modal.getOrCreateInstance(document.getElementById('editTheaterModal')).show();
 }
 
 /* ── Admin Bookings Page ─────────────────────────────────── */
