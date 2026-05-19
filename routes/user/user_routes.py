@@ -70,7 +70,24 @@ def format_movie_display(movie):
 @user_bp.route('/api/locations')
 @handle_exceptions
 def api_locations():
-    rows = (
+    # Step 1: get ALL distinct states (including state-only sentinels
+    # which have city='(placeholder)' — those need to appear in the
+    # state dropdown even before any city is added to them).
+    state_rows = (
+        db.session.query(Theater.state)
+        .filter(Theater.state != None)
+        .distinct()
+        .order_by(Theater.state)
+        .all()
+    )
+    result = {}
+    for (state,) in state_rows:
+        state = (state or '').strip()
+        if state:
+            result.setdefault(state, [])
+
+    # Step 2: get all real state+city pairs (exclude placeholder cities).
+    city_rows = (
         db.session.query(Theater.state, Theater.city)
         .filter(
             Theater.state != None,
@@ -81,14 +98,14 @@ def api_locations():
         .order_by(Theater.state, Theater.city)
         .all()
     )
-    result = {}
-    for state, city in rows:
+    for state, city in city_rows:
         state = (state or '').strip()
         city  = (city  or '').strip()
         if state and city:
             result.setdefault(state, [])
             if city not in result[state]:
                 result[state].append(city)
+
     return jsonify(result)
 
 
