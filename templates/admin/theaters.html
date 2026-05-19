@@ -420,156 +420,297 @@ ADD STATE / CITY / LOCATION MODAL
 </script>
 
 <script>
-  // ─── Add State / City / Location Modal ───────────────────────
-  let _addLocType = 'state'; // 'state' | 'city' | 'location'
+
+  let _addLocType = 'state';
 
   function openAddLocationModal(type) {
+
     _addLocType = type;
+
     const modal = document.getElementById('addLocationModal');
+
     const title = document.getElementById('addLocModalTitle');
     const label = document.getElementById('addLocInputLabel');
     const inp = document.getElementById('addLocInput');
+
     const stateRow = document.getElementById('addLocStateRow');
     const cityRow = document.getElementById('addLocCityRow');
+
     const stateEl = document.getElementById('addLocStateSelect');
     const cityEl = document.getElementById('addLocCitySelect');
-    const errEl = document.getElementById('addLocError');
-    const okEl = document.getElementById('addLocSuccess');
 
-    errEl.style.display = 'none'; errEl.textContent = '';
-    okEl.style.display = 'none'; okEl.textContent = '';
+    document.getElementById('addLocError').style.display = 'none';
+    document.getElementById('addLocSuccess').style.display = 'none';
+
     inp.value = '';
 
     if (type === 'state') {
+
       title.innerHTML = '<i class="fas fa-plus-circle me-2 text-orange"></i>Add New State';
-      label.innerHTML = 'State Name <span class="text-danger">*</span>';
+
+      label.innerHTML = 'State Name *';
+
       inp.placeholder = 'e.g. Maharashtra';
+
       stateRow.style.display = 'none';
       cityRow.style.display = 'none';
 
-    } else if (type === 'city') {
-      title.innerHTML = '<i class="fas fa-plus-circle me-2" style="color:#388bfd"></i>Add New City';
-      label.innerHTML = 'City Name <span class="text-danger">*</span>';
-      inp.placeholder = 'e.g. Nashik';
-      stateRow.style.display = '';
-      cityRow.style.display = 'none';
-      // Populate state dropdown from DB_LOCATIONS
-      populateStateSelect(stateEl);
-      stateEl.addEventListener('change', function () {
-        // No city needed for adding city
-      });
+    }
 
-    } else if (type === 'location') {
-      title.innerHTML = '<i class="fas fa-plus-circle me-2" style="color:#3fb950"></i>Add New Location / Area';
-      label.innerHTML = 'Area / Location Name <span class="text-danger">*</span>';
-      inp.placeholder = 'e.g. Nashik 21';
+    else if (type === 'city') {
+
+      title.innerHTML = '<i class="fas fa-plus-circle me-2" style="color:#388bfd"></i>Add New City';
+
+      label.innerHTML = 'City Name *';
+
+      inp.placeholder = 'e.g. Hyderabad';
+
       stateRow.style.display = '';
-      cityRow.style.display = '';
+
+      cityRow.style.display = 'none';
+
       populateStateSelect(stateEl);
+
+    }
+
+    else {
+
+      title.innerHTML = '<i class="fas fa-plus-circle me-2" style="color:#3fb950"></i>Add New Location';
+
+      label.innerHTML = 'Location Name *';
+
+      inp.placeholder = 'e.g. Banjara Hills';
+
+      stateRow.style.display = '';
+
+      cityRow.style.display = '';
+
+      populateStateSelect(stateEl);
+
       stateEl.onchange = function () {
-        const s = this.value;
-        if (s) {
-          populateCitySelect(cityEl, s);
+
+        if (this.value) {
+
+          populateCitySelect(
+            cityEl,
+            this.value
+          );
+
           cityEl.disabled = false;
-        } else {
-          cityEl.innerHTML = '<option value="">-- Select City first --</option>';
-          cityEl.disabled = true;
+
         }
+
+        else {
+
+          cityEl.innerHTML =
+            '<option value="">Select city</option>';
+
+          cityEl.disabled = true;
+
+        }
+
       };
+
     }
 
     new bootstrap.Modal(modal).show();
-    setTimeout(() => inp.focus(), 400);
+
   }
 
   async function saveNewLocation() {
+
     const inp = document.getElementById('addLocInput');
+
     const stateEl = document.getElementById('addLocStateSelect');
+
     const cityEl = document.getElementById('addLocCitySelect');
+
     const errEl = document.getElementById('addLocError');
+
     const okEl = document.getElementById('addLocSuccess');
+
     const btn = document.getElementById('addLocSaveBtn');
 
-    errEl.style.display = 'none'; errEl.textContent = '';
-    okEl.style.display = 'none'; okEl.textContent = '';
+    errEl.style.display = 'none';
+    okEl.style.display = 'none';
 
     const name = inp.value.trim();
-    const state = stateEl.value.trim();
-    const city = cityEl.value ? cityEl.value.trim() : '';
 
-    if (!name) { errEl.textContent = 'Please enter a name.'; errEl.style.display = ''; return; }
-    if (_addLocType === 'city' && !state) { errEl.textContent = 'Please select a state first.'; errEl.style.display = ''; return; }
-    if (_addLocType === 'location' && !state) { errEl.textContent = 'Please select a state first.'; errEl.style.display = ''; return; }
-    if (_addLocType === 'location' && !city) { errEl.textContent = 'Please select a city first.'; errEl.style.display = ''; return; }
+    const state = stateEl.value.trim();
+
+    const city = cityEl.value.trim();
+
+    if (!name) {
+
+      errEl.innerHTML = 'Enter a name';
+
+      errEl.style.display = '';
+
+      return;
+    }
 
     btn.disabled = true;
-    btn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Saving...';
+
+    btn.innerHTML =
+      '<i class="fas fa-spinner fa-spin"></i> Saving...';
 
     try {
-      const res = await fetch('/admin/locations/add', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ type: _addLocType, name, state, city })
-      });
+
+      const res = await fetch(
+        '/admin/locations/add',
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            type: _addLocType,
+            name: name,
+            state: state,
+            city: city
+          })
+        }
+      );
+
       const data = await res.json();
 
       if (data.success) {
-        okEl.textContent = data.message || 'Saved!';
+
+        okEl.innerHTML =
+          data.message || 'Saved';
+
         okEl.style.display = '';
 
-        // Reload DB_LOCATIONS and refresh all dropdowns on the page
         await loadLocationsFromDB();
 
+        const addState =
+          document.getElementById(
+            'add_state'
+          );
+
+        const addCity =
+          document.getElementById(
+            'add_city'
+          );
+
+        const editState =
+          document.getElementById(
+            'et_state'
+          );
+
+        const editCity =
+          document.getElementById(
+            'et_city'
+          );
+
+        const filterState =
+          document.getElementById(
+            'filterState'
+          );
+
         if (_addLocType === 'state') {
-          ['add_state', 'et_state', 'filterState', 'addLocStateSelect'].forEach(id => {
-            const el = document.getElementById(id);
-            if (el) populateStateSelect(el, name);
-          });
-          // Auto-select the new state in add modal
-          const addSt = document.getElementById('add_state');
-          if (addSt) { addSt.value = name; addSt.dispatchEvent(new Event('change')); }
 
-        } else if (_addLocType === 'city') {
-          // Refresh city dropdowns for the selected state
-          const selState = stateEl.value;
-          ['add_city', 'et_city'].forEach(id => {
-            const el = document.getElementById(id);
-            if (el) populateCitySelect(el, selState, name);
-          });
-          // If add_state matches, auto-select city
-          const addSt = document.getElementById('add_state');
-          if (addSt && addSt.value === selState) {
-            const addCt = document.getElementById('add_city');
-            if (addCt) { addCt.disabled = false; addCt.value = name; }
-          }
+          [addState, editState, filterState]
+            .forEach(el => {
 
-        } else if (_addLocType === 'location') {
-          // Auto-fill the location input in the add theater modal
-          const locInp = document.getElementById('add_location');
-          if (locInp) locInp.value = name;
+              if (el) {
+
+                populateStateSelect(
+                  el,
+                  name
+                );
+
+              }
+
+            });
+
         }
 
-        // Close modal after short delay
-        setTimeout(() => {
-          bootstrap.Modal.getInstance(document.getElementById('addLocationModal')).hide();
-        }, 900);
+        else if (_addLocType === 'city') {
 
-      } else {
-        errEl.textContent = data.message || 'Error saving. Try again.';
-        errEl.style.display = '';
+          populateCitySelect(
+            addCity,
+            state,
+            name
+          );
+
+          populateCitySelect(
+            editCity,
+            state,
+            name
+          );
+
+          addCity.disabled = false;
+          editCity.disabled = false;
+
+          addCity.value = name;
+          editCity.value = name;
+
+        }
+
+        else {
+
+          document.getElementById(
+            'add_location'
+          ).value = name;
+
+        }
+
+        setTimeout(() => {
+
+          bootstrap.Modal
+            .getInstance(
+              document.getElementById(
+                'addLocationModal'
+              )
+            )
+            .hide();
+
+        }, 1000);
+
       }
-    } catch (e) {
-      errEl.textContent = 'Network error. Please try again.';
-      errEl.style.display = '';
-    } finally {
-      btn.disabled = false;
-      btn.innerHTML = '<i class="fas fa-save me-1"></i>Save';
+
+      else {
+
+        errEl.innerHTML =
+          data.message || 'Save failed';
+
+        errEl.style.display = '';
+
+      }
+
     }
+
+    catch (e) {
+
+      errEl.innerHTML =
+        'Network error';
+
+      errEl.style.display = '';
+
+    }
+
+    finally {
+
+      btn.disabled = false;
+
+      btn.innerHTML =
+        '<i class="fas fa-save me-1"></i>Save';
+
+    }
+
   }
 
-  // Enter key in input triggers save
-  document.getElementById('addLocInput')?.addEventListener('keydown', function (e) {
-    if (e.key === 'Enter') saveNewLocation();
-  });
+  document.getElementById('addLocInput')
+    ?.addEventListener(
+      'keydown',
+      function (e) {
+
+        if (e.key === 'Enter') {
+          saveNewLocation();
+        }
+
+      });
+
 </script>
 {% endblock %}
