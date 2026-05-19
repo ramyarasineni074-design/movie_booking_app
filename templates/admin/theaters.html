@@ -119,10 +119,11 @@
           <td>
             <div class="d-flex gap-1">
               <button class="btn btn-sm" title="Edit"
-                style="background:rgba(56,139,253,0.1);color:#388bfd;border:none;border-radius:7px"
-                data-theater-id="{{ theater.theater_id }}"
-                data-theater-info="{{ theater.to_dict()|tojson|e }}"
-                onclick="editTheater(this.dataset.theaterId, JSON.parse(this.dataset.theaterInfo))">
+                style="background:rgba(56,139,253,0.1);color:#388bfd;border:none;border-radius:7px" onclick='editTheater(
+                "{{ theater.theater_id }}",
+                {{ theater.to_dict()|tojson|safe }}
+                )'>
+
                 <i class="fas fa-edit"></i>
               </button>
               <button class="btn btn-sm" title="Delete"
