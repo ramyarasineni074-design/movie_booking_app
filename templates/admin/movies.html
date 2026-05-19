@@ -77,12 +77,12 @@
       <tbody>
         {% for movie in movies %}
         {%- set _mv_num = movie.movie_id | replace('MV_','') | int(default=loop.index) -%}
-        {%- set _pi = ((_mv_num - 1) % 20) + 1 -%}
+        {%- set _pi = ((_mv_num - 1) % 200) + 1 -%}
         {%- set _fp = url_for('static', filename='uploads/posters/poster_%03d.jpg' | format(_pi)) -%}
         <tr>
           <td>
-            <img src="{{ movie.poster_url or _fp }}"
-              onerror="this.src='{{ _fp }}'"
+            <img src="{{ movie.poster_url if movie.poster_url else _fp }}"
+              onerror="this.onerror=null;this.src='{{ _fp }}'"
               style="width:42px;height:58px;object-fit:cover;border-radius:6px">
           </td>
           <td style="max-width:200px">
@@ -100,8 +100,7 @@
           <td style="text-align:center">
             <button class="btn btn-sm" title="Assign to Theaters"
               style="background:rgba(243,156,18,0.15);color:#f39c12;border:1px solid rgba(243,156,18,0.3);border-radius:7px;padding:4px 10px;font-size:0.8rem"
-              data-id="{{ movie.movie_id }}" data-title="{{ movie.title|e }}"
-              data-poster="{{ movie.poster_url or '' }}"
+              data-id="{{ movie.movie_id }}" data-title="{{ movie.title|e }}" data-poster="{{ movie.poster_url or '' }}"
               onclick="openAssignModal(this.dataset.id, this.dataset.title, this.dataset.poster)">
               <i class="fas fa-map-marker-alt me-1"></i>Assign
             </button>
@@ -154,20 +153,23 @@
       {# First #}
       {% if page > 1 %}
       <a href="?page=1&search={{ search }}&genre={{ genre }}&language={{ language }}&status={{ status }}"
-        class="btn btn-sm btn-admin-primary" style="opacity:0.7" title="First"><i class="fas fa-angle-double-left"></i></a>
+        class="btn btn-sm btn-admin-primary" style="opacity:0.7" title="First"><i
+          class="fas fa-angle-double-left"></i></a>
       <a href="?page={{ page-1 }}&search={{ search }}&genre={{ genre }}&language={{ language }}&status={{ status }}"
         class="btn btn-sm btn-admin-primary" style="opacity:0.7"><i class="fas fa-chevron-left"></i></a>
       {% endif %}
       {% for p in range([1, page-2]|max, [total_pages+1, page+3]|min) %}
       <a href="?page={{ p }}&search={{ search }}&genre={{ genre }}&language={{ language }}&status={{ status }}"
-        class="btn btn-sm {% if p==page %}btn-admin-primary{% else %}btn-admin-primary" style="opacity:0.45{% endif %}">{{ p }}</a>
+        class="btn btn-sm {% if p==page %}btn-admin-primary{% else %}btn-admin-primary"
+        style="opacity:0.45{% endif %}">{{ p }}</a>
       {% endfor %}
-      {% if page < total_pages %}
-      <a href="?page={{ page+1 }}&search={{ search }}&genre={{ genre }}&language={{ language }}&status={{ status }}"
+      {% if page < total_pages %} <a
+        href="?page={{ page+1 }}&search={{ search }}&genre={{ genre }}&language={{ language }}&status={{ status }}"
         class="btn btn-sm btn-admin-primary" style="opacity:0.7"><i class="fas fa-chevron-right"></i></a>
-      <a href="?page={{ total_pages }}&search={{ search }}&genre={{ genre }}&language={{ language }}&status={{ status }}"
-        class="btn btn-sm btn-admin-primary" style="opacity:0.7" title="Last"><i class="fas fa-angle-double-right"></i></a>
-      {% endif %}
+        <a href="?page={{ total_pages }}&search={{ search }}&genre={{ genre }}&language={{ language }}&status={{ status }}"
+          class="btn btn-sm btn-admin-primary" style="opacity:0.7" title="Last"><i
+            class="fas fa-angle-double-right"></i></a>
+        {% endif %}
     </div>
   </div>
   {% endif %}
@@ -408,8 +410,7 @@ ADMIN: ASSIGN MOVIE TO THEATERS MODAL
 
         <div class="modal-body">
           {# Location cascade #}
-          <div class="data-card p-3 mb-4"
-            style="background:var(--admin-bg);border:1px solid rgba(229,9,20,0.15)">
+          <div class="data-card p-3 mb-4" style="background:var(--admin-bg);border:1px solid rgba(229,9,20,0.15)">
             <div
               style="font-size:0.75rem;color:var(--orange,#e50914);text-transform:uppercase;letter-spacing:1px;font-weight:600;margin-bottom:12px">
               <i class="fas fa-filter me-1"></i>Filter by Location
@@ -426,7 +427,8 @@ ADMIN: ASSIGN MOVIE TO THEATERS MODAL
               </div>
               <div class="col-md-4">
                 <label class="form-label" style="font-size:0.8rem">State</label>
-                <select class="form-select search-input-dark" id="adm_assign_state" onchange="admOnStateChange()" disabled>
+                <select class="form-select search-input-dark" id="adm_assign_state" onchange="admOnStateChange()"
+                  disabled>
                   <option value="">All States</option>
                   {% for state in all_states %}<option value="{{ state }}">{{ state }}</option>{% endfor %}
                 </select>
@@ -457,7 +459,8 @@ ADMIN: ASSIGN MOVIE TO THEATERS MODAL
           <div class="d-flex align-items-center justify-content-between mb-3">
             <div class="form-check">
               <input class="form-check-input" type="checkbox" id="admSelectAll" onchange="admToggleSelectAll(this)">
-              <label class="form-check-label" for="admSelectAll" style="color:var(--admin-text);font-size:0.875rem;font-weight:600">
+              <label class="form-check-label" for="admSelectAll"
+                style="color:var(--admin-text);font-size:0.875rem;font-weight:600">
                 Select All Visible Theaters
               </label>
             </div>
@@ -467,9 +470,9 @@ ADMIN: ASSIGN MOVIE TO THEATERS MODAL
 
           {# Theaters grid #}
           <div id="admAssignList" class="row g-3">
-              <div class="text-center text-muted py-4">
-                Select Brand and State to load theaters
-              </div>
+            <div class="text-center text-muted py-4">
+              Select Brand and State to load theaters
+            </div>
           </div>
 
           <div id="admAssignNoResults" class="text-center py-4" style="display:none">
@@ -497,11 +500,19 @@ ADMIN: ASSIGN MOVIE TO THEATERS MODAL
 <script>
   // Helper: derive per-movie poster fallback from movie_id (e.g. MV_42 → poster_002.jpg)
   function getPosterFallback(movieId) {
-    if (!movieId) return "{{ url_for('static', filename='uploads/posters/poster_001.jpg') }}";
-    const num = parseInt((movieId || '').replace('MV_', ''), 10) || 1;
-    const idx = ((num - 1) % 20) + 1;
-    const padded = String(idx).padStart(3, '0');
-    return "/static/uploads/posters/poster_" + padded + ".jpg";
+
+    if (!movieId)
+      return "/static/uploads/posters/poster_001.jpg";
+
+    const num = parseInt(
+      (movieId || '').replace('MV_', ''),
+      10
+    ) || 1;
+
+    const idx = ((num - 1) % 200) + 1;
+
+    return `/static/uploads/posters/poster_${String(idx).padStart(3, '0')}.jpg`;
+
   }
 
   // Persistent selection Set — survives brand/state/city changes
@@ -576,42 +587,42 @@ ADMIN: ASSIGN MOVIE TO THEATERS MODAL
     ADM_CITY_THEATERS[key].push(t);
   });
 
-function openAssignModal(movieId, movieTitle, posterUrl) {
-  document.getElementById('adminAssignMovieId').value = movieId;
-  document.getElementById('adminAssignMovieTitle').textContent = movieTitle;
-  const thumb = document.getElementById('adminAssignPoster');
-  if (posterUrl) { thumb.src = posterUrl; thumb.style.display = ''; }
-  else { thumb.style.display = 'none'; }
+  function openAssignModal(movieId, movieTitle, posterUrl) {
+    document.getElementById('adminAssignMovieId').value = movieId;
+    document.getElementById('adminAssignMovieTitle').textContent = movieTitle;
+    const thumb = document.getElementById('adminAssignPoster');
+    if (posterUrl) { thumb.src = posterUrl; thumb.style.display = ''; }
+    else { thumb.style.display = 'none'; }
 
-  // Reset state
-  ADM_SELECTED_IDS.clear();                          // ← clear persisted selections
-  document.getElementById('adm_assign_brand').value = '';
-  document.getElementById('adm_assign_state').innerHTML = '<option value="">Select State</option>';
-  document.getElementById('adm_assign_state').disabled = true;
-  document.getElementById('adm_assign_city').innerHTML  = '<option value="">Select City</option>';
-  document.getElementById('adm_assign_city').disabled = true;
-  document.getElementById('adm_assign_theater_filter').value = '';
-  document.getElementById('adm_assign_theater_filter').disabled = true;
-  document.getElementById('admAssignList').innerHTML =
-    `<div class="text-center text-muted py-4">Select Brand and State to load theaters</div>`;
-  document.getElementById('admSelectAll').checked = false;
-  admUpdateCount();
+    // Reset state
+    ADM_SELECTED_IDS.clear();                          // ← clear persisted selections
+    document.getElementById('adm_assign_brand').value = '';
+    document.getElementById('adm_assign_state').innerHTML = '<option value="">Select State</option>';
+    document.getElementById('adm_assign_state').disabled = true;
+    document.getElementById('adm_assign_city').innerHTML = '<option value="">Select City</option>';
+    document.getElementById('adm_assign_city').disabled = true;
+    document.getElementById('adm_assign_theater_filter').value = '';
+    document.getElementById('adm_assign_theater_filter').disabled = true;
+    document.getElementById('admAssignList').innerHTML =
+      `<div class="text-center text-muted py-4">Select Brand and State to load theaters</div>`;
+    document.getElementById('admSelectAll').checked = false;
+    admUpdateCount();
 
-  new bootstrap.Modal(document.getElementById('assignMovieModal')).show();
-}
+    new bootstrap.Modal(document.getElementById('assignMovieModal')).show();
+  }
 
 
- function admToggleSelectAll(cb) {
-  document.querySelectorAll('.adm-assign-item').forEach(item => {
-    if (item.style.display === 'none') return;
-    const box = item.querySelector('.adm-theater-cb');
-    box.checked = cb.checked;
-    if (cb.checked) ADM_SELECTED_IDS.add(String(box.value));
-    else            ADM_SELECTED_IDS.delete(String(box.value));
-    admHighlight(box);
-  });
-  admUpdateCount();
-}
+  function admToggleSelectAll(cb) {
+    document.querySelectorAll('.adm-assign-item').forEach(item => {
+      if (item.style.display === 'none') return;
+      const box = item.querySelector('.adm-theater-cb');
+      box.checked = cb.checked;
+      if (cb.checked) ADM_SELECTED_IDS.add(String(box.value));
+      else ADM_SELECTED_IDS.delete(String(box.value));
+      admHighlight(box);
+    });
+    admUpdateCount();
+  }
 
   function admOnCbChange(cb) { admHighlight(cb); admUpdateCount(); }
 
@@ -623,40 +634,40 @@ function openAssignModal(movieId, movieTitle, posterUrl) {
   }
 
   function admUpdateCount() {
-  const n = ADM_SELECTED_IDS.size;
-  document.getElementById('admSelectedCount').textContent = `${n} selected`;
-  document.getElementById('admAssignBtn').disabled = n === 0;
-  const summary = document.getElementById('admAssignSummary');
-  if (n > 0) {
-    summary.textContent = `Assigning movie to ${n} theater(s) across all locations`;
-    summary.style.color = '#e3a008';
-  } else {
-    summary.textContent = 'No theaters selected';
-    summary.style.color = 'var(--text-muted)';
-  }
-
-  // Sync hidden inputs so off-screen selections are submitted with the form
-  const form = document.getElementById('adminAssignForm');
-  form.querySelectorAll('input.adm-hidden-theater').forEach(el => el.remove());
-  ADM_SELECTED_IDS.forEach(id => {
-    // Only add hidden input if checkbox isn't already visible in DOM
-    if (!form.querySelector(`.adm-theater-cb[value="${id}"]`)) {
-      const hidden = document.createElement('input');
-      hidden.type  = 'hidden';
-      hidden.name  = 'theater_ids';
-      hidden.value = id;
-      hidden.classList.add('adm-hidden-theater');
-      form.appendChild(hidden);
+    const n = ADM_SELECTED_IDS.size;
+    document.getElementById('admSelectedCount').textContent = `${n} selected`;
+    document.getElementById('admAssignBtn').disabled = n === 0;
+    const summary = document.getElementById('admAssignSummary');
+    if (n > 0) {
+      summary.textContent = `Assigning movie to ${n} theater(s) across all locations`;
+      summary.style.color = '#e3a008';
+    } else {
+      summary.textContent = 'No theaters selected';
+      summary.style.color = 'var(--text-muted)';
     }
-  });
-}
+
+    // Sync hidden inputs so off-screen selections are submitted with the form
+    const form = document.getElementById('adminAssignForm');
+    form.querySelectorAll('input.adm-hidden-theater').forEach(el => el.remove());
+    ADM_SELECTED_IDS.forEach(id => {
+      // Only add hidden input if checkbox isn't already visible in DOM
+      if (!form.querySelector(`.adm-theater-cb[value="${id}"]`)) {
+        const hidden = document.createElement('input');
+        hidden.type = 'hidden';
+        hidden.name = 'theater_ids';
+        hidden.value = id;
+        hidden.classList.add('adm-hidden-theater');
+        form.appendChild(hidden);
+      }
+    });
+  }
   document.addEventListener('change', e => {
-  if (!e.target.classList.contains('adm-theater-cb')) return;
-  const id = String(e.target.value);
-  if (e.target.checked) ADM_SELECTED_IDS.add(id);
-  else                  ADM_SELECTED_IDS.delete(id);
-  admHighlight(e.target);
-  admUpdateCount();
-});
+    if (!e.target.classList.contains('adm-theater-cb')) return;
+    const id = String(e.target.value);
+    if (e.target.checked) ADM_SELECTED_IDS.add(id);
+    else ADM_SELECTED_IDS.delete(id);
+    admHighlight(e.target);
+    admUpdateCount();
+  });
 </script>
 {% endblock %}
