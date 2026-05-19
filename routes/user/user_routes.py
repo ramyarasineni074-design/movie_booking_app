@@ -75,7 +75,6 @@ def api_locations():
         .filter(
             Theater.state != None,
             Theater.city  != None,
-            ~Theater.theater_id.like('LOC_%'),
             Theater.city  != '(placeholder)'
         )
         .distinct()
@@ -105,7 +104,6 @@ def api_areas():
             Theater.state    != None,
             Theater.city     != None,
             Theater.location != None,
-            ~Theater.theater_id.like('LOC_%'),
             Theater.city     != '(placeholder)'
         )
         .distinct()
