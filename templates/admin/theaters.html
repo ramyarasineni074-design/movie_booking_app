@@ -395,32 +395,7 @@ ADD STATE / CITY / LOCATION MODAL
   buildScreens();
 
   function editTheater(id, data) {
-
-    const form = document.getElementById('editTheaterForm');
-
-    form.action = `/admin/theaters/edit/${id}`;
-
-    document.getElementById('et_name').value =
-      data.name || '';
-
-    document.getElementById('et_brand').value =
-      data.brand_id || '';
-
-    document.getElementById('et_owner').value =
-      data.owner_id || '';
-
-    document.getElementById('et_state').value =
-      data.state || '';
-
-    document.getElementById('et_city').value =
-      data.city || '';
-
-    document.getElementById('et_location').value =
-      data.location || '';
-
-    new bootstrap.Modal(
-      document.getElementById('editTheaterModal')
-    ).show();
+    _adminEditTheaterSetup(id, data);
   }
 
   function delTheater(id, name) {
