@@ -66,8 +66,10 @@
         placeholder="Search location/area..." oninput="liveLocSearch(this.value)">
     </div>
     <div class="col-md-auto ms-auto">
-      <button class="btn btn-admin-primary" data-bs-toggle="modal" data-bs-target="#addTheaterModal">
-        <i class="fas fa-plus me-1"></i>Add Theater
+      <button type="button" id="createTheaterBtn" class="btn btn-admin-primary">
+
+        <i class="fas fa-save me-1"></i>Add Theater
+
       </button>
     </div>
   </div>
@@ -176,7 +178,7 @@
         <h5 class="modal-title"><i class="fas fa-plus-circle me-2 text-orange"></i>Add Theater</h5>
         <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
       </div>
-      <form method="POST" action="{{ url_for('admin_bp.add_theater') }}">
+      <form id="addTheaterForm" method="POST" action="{{ url_for('admin_bp.add_theater') }}">
         <div class="modal-body">
           <div class="row g-3">
             <div class="col-md-8">
@@ -396,6 +398,78 @@ ADD STATE / CITY / LOCATION MODAL
     document.getElementById('screenFields').innerHTML = html;
   }
   buildScreens();
+
+  document.getElementById(
+    'createTheaterBtn'
+  )
+    .addEventListener(
+      'click',
+      function () {
+
+        const form =
+          document.getElementById(
+            'addTheaterForm'
+          );
+
+        const theaterName =
+          form.querySelector(
+            '[name="name"]'
+          ).value.trim();
+
+        const state =
+          document.getElementById(
+            'add_state'
+          ).value;
+
+        const city =
+          document.getElementById(
+            'add_city'
+          ).value;
+
+        if (!theaterName) {
+
+          alert(
+            'Please enter theater name'
+          );
+
+          return;
+        }
+
+        if (!state) {
+
+          alert(
+            'Please select state'
+          );
+
+          return;
+        }
+
+        if (!city) {
+
+          alert(
+            'Please select city'
+          );
+
+          return;
+        }
+
+        form.submit();
+
+      });
+
+  document.getElementById(
+    'addTheaterForm'
+  )
+    .addEventListener(
+      'keydown',
+      function (e) {
+
+        if (e.key === "Enter") {
+          e.preventDefault();
+        }
+
+      });
+
 
   function editTheater(id, data) {
     _adminEditTheaterSetup(id, data);
