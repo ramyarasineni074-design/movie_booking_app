@@ -178,7 +178,7 @@
   <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
     <div class="modal-content modal-dark">
       <div class="modal-header">
-        <h5 class="modal-title"><i class="fas fa-plus-circle me-2 text-orange"></i>Add Theater</h5>
+        <h5 class="modal-title" id="addTheaterModalTitle"><i class="fas fa-plus-circle me-2 text-orange" id="addTheaterModalIcon"></i><span id="addTheaterModalTitleText">Add Theater</span></h5>
         <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
       </div>
       <form id="addTheaterForm" method="POST" action="{{ url_for('admin_bp.add_theater') }}">
@@ -186,18 +186,18 @@
           <div class="row g-3">
             <div class="col-md-8">
               <label class="form-label">Theater Name *</label>
-              <input type="text" name="name" class="form-control" placeholder="e.g. PVR Cinemas Banjara Hills" required>
+              <input type="text" name="name" id="add_name" class="form-control" placeholder="e.g. PVR Cinemas Banjara Hills" required>
             </div>
             <div class="col-md-4">
               <label class="form-label">Brand</label>
-              <select name="brand_id" class="form-select">
+              <select name="brand_id" id="add_brand_id" class="form-select">
                 <option value="">No Brand</option>
                 {% for b in brands %}<option value="{{ b.brand_id }}">{{ b.brand_name }}</option>{% endfor %}
               </select>
             </div>
             <div class="col-md-6">
               <label class="form-label">Assign to Owner</label>
-              <select name="owner_id" class="form-select">
+              <select name="owner_id" id="add_owner_id" class="form-select">
                 <option value="">No Owner</option>
                 {% for o in owners %}<option value="{{ o.id }}">{{ o.name }} ({{ o.email }})</option>{% endfor %}
               </select>
@@ -250,7 +250,7 @@
             </div>
             <div class="col-12">
               <label class="form-label">Full Address</label>
-              <input type="text" name="address" class="form-control" placeholder="Street, landmark, pin code">
+              <input type="text" name="address" id="add_address" class="form-control" placeholder="Street, landmark, pin code">
             </div>
             <div class="col-12">
               <div
@@ -268,10 +268,8 @@
         <div class="modal-footer">
           <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
           <button type="button" id="createTheaterBtn" class="btn btn-admin-primary">
-
             <i class="fas fa-save me-1"></i>
-            Add Theater
-
+            <span id="createTheaterBtnText">Add Theater</span>
           </button>
         </div>
       </form>
@@ -279,61 +277,6 @@
   </div>
 </div>
 
-{# ── EDIT THEATER MODAL ── #}
-<div class="modal fade" id="editTheaterModal" tabindex="-1">
-  <div class="modal-dialog modal-lg modal-dialog-centered">
-    <div class="modal-content modal-dark">
-      <div class="modal-header">
-        <h5 class="modal-title"><i class="fas fa-edit me-2" style="color:#388bfd"></i>Edit Theater</h5>
-        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-      </div>
-      <form method="POST" id="editTheaterForm">
-        <div class="modal-body">
-          <div class="row g-3">
-            <div class="col-md-8">
-              <label class="form-label">Theater Name *</label>
-              <input type="text" name="name" id="et_name" class="form-control" required>
-            </div>
-            <div class="col-md-4">
-              <label class="form-label">Brand</label>
-              <select name="brand_id" id="et_brand" class="form-select">
-                <option value="">No Brand</option>
-                {% for b in brands %}<option value="{{ b.brand_id }}">{{ b.brand_name }}</option>{% endfor %}
-              </select>
-            </div>
-            <div class="col-md-6">
-              <label class="form-label">Assign to Owner</label>
-              <select name="owner_id" id="et_owner" class="form-select">
-                <option value="">No Owner</option>
-                {% for o in owners %}<option value="{{ o.id }}">{{ o.name }}</option>{% endfor %}
-              </select>
-            </div>
-            <div class="col-md-4">
-              <label class="form-label">State</label>
-              <select name="state" id="et_state" class="form-select">
-                <option value="">Select State</option>
-              </select>
-            </div>
-            <div class="col-md-4">
-              <label class="form-label">City</label>
-              <select name="city" id="et_city" class="form-select" disabled>
-                <option value="">Select City</option>
-              </select>
-            </div>
-            <div class="col-md-4">
-              <label class="form-label">Area / Location</label>
-              <input type="text" name="location" id="et_location" class="form-control">
-            </div>
-          </div>
-        </div>
-        <div class="modal-footer">
-          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-          <button type="submit" class="btn btn-admin-primary"><i class="fas fa-save me-1"></i>Save Changes</button>
-        </div>
-      </form>
-    </div>
-  </div>
-</div>
 <form method="POST" id="delTheaterForm"></form>
 
 {# ══════════════════════════════════════════════
@@ -419,6 +362,8 @@ ADD STATE / CITY / LOCATION MODAL
             'addTheaterForm'
           );
 
+        const isEditMode = !!form.dataset.editId;
+
         const theaterName =
           form.querySelector(
             '[name="name"]'
@@ -443,7 +388,7 @@ ADD STATE / CITY / LOCATION MODAL
           return;
         }
 
-        if (!state) {
+        if (!isEditMode && !state) {
 
           alert(
             'Please select state'
@@ -452,7 +397,7 @@ ADD STATE / CITY / LOCATION MODAL
           return;
         }
 
-        if (!city) {
+        if (!isEditMode && !city) {
 
           alert(
             'Please select city'
@@ -480,8 +425,158 @@ ADD STATE / CITY / LOCATION MODAL
 
 
   function editTheater(id, data) {
-    _adminEditTheaterSetup(id, data);
+    const editUrl = `/admin/theaters/edit/${id}`;
+    const form = document.getElementById('addTheaterForm');
+
+    // Switch modal to Edit mode
+    document.getElementById('addTheaterModalIcon').className = 'fas fa-edit me-2';
+    document.getElementById('addTheaterModalIcon').style.color = '#388bfd';
+    document.getElementById('addTheaterModalTitleText').textContent = 'Edit Theater';
+    document.getElementById('createTheaterBtnText').textContent = 'Save Changes';
+    form.action = editUrl;
+
+    // Fill basic fields
+    document.getElementById('add_name').value = data.name || '';
+    document.getElementById('add_brand_id').value = data.brand_id || '';
+    document.getElementById('add_owner_id').value = data.owner_id || '';
+    document.getElementById('add_location').value = data.location || '';
+    if (document.getElementById('add_address')) document.getElementById('add_address').value = data.location || '';
+
+    // State → City cascade
+    const stateEl = document.getElementById('add_state');
+    const cityEl = document.getElementById('add_city');
+    stateEl.removeAttribute('required');
+    cityEl.removeAttribute('required');
+    if (data.state) {
+      populateStateSelect(stateEl, data.state);
+      stateEl.value = data.state;
+      if (data.city) {
+        populateCitySelect(cityEl, data.state, data.city);
+        cityEl.disabled = false;
+        cityEl.value = data.city;
+      }
+    }
+
+    // Build editable screens from existing data
+    buildEditScreens(data.screens || []);
+
+    // Hide "Number of Screens" spinner — screens are managed row-by-row in edit mode
+    document.getElementById('numScreens').closest('.col-md-4').style.display = 'none';
+
+    // Store edit id
+    form.dataset.editId = id;
+
+    bootstrap.Modal.getOrCreateInstance(document.getElementById('addTheaterModal')).show();
   }
+
+  function buildEditScreens(screens) {
+    // Replace screenFields content with editable rows for each existing screen
+    // plus an "Add Screen" button
+    let html = '<div class="row g-2" id="editScreenRows">';
+    screens.forEach((s, i) => {
+      const idx = i + 1;
+      html += `
+        <div class="col-md-6 edit-screen-row" data-idx="${idx}">
+          <div class="p-2 rounded" style="background:var(--admin-bg);border:1px solid var(--admin-border)">
+            <div class="d-flex justify-content-between align-items-center mb-1">
+              <span style="font-size:0.8rem;color:var(--text-muted)">Screen ${s.screen_number}</span>
+              <button type="button" class="btn btn-sm px-1 py-0"
+                style="font-size:0.7rem;background:rgba(229,9,20,0.12);color:#e50914;border:none;border-radius:5px"
+                onclick="removeEditScreen(this)">
+                <i class="fas fa-times"></i>
+              </button>
+            </div>
+            <input type="hidden" name="screen_id_${idx}" value="${s.screen_id}">
+            <div class="row g-2">
+              <div class="col-12">
+                <input type="number" name="screen_capacity_${idx}" class="form-control form-control-sm"
+                  placeholder="Seats" value="${s.total_seats}" min="1">
+              </div>
+            </div>
+          </div>
+        </div>`;
+    });
+    html += '</div>';
+    html += `
+      <div class="col-12 mt-2">
+        <button type="button" class="btn btn-sm"
+          style="background:rgba(63,185,80,0.12);color:#3fb950;border:1px solid rgba(63,185,80,0.3);border-radius:6px;font-size:0.8rem"
+          onclick="addNewScreenRow()">
+          <i class="fas fa-plus me-1"></i>Add Another Screen
+        </button>
+      </div>`;
+    const sf = document.getElementById('screenFields');
+    sf.style.display = '';
+    sf.innerHTML = html;
+    // Show the Screens divider
+    document.querySelectorAll('#addTheaterForm .col-12').forEach(el => {
+      if (el.querySelector('div') && el.querySelector('div').textContent.trim() === 'Screens') el.style.display = '';
+    });
+    // track next index
+    sf.dataset.nextIdx = screens.length + 1;
+  }
+
+  function removeEditScreen(btn) {
+    btn.closest('.col-md-6').remove();
+  }
+
+  function addNewScreenRow() {
+    const sf = document.getElementById('screenFields');
+    const rows = document.getElementById('editScreenRows');
+    const idx = parseInt(sf.dataset.nextIdx || 1);
+    const div = document.createElement('div');
+    div.className = 'col-md-6 edit-screen-row';
+    div.dataset.idx = idx;
+    div.innerHTML = `
+      <div class="p-2 rounded" style="background:var(--admin-bg);border:1px solid var(--admin-border)">
+        <div class="d-flex justify-content-between align-items-center mb-1">
+          <span style="font-size:0.8rem;color:var(--text-muted)">New Screen</span>
+          <button type="button" class="btn btn-sm px-1 py-0"
+            style="font-size:0.7rem;background:rgba(229,9,20,0.12);color:#e50914;border:none;border-radius:5px"
+            onclick="removeEditScreen(this)">
+            <i class="fas fa-times"></i>
+          </button>
+        </div>
+        <input type="hidden" name="screen_id_${idx}" value="">
+        <div class="row g-2">
+          <div class="col-12">
+            <input type="number" name="screen_capacity_${idx}" class="form-control form-control-sm"
+              placeholder="Seats" value="150" min="1">
+          </div>
+        </div>
+      </div>`;
+    rows.appendChild(div);
+    sf.dataset.nextIdx = idx + 1;
+  }
+
+  // Reset modal back to Add mode when it closes
+  document.getElementById('addTheaterModal').addEventListener('hidden.bs.modal', function () {
+    const form = document.getElementById('addTheaterForm');
+    if (!form.dataset.editId) return;
+    delete form.dataset.editId;
+
+    // Restore Add mode UI
+    document.getElementById('addTheaterModalIcon').className = 'fas fa-plus-circle me-2 text-orange';
+    document.getElementById('addTheaterModalIcon').style.color = '';
+    document.getElementById('addTheaterModalTitleText').textContent = 'Add Theater';
+    document.getElementById('createTheaterBtnText').textContent = 'Add Theater';
+    form.action = "{{ url_for('admin_bp.add_theater') }}";
+
+    // Restore state/city required attrs
+    document.getElementById('add_state').setAttribute('required', '');
+    document.getElementById('add_city').setAttribute('required', '');
+
+    // Restore numScreens spinner
+    document.getElementById('numScreens').closest('.col-md-4').style.display = '';
+
+    // Reset form fields
+    form.reset();
+    document.getElementById('add_city').disabled = true;
+    document.getElementById('add_city').innerHTML = '<option value="">-- Select City --</option>';
+
+    // Rebuild clean screens for Add mode
+    buildScreens();
+  });
 
   function delTheater(id, name) {
     if (!confirm(`Delete theater "${name}"?`)) return;
@@ -603,7 +698,7 @@ ADD STATE / CITY / LOCATION MODAL
         await loadLocationsFromDB();
 
         if (_addLocType === 'state') {
-          ['add_state', 'et_state', 'filterState', 'addLocStateSelect'].forEach(id => {
+          ['add_state', 'filterState', 'addLocStateSelect'].forEach(id => {
             const el = document.getElementById(id);
             if (el) populateStateSelect(el, name);
           });
@@ -616,22 +711,13 @@ ADD STATE / CITY / LOCATION MODAL
           // currently shows the same state the new city was added to.
           const selState = stateEl.value;
 
-          // Add Theater modal
+          // Add Theater modal (also used for Edit mode)
           const addSt = document.getElementById('add_state');
           const addCt = document.getElementById('add_city');
           if (addSt && addSt.value === selState && addCt) {
             populateCitySelect(addCt, selState, name);
             addCt.disabled = false;
             addCt.value = name;
-          }
-
-          // Edit Theater modal
-          const etSt = document.getElementById('et_state');
-          const etCt = document.getElementById('et_city');
-          if (etSt && etSt.value === selState && etCt) {
-            populateCitySelect(etCt, selState, name);
-            etCt.disabled = false;
-            etCt.value = name;
           }
 
         } else if (_addLocType === 'location') {

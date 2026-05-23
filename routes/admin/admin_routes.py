@@ -436,14 +436,57 @@ def edit_theater(theater_id):
     t.name     = request.form.get('name', t.name).strip()
     t.state    = request.form.get('state', t.state or '').strip()
     t.city     = request.form.get('city', t.city or '').strip()
-    t.location = request.form.get('location', t.location or '').strip()
-    bid = request.form.get('brand_id','').strip()
-    if bid: t.brand_id = bid
+    # location field; fall back to address input if location is blank
+    loc = request.form.get('location', '').strip()
+    addr = request.form.get('address', '').strip()
+    t.location = loc or addr or t.location or ''
 
-    # Reassign brand owner if owner_id provided
-    oid = request.form.get('owner_id','').strip()
+    # Brand — allow clearing (empty string = remove brand)
+    bid = request.form.get('brand_id', '').strip()
+    t.brand_id = bid if bid else None
+
+    # Owner — reassign brand owner if brand exists
+    oid = request.form.get('owner_id', '').strip()
     if oid and t.brand:
         t.brand.owner_id = int(oid)
+
+    # ── Screens ──────────────────────────────────────────────
+    # Update existing screens sent back with a screen_id
+    existing_ids = {s.screen_id for s in t.screens}
+    submitted_ids = set()
+
+    idx = 1
+    while True:
+        sid      = request.form.get(f'screen_id_{idx}', '').strip()
+        cap_raw  = request.form.get(f'screen_capacity_{idx}')
+        if cap_raw is None:
+            break   # no more screen fields
+
+        cap = int(cap_raw) if cap_raw else 150
+
+        if sid and sid in existing_ids:
+            # Update existing screen
+            scr = next(s for s in t.screens if s.screen_id == sid)
+            scr.total_seats = cap
+            submitted_ids.add(sid)
+        else:
+            # New screen (no screen_id or unrecognised id)
+            new_scr = Screen(
+                screen_id=f'SC_{uuid.uuid4().hex[:6].upper()}',
+                theater_id=t.theater_id,
+                screen_number=idx,
+                total_seats=cap
+            )
+            db.session.add(new_scr)
+
+        idx += 1
+
+    # Delete screens that were removed in the UI
+    for scr in list(t.screens):
+        if scr.screen_id not in submitted_ids and scr.screen_id in existing_ids:
+            # Only delete if no active bookings / shows tied to this screen
+            if not scr.shows:
+                db.session.delete(scr)
 
     db.session.commit()
     flash(f'Theater "{t.name}" updated.', 'success')

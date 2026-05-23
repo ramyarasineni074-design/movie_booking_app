@@ -38,7 +38,15 @@ class Theater(db.Model):
             "name":       self.name,
             "location":   self.location,
             "city":       self.city,
-            "state":      self.state
+            "state":      self.state,
+            "screens":    [
+                {
+                    "screen_id":     s.screen_id,
+                    "screen_number": s.screen_number,
+                    "total_seats":   s.total_seats
+                }
+                for s in sorted(self.screens, key=lambda x: x.screen_number)
+            ]
         }
 
     def __repr__(self):
