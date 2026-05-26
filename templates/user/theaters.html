@@ -64,12 +64,15 @@
             <label style="color:rgba(255,255,255,0.5);font-size:0.8rem;margin-bottom:6px">
               City
             </label>
-            <select name="city" class="form-select filter-select">
-              <option value="">All Cities</option>
-              {% for c in all_cities %}
-              <option value="{{ c }}"
-                      {% if selected_city == c %}selected{% endif %}>{{ c }}</option>
-              {% endfor %}
+            <select name="city" id="citySelect" class="form-select filter-select"
+                    {% if not selected_state %}disabled{% endif %}>
+              <option value="">{{ 'All Cities' if selected_state else 'Select a state first' }}</option>
+              {% if selected_state and selected_state in cities_by_state %}
+                {% for c in cities_by_state[selected_state] %}
+                <option value="{{ c }}"
+                        {% if selected_city == c %}selected{% endif %}>{{ c }}</option>
+                {% endfor %}
+              {% endif %}
             </select>
           </div>
 
@@ -255,11 +258,48 @@
 {% block extra_js %}
 <script>
 (function () {
-  const form = document.getElementById('theaterFilterForm');
-  if (!form) return;
-  form.querySelectorAll('select').forEach(function (sel) {
-    sel.addEventListener('change', function () { form.submit(); });
+  const form        = document.getElementById('theaterFilterForm');
+  const stateSelect = form ? form.querySelector('[name="state"]') : null;
+  const citySelect  = document.getElementById('citySelect');
+  if (!form || !stateSelect || !citySelect) return;
+
+  const citiesByState = {{ cities_by_state | tojson }};
+
+  function populateCities(selectedState, keepCity) {
+    citySelect.innerHTML = '';
+    if (!selectedState || !citiesByState[selectedState]) {
+      var opt = document.createElement('option');
+      opt.value = '';
+      opt.textContent = 'Select a state first';
+      citySelect.appendChild(opt);
+      citySelect.disabled = true;
+      return;
+    }
+    citySelect.disabled = false;
+    var placeholder = document.createElement('option');
+    placeholder.value = '';
+    placeholder.textContent = 'All Cities';
+    citySelect.appendChild(placeholder);
+    citiesByState[selectedState].forEach(function (city) {
+      var opt = document.createElement('option');
+      opt.value = city;
+      opt.textContent = city;
+      if (city === keepCity) opt.selected = true;
+      citySelect.appendChild(opt);
+    });
+  }
+
+  stateSelect.addEventListener('change', function () {
+    populateCities(stateSelect.value, '');
+    form.submit();
   });
+
+  citySelect.addEventListener('change', function () {
+    if (!citySelect.disabled) form.submit();
+  });
+
+  // Re-sync on load (server already rendered options, JS stays consistent)
+  populateCities(stateSelect.value, '{{ selected_city }}');
 })();
 </script>
 {% endblock %}

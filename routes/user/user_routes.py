@@ -1290,7 +1290,7 @@ def theater_detail(theater_id):
 @user_bp.route('/theaters')
 @handle_exceptions
 def theaters():
-    city     = request.args.get('city',  session.get('city', '')).strip()
+    city     = request.args.get('city',  '').strip()
     state    = request.args.get('state', '').strip()
     search   = request.args.get('q',     '').strip()
     page     = max(1, int(request.args.get('page', 1)))
@@ -1337,30 +1337,37 @@ def theaters():
             .distinct().all()
         if r[0] and r[0].strip()
     ))
-    all_cities = sorted(set(
-        r[0].strip() for r in
-        db.session.query(Theater.city)
-            .filter(Theater.city != None,
-                    Theater.city != '(placeholder)',
+    # Build a mapping of state -> sorted list of cities for dynamic city dropdown
+    state_city_rows = (
+        db.session.query(Theater.state, Theater.city)
+            .filter(Theater.city  != None,
+                    Theater.city  != '(placeholder)',
+                    Theater.state != None,
                     ~Theater.theater_id.like('LOC_%'),
                     Theater.theater_id.in_(theaters_with_shows))
             .distinct().all()
-        if r[0] and r[0].strip()
-    ))
+    )
+    cities_by_state = {}
+    for s, c in state_city_rows:
+        s = s.strip() if s else ''
+        c = c.strip() if c else ''
+        if s and c:
+            cities_by_state.setdefault(s, set()).add(c)
+    cities_by_state = {s: sorted(cs) for s, cs in cities_by_state.items()}
 
     return render_template(
         'user/theaters.html',
-        theaters      = theater_list,
-        total         = total,
-        page          = page,
-        total_pages   = total_pages,
-        per_page      = PER_PAGE,
-        search        = search,
-        selected_city = city,
-        selected_state= state,
-        all_states    = all_states,
-        all_cities    = all_cities,
-        active_page   = 'theaters'
+        theaters        = theater_list,
+        total           = total,
+        page            = page,
+        total_pages     = total_pages,
+        per_page        = PER_PAGE,
+        search          = search,
+        selected_city   = city,
+        selected_state  = state,
+        all_states      = all_states,
+        cities_by_state = cities_by_state,
+        active_page     = 'theaters'
     )
 
 
